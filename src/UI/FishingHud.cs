@@ -273,7 +273,7 @@ namespace ValheimDeepWaters
 
         // the hint panel's size, and its gap above the bottom of the screen (Valheim units; the stamina bar's bottom edge
         // is about 56 up)
-        private const float HintScale = 0.65f, HintBottomGap = 18f;
+        private const float HintScale = 0.65f, HintBottomGap = 30f;
 
         // ------------------------------------------------------------------
         // Catch log

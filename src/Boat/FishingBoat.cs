@@ -422,7 +422,9 @@ namespace ValheimDeepWaters
             SeatNudges.TryGetValue(which, out var total);
             total += new Vector4(move.x, move.y, move.z, turn);
             SeatNudges[which] = total;
-            return $"{which} on {n} boat(s): moved in all {total.x:0.00} right, {total.y:0.00} up, {total.z:0.00} toward the bow, turned {total.w:0} degrees.";
+            string msg = $"{which} on {n} boat(s): moved in all {total.x:0.00} right, {total.y:0.00} up, {total.z:0.00} toward the bow, turned {total.w:0} degrees.";
+            Plugin.Log.LogInfo("Fishing Boat seat: " + msg);
+            return msg;
         }
 
         /// <summary>No sail to raise: Forward stops at rowing speed.</summary>

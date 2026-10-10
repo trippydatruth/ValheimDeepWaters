@@ -254,15 +254,29 @@ namespace ValheimDeepWaters
             return boss.Music.Length > 0 ? boss.Music : null;
         }
 
-        /// <summary>Boss music during a boss fish fight, through the same override vanilla uses for its bosses.</summary>
+        /// <summary>
+        /// Boss music for a boss fish, through the same override vanilla uses for its bosses: from the omen on the water,
+        /// through the strike, to the end of the fight (the track loops on its own). It plays at Valheim's music volume.
+        /// </summary>
         [HarmonyPatch(typeof(RandEventSystem), nameof(RandEventSystem.GetMusicOverride))]
         private static class MusicPatch
         {
+            private static string? _playing;
+
             private static void Postfix(ref string __result)
             {
-                if (__result != null) return;
+                string? boss = null;
                 var s = FishingController.Session;
-                if (s?.Boss != null && s.Phase == FishingPhase.Fighting) __result = MusicFor(s.Boss)!;
+                bool encounter = s?.Boss != null && (s.Phase != FishingPhase.Waiting || s.OmenStep >= 1);
+                if (__result == null && encounter) boss = MusicFor(s!.Boss!);
+                if (boss != null) __result = boss;
+                if (boss != _playing)
+                {
+                    Plugin.Log.LogInfo(boss != null
+                        ? $"Boss music: {boss} (phase {s!.Phase}, omen {s.OmenStep})."
+                        : $"Boss music stopped: {(s == null ? "the cast ended" : s.Boss == null ? "the boss is gone" : encounter ? "another event's music took over" : "back to waiting")}.");
+                    _playing = boss;
+                }
             }
         }
     }

@@ -114,7 +114,17 @@
   straight from the Models folder. Plain `.bundle` files still load (and win over a packed copy), so custom models
   work as before. The loose `bobber.obj` is no longer shipped (the bobber is in the rod bundle).
 
+- Baitfish swim in the world too: minnows, large baitfish and sea shrimp school in rivers, lakes and the sea with
+  their own animated models. Catch them on a rod as before; one that flops onto land can be picked up as its bait.
+- Deep Waters fish can be made into vanilla **Raw fish** at the food preparation table (like vanilla's own fish),
+  so they go into Fish Wraps, Fish Soup and the other fish dishes. Bigger size classes give more raw fish.
+
 ### Fixed
+- Minnows, large baitfish and sea shrimp swam up to the bait and fought on the line as the vanilla bait model; they
+  now use their own animated models.
+- Boss fish music only played while the fish was being fought; it now plays for the whole encounter, from the omen
+  on the water to the end of the fight (at Valheim's music volume).
+- The bite message is just "FISH ON!" (the key prompt below already says to right click).
 - The float's nibble splash never played (the vanilla rod's float had no nibble effect set); it now uses the game's
   own `fx_float_nibble`.
 - The Thunderstore package left out the Horn of Ægir's blast (`horn_of_aegir.wav`), so a packaged horn was silent.

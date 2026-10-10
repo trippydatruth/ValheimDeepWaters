@@ -273,6 +273,13 @@ namespace ValheimDeepWaters
         /// <summary>Which fish species a swimming fish is, by its prefab name ("Fish1", "VDW_Fish_trout").</summary>
         public static readonly Dictionary<string, string> FishIdByPrefab = new();
 
+        /// <summary>
+        /// The custom model a fish swims and fights as: its own "fish_&lt;id&gt;", or for a baitfish (which lands as bait)
+        /// its bait's "bait_&lt;id&gt;" - without that, minnows swam up as the vanilla bait mesh their bait item is cloned from.
+        /// </summary>
+        public static string ModelKeyFor(FishDefinition fish) =>
+            string.IsNullOrWhiteSpace(fish.CatchBait) ? "fish_" + fish.Id : "bait_" + fish.CatchBait;
+
         /// <summary>The item a landed fish gives: vanilla's pickup item for vanilla fish, else the fish's own item.</summary>
         public static ItemDrop? DropFor(FishDefinition fish)
         {
@@ -314,6 +321,8 @@ namespace ValheimDeepWaters
 
                     if (CustomModels.ApplyToPrefab(item.ItemPrefab, "hook_" + hook.Id))
                         GroundPose.FitCollider(item.ItemPrefab);
+                    else
+                        Plugin.Log.LogWarning($"Hook '{hook.Id}': no hook_{hook.Id} model found; it keeps the stand-in look.");
 
                     ItemManager.Instance.AddItem(item);
                     HookByItemName[name] = hook;
@@ -513,11 +522,68 @@ namespace ValheimDeepWaters
 
             ItemManager.OnItemsRegistered -= RemoveVanillaFishingRecipes;
             ItemManager.OnItemsRegistered += RemoveVanillaFishingRecipes;
+            ItemManager.OnItemsRegistered -= AddFishToRawFishRecipe;
+            ItemManager.OnItemsRegistered += AddFishToRawFishRecipe;
+        }
+
+        /// <summary>
+        /// Vanilla makes Raw fish (for Fish Wraps, Fish Soup and the rest) from any one caught fish at the food
+        /// preparation table, more from a fish of higher quality. Deep Waters fish join that list, so they go into
+        /// vanilla's fish dishes too; their size class is their quality, so bigger catches give more.
+        /// </summary>
+        private static void AddFishToRawFishRecipe()
+        {
+            var recipe = ObjectDB.instance?.m_recipes.FirstOrDefault(r => r != null && r.m_item != null && r.m_item.gameObject.name == "FishRaw");
+            if (recipe == null)
+            {
+                Plugin.Log.LogInfo("Raw fish recipe not found; Deep Waters fish can't be made into Raw fish.");
+                return;
+            }
+            var have = new HashSet<string>(recipe.m_resources.Where(r => r?.m_resItem != null).Select(r => r.m_resItem.gameObject.name));
+            var add = new List<Piece.Requirement>();
+            foreach (var fish in Fish.Values)
+            {
+                if (fish.IsVanilla || !string.IsNullOrWhiteSpace(fish.CatchBait)) continue;   // vanilla's own / bait, not food
+                if (!FishItems.TryGetValue(fish.Id, out var prefab) || prefab == null || have.Contains(prefab.name)) continue;
+                var drop = prefab.GetComponent<ItemDrop>();
+                if (drop == null) continue;
+                add.Add(new Piece.Requirement { m_resItem = drop, m_amount = 1, m_amountPerLevel = 1, m_recover = true });
+            }
+            if (add.Count == 0) return;
+            recipe.m_resources = recipe.m_resources.Concat(add).ToArray();
+            Plugin.Log.LogInfo($"Raw fish: {add.Count} Deep Waters fish can be made into Raw fish at the preparation table.");
         }
 
         private static void RemoveVanillaFishingRecipes()
         {
             ObjectDB.instance?.m_recipes.RemoveAll(r => r != null && r.m_item != null && IsVanillaFishingGear(r.m_item.gameObject));
+        }
+
+        /// <summary>The swimming creature for each baitfish (by fish id), spawned in the world in schools (FishSpawns).</summary>
+        public static readonly Dictionary<string, GameObject> SwimmingBaitfish = new();
+
+        /// <summary>
+        /// A baitfish swimming in the world: vanilla's swimming perch with the bait's own model, and no item of its own,
+        /// so one picked up when it flops onto land gives its bait (as many as a catch does).
+        /// </summary>
+        private static void RegisterSwimmingBaitfish(FishDefinition fish, GameObject baitPrefab)
+        {
+            string name = "VDW_Swim_" + fish.Id;
+            var swim = PrefabManager.Instance.CreateClonedPrefab(name, "Fish1");
+            if (swim == null) return;
+            var item = swim.GetComponent<ItemDrop>();
+            if (item != null) UnityEngine.Object.DestroyImmediate(item);
+            var f = swim.GetComponent<global::Fish>();
+            if (f != null)
+            {
+                f.m_name = baitPrefab.GetComponent<ItemDrop>()?.m_itemData.m_shared.m_name ?? fish.Name;
+                f.m_pickupItem = baitPrefab;
+                f.m_pickupItemStackSize = Mathf.Max(1, fish.CatchAmount);
+            }
+            CustomModels.ApplyToPrefab(swim, "bait_" + fish.CatchBait);
+            PrefabManager.Instance.AddPrefab(swim);
+            SwimmingBaitfish[fish.Id] = swim;
+            FishIdByPrefab[name] = fish.Id;
         }
 
         private static void RegisterFish()
@@ -530,7 +596,11 @@ namespace ValheimDeepWaters
                     // their swimming and hooked visual.
                     if (!string.IsNullOrWhiteSpace(fish.CatchBait))
                     {
-                        if (BaitItems.TryGetValue(fish.CatchBait, out var baitPrefab)) FishItems[fish.Id] = baitPrefab;
+                        if (BaitItems.TryGetValue(fish.CatchBait, out var baitPrefab))
+                        {
+                            FishItems[fish.Id] = baitPrefab;
+                            RegisterSwimmingBaitfish(fish, baitPrefab);
+                        }
                         else Plugin.Log.LogWarning($"Fish '{fish.Id}': CatchBait '{fish.CatchBait}' isn't a bait id.");
                         continue;
                     }

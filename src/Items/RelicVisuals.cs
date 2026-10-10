@@ -118,17 +118,22 @@ namespace ValheimDeepWaters
             }
         }
 
-        // How the belt sits: y up from the hips bone, z forward from it (metres), w its scale. The model is 38 cm across
-        // (build_pearl_belt.py); vdw_debug pearlfit changes this in game.
-        private static Vector4 Fit = new Vector4(0f, 0.29f, 0.0f, 1f);
+        // How the belt sits: y up from the hips bone, z forward from it (metres), w its overall scale; Shape stretches it
+        // on its own axes (x across, y tall, z front to back - a little deeper and taller than the model so it doesn't
+        // clip into the body). The model is 38 cm across (build_pearl_belt.py); vdw_debug pearlfit changes these in game.
+        private static Vector4 Fit = new Vector4(0f, 0.29f, 0.1f, 1f);   // fitted in game
+        private static Vector3 Shape = new Vector3(1f, 1.1f, 1.1f);
 
-        /// <summary>vdw_debug pearlfit: sets the belt's scale, height and forward offset, and refits it on everyone.</summary>
-        internal static string PearlFit(float scale, float up, float forward)
+        /// <summary>vdw_debug pearlfit: sets the belt's scale, height, forward offset and stretch, and refits it on everyone.</summary>
+        internal static string PearlFit(float scale, float up, float forward, float tall, float deep)
         {
             Fit = new Vector4(0f, up, forward, scale);
+            Shape = new Vector3(1f, tall, deep);
             int n = 0;
             foreach (var p in Object.FindObjectsByType<PearlOnBelt>(FindObjectsSortMode.None)) { p.Refit(); n++; }
-            return $"Pearl belt: scale {scale:0.00}, up {up:0.00}, forward {forward:0.00} (refitted on {n} wearer(s)).";
+            string msg = $"Pearl belt: scale {scale:0.00}, up {up:0.00}, forward {forward:0.00}, height x{tall:0.00}, depth x{deep:0.00} (refitted on {n} wearer(s)).";
+            Plugin.Log.LogInfo(msg);
+            return msg;
         }
 
         private sealed class PearlOnBelt : MonoBehaviour
@@ -154,14 +159,34 @@ namespace ValheimDeepWaters
                 _pearl.name = "VDW_PearlOnBelt";
                 foreach (var c in _pearl.GetComponentsInChildren<Collider>(true)) Destroy(c);
                 foreach (var rb in _pearl.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
-                // Round the hips at the vanilla belt line, the pearl to the front. Placed against the character (not the
-                // hips' own axes, which differ by rig) and then carried along by the hips.
+                // Round the hips at the vanilla belt line, the pearl to the front, squared to the character - worked out
+                // against the hips in the skeleton's rest pose (not wherever the walk or idle has twisted them right now,
+                // which left the belt turned), then carried along by the hips as they move.
                 var root = vis.transform;
-                _pearl.transform.SetPositionAndRotation(hips.position + root.forward * Fit.z + root.up * Fit.y,
+                var rest = RestHips(vis.m_bodyModel, hips);
+                var frame = new GameObject("vdw_rest_hips").transform;
+                frame.SetPositionAndRotation(rest.pos, rest.rot);
+                frame.localScale = hips.lossyScale;
+                _pearl.transform.SetPositionAndRotation(rest.pos + root.forward * Fit.z + root.up * Fit.y,
                     Quaternion.LookRotation(root.forward, root.up));
-                _pearl.transform.localScale = Vector3.one * Fit.w;
-                _pearl.transform.SetParent(hips, true);
+                _pearl.transform.localScale = Shape * Fit.w;
+                _pearl.transform.SetParent(frame, true);
+                Vector3 lp = _pearl.transform.localPosition, ls = _pearl.transform.localScale;
+                Quaternion lr = _pearl.transform.localRotation;
+                _pearl.transform.SetParent(hips, false);
+                _pearl.transform.localPosition = lp; _pearl.transform.localRotation = lr; _pearl.transform.localScale = ls;
+                Destroy(frame.gameObject);
                 _vis = vis;
+            }
+
+            /// <summary>Where the hips bone would be in the rest pose (from the skin's bind poses), as the body stands now.</summary>
+            private static (Vector3 pos, Quaternion rot) RestHips(SkinnedMeshRenderer body, Transform hips)
+            {
+                int i = System.Array.IndexOf(body.bones, hips);
+                var bind = body.sharedMesh != null ? body.sharedMesh.bindposes : null;
+                if (i < 0 || bind == null || i >= bind.Length) return (hips.position, hips.rotation);
+                var m = body.transform.localToWorldMatrix * bind[i].inverse;
+                return (m.GetColumn(3), m.rotation);
             }
 
             private VisEquipment? _vis;

@@ -10,7 +10,7 @@ namespace ValheimDeepWaters
     /// Puts Deep Waters' fish into Valheim's own world spawning so they swim in lakes, rivers and the sea like
     /// vanilla fish (and are networked the same way). Each fish's spawn rules are copied from a vanilla fish's
     /// (freshwater or ocean) so depth and behaviour match, then given its own biomes, numbers and time of day.
-    /// Baitfish aren't spawned: they're only caught.
+    /// Baitfish swim in schools too (their own swimming creature, see ContentRegistry.RegisterSwimmingBaitfish).
     /// </summary>
     internal static class FishSpawns
     {
@@ -66,8 +66,12 @@ namespace ValheimDeepWaters
             float density = Mathf.Max(0f, VdwConfig.SwimmingFishDensity.Value);
             foreach (var fish in ContentRegistry.Fish.Values)
             {
-                if (!string.IsNullOrWhiteSpace(fish.CatchBait) || fish.IsVanilla) continue; // vanilla fish keep vanilla's spawns
-                if (!ContentRegistry.FishItems.TryGetValue(fish.Id, out var prefab) || prefab.GetComponent<global::Fish>() == null) continue;
+                if (fish.IsVanilla) continue; // vanilla fish keep vanilla's spawns
+                bool baitfish = !string.IsNullOrWhiteSpace(fish.CatchBait);
+                GameObject? prefab = null;
+                if (baitfish) ContentRegistry.SwimmingBaitfish.TryGetValue(fish.Id, out prefab);
+                else ContentRegistry.FishItems.TryGetValue(fish.Id, out prefab);
+                if (prefab == null || prefab.GetComponent<global::Fish>() == null) continue;
 
                 bool sea = fish.Water == WaterType.Ocean || fish.Water == WaterType.DeepOcean;
                 var template = sea ? ocean ?? fresh! : fresh ?? ocean!;
@@ -80,6 +84,14 @@ namespace ValheimDeepWaters
                 data.m_maxSpawned = fish.Legendary ? 1 : Mathf.Clamp(Mathf.RoundToInt(1f + fish.BiteWeight / 2f), 1, 4);
                 data.m_groupSizeMax = fish.Legendary ? 1 : Mathf.Max(1, data.m_maxSpawned - 1);
                 data.m_spawnChance = template.m_spawnChance * Mathf.Clamp(fish.BiteWeight / 4f, 0.02f, 1f) * density;
+                if (baitfish)
+                {
+                    // small fish in bigger, more frequent schools
+                    data.m_maxSpawned = 6;
+                    data.m_groupSizeMin = 3;
+                    data.m_groupSizeMax = 5;
+                    data.m_spawnChance = template.m_spawnChance * density;
+                }
                 data.m_spawnAtDay = !string.Equals(fish.ActiveTime, "Night", StringComparison.OrdinalIgnoreCase);
                 data.m_spawnAtNight = !string.Equals(fish.ActiveTime, "Day", StringComparison.OrdinalIgnoreCase);
                 if (fish.Water == WaterType.DeepOcean) data.m_minOceanDepth = Mathf.Max(data.m_minOceanDepth, 15f);

@@ -198,7 +198,7 @@ namespace ValheimDeepWaters
                         s.Phase = FishingPhase.Bite;
                         s.HookDeadline = Time.time + HookWindowSeconds * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + SkillHookWindow * Skill(player));
                         FishingFx.Bite(bobberPos);
-                        Msg("FISH ON!  Right click to set the hook!");
+                        Msg("FISH ON!");
                     }
                     break;
 
@@ -306,7 +306,7 @@ namespace ValheimDeepWaters
 
                 if (ContentRegistry.FishItems.TryGetValue(s.Fish.Id, out var fishPrefab))
                 {
-                    s.HookedFish = HookedFishVisual.Create(fishPrefab, "fish_" + s.Fish.Id);
+                    s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish));
                     if (s.HookedFish != null) s.HookedFish.StayUnder = 0.05f;
                 }
 

@@ -235,6 +235,7 @@ namespace ValheimDeepWaters
                     return null;
                 }
                 LoadedBundles[path] = bundle;
+                Plugin.Log.LogInfo($"Custom models: loaded {Path.GetFileName(path)} ({bundle.GetAllAssetNames().Length} assets).");
                 return bundle;
             }
             catch (Exception ex)

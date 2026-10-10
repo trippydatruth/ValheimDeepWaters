@@ -112,11 +112,11 @@ namespace ValheimDeepWaters
                 }
                 else if (args[0].Equals("pearlfit", StringComparison.OrdinalIgnoreCase))
                 {
-                    // vdw_debug pearlfit <scale> <up> <forward>
+                    // vdw_debug pearlfit <scale> <up> <forward> [height] [depth]
                     float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
                     Console.instance.Print(args.Length < 2
-                        ? "Usage: vdw_debug pearlfit <scale> <up> <forward>   (now: 1 0.29 0)"
-                        : RelicVisuals.PearlFit(F(1, 1f), F(2, 0.29f), F(3, 0f)));
+                        ? "Usage: vdw_debug pearlfit <scale> <up> <forward> [height] [depth]   (now: 1 0.29 0.1 1.1 1.1)"
+                        : RelicVisuals.PearlFit(F(1, 1f), F(2, 0.29f), F(3, 0.1f), F(4, 1.1f), F(5, 1.1f)));
                 }
                 else if (args[0].Equals("horn", StringComparison.OrdinalIgnoreCase))
                 {

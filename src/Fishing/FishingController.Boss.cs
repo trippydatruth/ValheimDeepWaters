@@ -75,7 +75,7 @@ namespace ValheimDeepWaters
             FishingFx.Bite(bobberPos);
             FishingFx.FishSplash(bobberPos, 1.8f);
             GameCamera.instance?.AddShake(player.transform.position, 30f, 2f, false);
-            Msg("FISH ON!  Right click to set the hook!");
+            Msg("FISH ON!");
         }
 
         /// <summary>Clears the boss from a cast that missed it: it sinks back into the deep.</summary>

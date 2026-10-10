@@ -186,7 +186,7 @@ way (phases and all), with no bar, music or messages, and drop their trophy the 
 | Grubs | Sometimes found when you chop up a log |
 | Flies | Swarms along rivers, lakes and the coast in dry weather (fireflies at night); walk up and use one to catch it |
 | Leeches | Dropped by swamp leeches |
-| Minnows, Large Baitfish, Shrimp | Catch them as small fish with worms, grubs or flies on a Tiny hook |
+| Minnows, Large Baitfish, Shrimp | Catch them as small fish with worms, grubs or flies on a Tiny hook; they swim in schools where they live |
 | Abyssal, Frost and Runed bait | Crafted at the cauldron or forge |
 
 Wriggling soil only grows in parts of the world generated after installing the mod.
@@ -280,7 +280,8 @@ These need `devcommands`.
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
 - `vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn]`: moves a Fishing Boat seat (metres,
   degrees) to fit it by eye; prints the running total.
-- `vdw_debug pearlfit <scale> <up> <forward>`: fits the worn Pearl of Njord belt (defaults 1, 0.29, 0).
+- `vdw_debug pearlfit <scale> <up> <forward> [height] [depth]`: fits the worn Pearl of Njord belt (defaults 1,
+  0.29, 0.1, 1.1, 1.1).
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug tokens`: exports the text for translating.
 
