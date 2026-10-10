@@ -29,13 +29,38 @@ New-Item -ItemType Directory -Force "$stage\plugins", "$stage\config\ValheimDeep
 Copy-Item "$root\thunderstore\manifest.json", "$root\thunderstore\icon.png", "$root\README.md", "$root\CHANGELOG.md" $stage
 Copy-Item "$root\bin\Release\netstandard2.1\ValheimDeepWaters.dll" "$stage\plugins\"
 
-# Bundles hold the models (and the reel sounds); the bobber is still an .obj and the Horn of Aegir's blast a .wav.
-# Other .obj files are older copies of models that are now in the bundles, so they're left out, as are the
-# bundles_backup_* / icons_backup_* folders.
+# Bundles hold the models (the bobber too) and the reel sounds; they ship packed as .vdwpak so asset rippers can't
+# open them (src\Models\PackedBundles.cs reads them back; the scheme below must match it). The Horn of Aegir's blast
+# is a .wav, the icons .png. Loose .obj files are older copies of models now in the bundles, so they're left out, as
+# are the bundles_backup_* / icons_backup_* folders.
+Add-Type -TypeDefinition @'
+public static class VdwPack
+{
+    const int PadSize = 4096;
+    static byte[] BuildPad()
+    {
+        var pad = new byte[PadSize];
+        uint x = 0x9E3779B9u ^ 0x56445750u;
+        for (int i = 0; i < PadSize; i++) { x ^= x << 13; x ^= x >> 17; x ^= x << 5; pad[i] = (byte)(x >> 24); }
+        return pad;
+    }
+    public static void Pack(string from, string to)
+    {
+        var pad = BuildPad();
+        var data = System.IO.File.ReadAllBytes(from);
+        for (long p = 0; p < data.LongLength; p++) data[p] ^= (byte)(pad[p % PadSize] ^ (byte)((p / PadSize) * 167));
+        System.IO.File.WriteAllBytes(to, data);
+    }
+}
+'@
 if (Test-Path $ModelsDir) {
+    $dest = "$stage\config\ValheimDeepWaters\Models"
+    Get-ChildItem $ModelsDir -File -Filter *.bundle | ForEach-Object {
+        [VdwPack]::Pack($_.FullName, (Join-Path $dest ($_.BaseName + '.vdwpak')))
+    }
     Get-ChildItem $ModelsDir -File | Where-Object {
-        $_.Extension -eq '.bundle' -or $_.Name -like '*_icon.png' -or $_.Name -in 'bobber.obj', 'bobber.png', 'horn_of_aegir.wav'
-    } | Copy-Item -Destination "$stage\config\ValheimDeepWaters\Models\"
+        $_.Name -like '*_icon.png' -or $_.Name -eq 'horn_of_aegir.wav'
+    } | Copy-Item -Destination $dest
 } else {
     Write-Warning "Models folder not found ($ModelsDir); packaging without models and icons."
 }

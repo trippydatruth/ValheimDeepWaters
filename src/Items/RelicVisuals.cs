@@ -7,9 +7,9 @@ namespace ValheimDeepWaters
     /// <summary>
     /// How the two worn relics look. Jörmungandr's Scale is the vanilla linen cape with serpent-scale maps
     /// (buff_relic_scale_cape_Albedo / _Normal / _MetallicSmoothness / _Emission textures in a bundle) on both the
-    /// dropped cloth and the worn cape. The Pearl of Njord keeps the vanilla belt when worn and has its pearl clasp
-    /// (the buff_relic_pearl model) pinned to the front of the wearer's hips; everyone sees it, since the belt
-    /// a player wears is synced and this runs on every client.
+    /// dropped cloth and the worn cape. The Pearl of Njord is a whole belt with the pearl in front (the
+    /// buff_relic_pearl model): worn, it takes the vanilla belt's place round the wearer's hips; everyone sees it,
+    /// since the belt a player wears is synced and this runs on every client.
     /// </summary>
     internal static class RelicVisuals
     {
@@ -118,6 +118,19 @@ namespace ValheimDeepWaters
             }
         }
 
+        // How the belt sits: y up from the hips bone, z forward from it (metres), w its scale. The model is 38 cm across
+        // (build_pearl_belt.py); vdw_debug pearlfit changes this in game.
+        private static Vector4 Fit = new Vector4(0f, 0.29f, 0.0f, 1f);
+
+        /// <summary>vdw_debug pearlfit: sets the belt's scale, height and forward offset, and refits it on everyone.</summary>
+        internal static string PearlFit(float scale, float up, float forward)
+        {
+            Fit = new Vector4(0f, up, forward, scale);
+            int n = 0;
+            foreach (var p in Object.FindObjectsByType<PearlOnBelt>(FindObjectsSortMode.None)) { p.Refit(); n++; }
+            return $"Pearl belt: scale {scale:0.00}, up {up:0.00}, forward {forward:0.00} (refitted on {n} wearer(s)).";
+        }
+
         private sealed class PearlOnBelt : MonoBehaviour
         {
             private GameObject? _pearl;
@@ -141,13 +154,24 @@ namespace ValheimDeepWaters
                 _pearl.name = "VDW_PearlOnBelt";
                 foreach (var c in _pearl.GetComponentsInChildren<Collider>(true)) Destroy(c);
                 foreach (var rb in _pearl.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
-                // At the front of the belt: forward of the hips and up at the vanilla belt line, facing out. Placed against the
-                // character (not the hips' own axes, which differ by rig) and then carried along by the hips.
+                // Round the hips at the vanilla belt line, the pearl to the front. Placed against the character (not the
+                // hips' own axes, which differ by rig) and then carried along by the hips.
                 var root = vis.transform;
-                _pearl.transform.SetPositionAndRotation(hips.position + root.forward * 0.16f + root.up * 0.29f,
+                _pearl.transform.SetPositionAndRotation(hips.position + root.forward * Fit.z + root.up * Fit.y,
                     Quaternion.LookRotation(root.forward, root.up));
-                _pearl.transform.localScale = Vector3.one * 0.8f;
+                _pearl.transform.localScale = Vector3.one * Fit.w;
                 _pearl.transform.SetParent(hips, true);
+                _vis = vis;
+            }
+
+            private VisEquipment? _vis;
+
+            /// <summary>Puts the belt back with the current fit (vdw_debug pearlfit).</summary>
+            public void Refit()
+            {
+                if (_vis == null || _pearl == null) return;
+                Destroy(_pearl);
+                Attach(_vis);
             }
 
             public void Remove()

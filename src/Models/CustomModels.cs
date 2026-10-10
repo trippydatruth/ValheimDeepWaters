@@ -122,8 +122,8 @@ namespace ValheimDeepWaters
         private static GameObject? FindBundlePrefab(string baseName, out string source)
         {
             source = "";
-            string ownBundle = Path.Combine(ModelsFolder, baseName + ".bundle");
-            if (File.Exists(ownBundle) && GetBundle(ownBundle) is AssetBundle own)
+            string? ownBundle = BundleFile(baseName);
+            if (ownBundle != null && GetBundle(ownBundle) is AssetBundle own)
             {
                 source = Path.GetFileName(ownBundle);
                 if ((own.LoadAsset<GameObject>(baseName) ?? FirstGameObject(own)) is GameObject p) return p;
@@ -185,7 +185,7 @@ namespace ValheimDeepWaters
                 _bundleIndex = new Dictionary<string, (AssetBundle, string, string)>();
                 if (!Directory.Exists(ModelsFolder)) return _bundleIndex;
 
-                foreach (var path in Directory.GetFiles(ModelsFolder, "*.bundle"))
+                foreach (var path in BundleFiles())
                 {
                     var bundle = GetBundle(path);
                     if (bundle == null) continue;
@@ -201,12 +201,34 @@ namespace ValheimDeepWaters
             }
         }
 
+        /// <summary>
+        /// The bundle file for a name: name.bundle (as built in Unity) or, in a release, the packed name.vdwpak. A plain
+        /// bundle wins, so a freshly built one is used over a packed copy (both can't be loaded at once).
+        /// </summary>
+        private static string? BundleFile(string name)
+        {
+            foreach (var ext in new[] { ".bundle", PackedBundles.Extension })
+            {
+                string path = Path.Combine(ModelsFolder, name + ext);
+                if (File.Exists(path)) return path;
+            }
+            return null;
+        }
+
+        /// <summary>Every bundle in the Models folder, one file per name (see BundleFile).</summary>
+        private static IEnumerable<string> BundleFiles() =>
+            Directory.GetFiles(ModelsFolder, "*.bundle").Concat(Directory.GetFiles(ModelsFolder, "*" + PackedBundles.Extension))
+                .Select(Path.GetFileNameWithoutExtension).Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(BundleFile).Where(p => p != null).Select(p => p!);
+
         private static AssetBundle? GetBundle(string path)
         {
             if (LoadedBundles.TryGetValue(path, out var cached) && cached != null) return cached;
             try
             {
-                var bundle = AssetBundle.LoadFromFile(path);
+                var bundle = path.EndsWith(PackedBundles.Extension, StringComparison.OrdinalIgnoreCase)
+                    ? PackedBundles.Load(path)
+                    : AssetBundle.LoadFromFile(path);
                 if (bundle == null)
                 {
                     Plugin.Log.LogWarning($"Custom models: could not load '{path}' - likely built with an incompatible Unity version.");

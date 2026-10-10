@@ -280,6 +280,7 @@ These need `devcommands`.
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
 - `vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn]`: moves a Fishing Boat seat (metres,
   degrees) to fit it by eye; prints the running total.
+- `vdw_debug pearlfit <scale> <up> <forward>`: fits the worn Pearl of Njord belt (defaults 1, 0.29, 0).
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug tokens`: exports the text for translating.
 

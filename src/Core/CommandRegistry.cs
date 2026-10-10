@@ -76,7 +76,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters debug tools. Usage: vdw_debug [bite|boss|worms|horn|boatseat|listrods|listhooks|listbuffs|listfish|listbait|resetlog|tokens]";
+            public override string Help => "Deep Waters debug tools. Usage: vdw_debug [bite|boss|worms|horn|boatseat|pearlfit|listrods|listhooks|listbuffs|listfish|listbait|resetlog|tokens]";
 
             public override void Run(string[] args)
             {
@@ -109,6 +109,14 @@ namespace ValheimDeepWaters
                     float F(int i) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
                     string? done = args.Length >= 2 ? FishingBoat.NudgeSeat(args[1], new UnityEngine.Vector3(F(2), F(3), F(4)), F(5)) : null;
                     Console.instance.Print(done ?? "Usage: vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn degrees]   e.g. vdw_debug boatseat rower 0 0.05 -0.1");
+                }
+                else if (args[0].Equals("pearlfit", StringComparison.OrdinalIgnoreCase))
+                {
+                    // vdw_debug pearlfit <scale> <up> <forward>
+                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
+                    Console.instance.Print(args.Length < 2
+                        ? "Usage: vdw_debug pearlfit <scale> <up> <forward>   (now: 1 0.29 0)"
+                        : RelicVisuals.PearlFit(F(1, 1f), F(2, 0.29f), F(3, 0f)));
                 }
                 else if (args[0].Equals("horn", StringComparison.OrdinalIgnoreCase))
                 {

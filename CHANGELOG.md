@@ -108,6 +108,11 @@
   `trippy.valheimdeepwaters.cfg`** so it's recreated without the removed settings.
 - Worm mounds grow half as often as mushrooms by default (`Worm Mound Density`).
 - Much less log output.
+- The Pearl of Njord is a new model: a whole leather belt with the pearl set in front, worn in place of the vanilla
+  belt. `vdw_debug pearlfit <scale> <up> <forward>` fits it in game.
+- The release ships its model bundles packed (`.vdwpak`), so asset rippers can't open the meshes and textures
+  straight from the Models folder. Plain `.bundle` files still load (and win over a packed copy), so custom models
+  work as before. The loose `bobber.obj` is no longer shipped (the bobber is in the rod bundle).
 
 ### Fixed
 - The float's nibble splash never played (the vanilla rod's float had no nibble effect set); it now uses the game's
