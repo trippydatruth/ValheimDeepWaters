@@ -1,0 +1,573 @@
+using Jotunn.Configs;
+using Jotunn.Entities;
+using Jotunn.Managers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+
+namespace ValheimDeepWaters
+{
+    internal static class ContentRegistry
+    {
+        public static readonly Dictionary<string, FishDefinition> Fish = new();
+        public static readonly Dictionary<string, BaitDefinition> Baits = new();
+        public static readonly Dictionary<string, GameObject> FishItems = new();
+        public static readonly Dictionary<string, GameObject> BaitItems = new();
+        public static readonly Dictionary<string, BaitDefinition> BaitByItemName = new();
+        public static readonly Dictionary<string, HookDefinition> Hooks = new();
+        public static readonly Dictionary<string, HookDefinition> HookByItemName = new();
+        public static readonly List<RodDefinition> Rods = new();
+        public static readonly Dictionary<string, RodDefinition> RodByItemName = new();
+        private static readonly Dictionary<string, ItemDrop> RodItems = new();
+
+        public static bool IsRod(ItemDrop.ItemData? item) => GetRod(item) != null;
+
+        public static RodDefinition? GetRod(ItemDrop.ItemData? item) =>
+            item?.m_shared != null && RodByItemName.TryGetValue(item.m_shared.m_name, out var rod) ? rod : null;
+
+        /// <summary>
+        /// Prefab name for a rod. The first rod keeps the old single rod's prefab name so rods already in
+        /// players' inventories carry over (as that tier) instead of disappearing.
+        /// </summary>
+        public static string RodPrefabName(RodDefinition rod) =>
+            Rods.Count > 0 && rod == Rods[0] ? "VDW_FishingRod" : "VDW_Rod_" + rod.Id;
+
+        public static void Initialize()
+        {
+            EnsureDataFiles();
+            LoadData();
+
+            try
+            {
+                RegisterRods();
+                SetUpHaldor();
+                RegisterHooks();
+                FishingBuffs.Register();
+                RegisterBaits();
+                RegisterFish();
+                BossFish.Register();
+                RemoveVanillaFishingGear();
+                BaitSources.Register();
+                try { FishSize.RegisterTrophyMount(); } catch (Exception ex) { Plugin.Log.LogError($"Trophy mount failed: {ex.Message}"); }
+                try { FishingBoat.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fishing Boat failed: {ex}"); }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.LogError($"Content registration failed: {ex}");
+            }
+        }
+
+        private static void EnsureDataFiles()
+        {
+            if (!File.Exists(VdwConfig.FishFile))
+                File.WriteAllText(VdwConfig.FishFile, DefaultData.FishJson);
+
+            if (!File.Exists(VdwConfig.BaitFile))
+                File.WriteAllText(VdwConfig.BaitFile, DefaultData.BaitJson);
+
+            if (!File.Exists(VdwConfig.RodsFile))
+                File.WriteAllText(VdwConfig.RodsFile, DefaultData.RodsJson);
+
+            if (!File.Exists(VdwConfig.HooksFile))
+                File.WriteAllText(VdwConfig.HooksFile, DefaultData.HooksJson);
+
+            if (!File.Exists(VdwConfig.BuffsFile))
+                File.WriteAllText(VdwConfig.BuffsFile, DefaultData.BuffsJson);
+
+            var offered = LoadOffered();
+            MergeDefaults(VdwConfig.FishFile, DefaultData.FishJson, "Fish", offered);
+            MergeDefaults(VdwConfig.BaitFile, DefaultData.BaitJson, "Baits", offered);
+            MergeDefaults(VdwConfig.RodsFile, DefaultData.RodsJson, "Rods", offered);
+            MergeDefaults(VdwConfig.HooksFile, DefaultData.HooksJson, "Hooks", offered);
+            MergeDefaults(VdwConfig.BuffsFile, DefaultData.BuffsJson, "Buffs", offered);
+            try { File.WriteAllText(OfferedFile, offered.ToString(Formatting.Indented)); }
+            catch (Exception ex) { Plugin.Log.LogWarning($"Could not save {OfferedFile} ({ex.Message})."); }
+        }
+
+        // Which default ids each data file has already been given, so an entry a player deletes stays deleted.
+        private static string OfferedFile => Path.Combine(Plugin.ConfigDirectory, "defaults_offered.json");
+
+        private static JObject LoadOffered()
+        {
+            try { return File.Exists(OfferedFile) ? JObject.Parse(File.ReadAllText(OfferedFile)) : new JObject(); }
+            catch { return new JObject(); }
+        }
+
+        /// <summary>Default entries whose old text is replaced if the player never changed it: (file, id, old name).</summary>
+        private static readonly (string kind, string id, string oldName)[] RenamedDefaults =
+        {
+            ("Baits", "fly", "Feather Fly"),
+            ("Buffs", "relic_horn", "Horn of Ægir"),       // drunk -> blown
+            ("Baits", "lure_wyrm", "Wyrm Lure"),           // now a silver scale with a dragon tear
+        };
+
+        /// <summary>
+        /// Default recipes that changed: a file entry still on the old recipe (the player never changed it) gets the new
+        /// recipe and crafting station. (file, id, old recipe as "Item:Amount,Item:Amount").
+        /// </summary>
+        private static readonly (string kind, string id, string oldRecipe)[] UpdatedRecipes =
+        {
+            // boss lures: the boss's own drops where it gives several, crafted at the biome's station (0.14.0)
+            ("Baits", "lure_antler", "TrophyEikthyr:1,HardAntler:1"),
+            ("Baits", "lure_root", "TrophyTheElder:1,Root:1"),
+            ("Baits", "lure_ooze", "TrophyBonemass:1,Ooze:2"),
+            ("Baits", "lure_wyrm", "TrophyDragonQueen:1,FreezeGland:2"),
+            ("Baits", "lure_ember", "TrophyGoblinKing:1,SurtlingCore:1"),
+            ("Baits", "lure_chitin", "TrophySeekerQueen:1,Carapace:2"),
+        };
+
+        private static string RecipeKey(JToken? recipe) =>
+            recipe is JArray a ? string.Join(",", a.OfType<JObject>().Select(r => $"{(string?)r["Item"]}:{(int?)r["Amount"] ?? 1}")) : "";
+
+        /// <summary>
+        /// Default entries the mod no longer has: taken out of the player's data file once (recorded, so one added back
+        /// on purpose stays). Items of these already in an inventory disappear.
+        /// </summary>
+        private static readonly (string kind, string id)[] RetiredDefaults =
+        {
+            ("Buffs", "hat_leather"), ("Buffs", "hat_troll"), ("Buffs", "hat_seafarer"),
+            ("Buffs", "cape_seawolf"), ("Buffs", "cape_netweaver"), ("Buffs", "cape_ashen"),
+            ("Fish", "cod"), ("Fish", "trolltrout"), ("Fish", "ashscale"),     // too close to vanilla fish
+        };
+
+        /// <summary>Retired fish, and the vanilla fish that takes their place in a bait's TargetFish.</summary>
+        private static readonly Dictionary<string, string> RetiredFishStandIn = new()
+        {
+            ["cod"] = "coral_cod", ["trolltrout"] = "trollfish", ["ashscale"] = "magmafish",
+        };
+
+        /// <summary>
+        /// Brings a data file up to date after an update: default entries that are new since the file was made are
+        /// added (each one only once, so deleting an entry sticks), and defaults whose text changed are refreshed if
+        /// the player never edited them. Everything else in the file - edits, extra fields, order - is kept.
+        /// </summary>
+        private static void MergeDefaults(string path, string defaultsJson, string kind, JObject offered)
+        {
+            try
+            {
+                var file = JArray.Parse(File.ReadAllText(path));
+                var defaults = JArray.Parse(defaultsJson);
+                var seen = offered[kind] as JArray ?? new JArray();
+                offered[kind] = seen;
+                var seenIds = new HashSet<string>(seen.Values<string>().Where(s => s != null)!);
+                var byId = file.OfType<JObject>().Where(o => o["Id"] != null).ToDictionary(o => (string)o["Id"]!, o => o);
+                bool changed = false;
+
+                foreach (var d in defaults.OfType<JObject>())
+                {
+                    string? id = (string?)d["Id"];
+                    if (id == null) continue;
+                    if (!byId.ContainsKey(id) && !seenIds.Contains(id))
+                    {
+                        file.Add(d.DeepClone());
+                        changed = true;
+                    }
+                    if (seenIds.Add(id)) seen.Add(id);
+                }
+
+                var retired = offered[kind + "_retired"] as JArray ?? new JArray();
+                offered[kind + "_retired"] = retired;
+                var retiredIds = new HashSet<string>(retired.Values<string>().Where(s => s != null)!);
+                foreach (var (k, id) in RetiredDefaults)
+                {
+                    if (k != kind || retiredIds.Contains(id)) continue;
+                    if (byId.TryGetValue(id, out var gone)) { gone.Remove(); changed = true; }
+                    retired.Add(id);
+                }
+
+                if (kind == "Baits")
+                    foreach (var targets in file.OfType<JObject>().Select(o => o["TargetFish"]).OfType<JArray>())
+                        foreach (var t in targets.ToList())
+                            if ((string?)t is string fid && RetiredFishStandIn.TryGetValue(fid, out var standIn))
+                            {
+                                if (targets.Any(x => (string?)x == standIn)) t.Remove(); else t.Replace(standIn);
+                                changed = true;
+                            }
+
+                foreach (var (k, id, oldRecipe) in UpdatedRecipes)
+                {
+                    if (k != kind || !byId.TryGetValue(id, out var entry) || RecipeKey(entry["Recipe"]) != oldRecipe) continue;
+                    var d = defaults.OfType<JObject>().FirstOrDefault(o => (string?)o["Id"] == id);
+                    if (d == null) continue;
+                    foreach (var field in new[] { "Recipe", "CraftingStation", "StationLevel", "CraftAmount" })
+                        if (d[field] != null) entry[field] = d[field]!.DeepClone();
+                    changed = true;
+                }
+
+                foreach (var (k, id, oldName) in RenamedDefaults)
+                {
+                    if (k != kind || !byId.TryGetValue(id, out var entry) || (string?)entry["Name"] != oldName) continue;
+                    var d = defaults.OfType<JObject>().FirstOrDefault(o => (string?)o["Id"] == id);
+                    if (d == null || ((string?)entry["Name"] == (string?)d["Name"] && (string?)entry["Description"] == (string?)d["Description"])) continue;
+                    entry["Name"] = d["Name"];
+                    entry["Description"] = d["Description"];
+                    changed = true;
+                }
+
+                if (changed) File.WriteAllText(path, file.ToString(Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.LogWarning($"Could not update {Path.GetFileName(path)} with new defaults ({ex.Message}); it's used as it is.");
+            }
+        }
+
+        private static void LoadData()
+        {
+            Fish.Clear();
+            Baits.Clear();
+
+            var fish = JsonConvert.DeserializeObject<List<FishDefinition>>(File.ReadAllText(VdwConfig.FishFile)) ?? new();
+            foreach (var f in fish)
+                if (!string.IsNullOrWhiteSpace(f.Id))
+                    Fish[f.Id] = f;
+            AddVanillaFish();
+
+            var baits = JsonConvert.DeserializeObject<List<BaitDefinition>>(File.ReadAllText(VdwConfig.BaitFile)) ?? new();
+            foreach (var b in baits)
+                if (!string.IsNullOrWhiteSpace(b.Id))
+                    Baits[b.Id] = b;
+
+            Rods.Clear();
+            var rods = JsonConvert.DeserializeObject<List<RodDefinition>>(File.ReadAllText(VdwConfig.RodsFile)) ?? new();
+            foreach (var r in rods)
+                if (!string.IsNullOrWhiteSpace(r.Id))
+                    Rods.Add(r);
+
+            Hooks.Clear();
+            var hooks = JsonConvert.DeserializeObject<List<HookDefinition>>(File.ReadAllText(VdwConfig.HooksFile)) ?? new();
+            foreach (var h in hooks)
+                if (!string.IsNullOrWhiteSpace(h.Id))
+                    Hooks[h.Id] = h;
+
+            FishingBuffs.Load(JsonConvert.DeserializeObject<List<BuffDefinition>>(File.ReadAllText(VdwConfig.BuffsFile)) ?? new());
+
+            Plugin.Log.LogInfo($"Loaded {Fish.Count} fish, {Baits.Count} baits, {Hooks.Count} hooks, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
+        }
+
+        /// <summary>
+        /// Brings an older Fish.json up to date with the vanilla fish: entries that now stand for a vanilla fish
+        /// (Perch, Pike...) are replaced with the vanilla-linked default, and missing vanilla fish are added. Other
+        /// entries are left exactly as they are. The file is rewritten only if something changed.
+        /// </summary>
+        private static void AddVanillaFish()
+        {
+            var defaults = JsonConvert.DeserializeObject<List<FishDefinition>>(DefaultData.FishJson) ?? new();
+            bool changed = false;
+            foreach (var d in defaults.Where(d => d.IsVanilla))
+            {
+                if (Fish.TryGetValue(d.Id, out var existing) && existing.IsVanilla) continue;
+                Fish[d.Id] = d;
+                changed = true;
+            }
+            if (!changed) return;
+
+            try { File.WriteAllText(VdwConfig.FishFile, JsonConvert.SerializeObject(Fish.Values.ToList(), Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter())); }
+            catch (Exception ex) { Plugin.Log.LogWarning($"Could not update {VdwConfig.FishFile} with the vanilla fish ({ex.Message})."); }
+        }
+
+        /// <summary>Which fish species a swimming fish is, by its prefab name ("Fish1", "VDW_Fish_trout").</summary>
+        public static readonly Dictionary<string, string> FishIdByPrefab = new();
+
+        /// <summary>The item a landed fish gives: vanilla's pickup item for vanilla fish, else the fish's own item.</summary>
+        public static ItemDrop? DropFor(FishDefinition fish)
+        {
+            if (!FishItems.TryGetValue(fish.Id, out var prefab) || prefab == null) return null;
+            var pickup = prefab.GetComponent<global::Fish>()?.m_pickupItem;
+            return (pickup != null ? pickup.GetComponent<ItemDrop>() : null) ?? prefab.GetComponent<ItemDrop>();
+        }
+
+        public static string HookDisplayName(HookDefinition h) => Loc.Token("vdw_hook_" + h.Id,
+            (string.IsNullOrWhiteSpace(h.Name) ? h.Id : h.Name) + (string.IsNullOrWhiteSpace(h.Label) ? "" : " " + h.Label));
+
+        private static void RegisterHooks()
+        {
+            foreach (var hook in Hooks.Values)
+            {
+                try
+                {
+                    string basePrefab = ResolveBasePrefab(hook.VanillaFallbackPrefab, "BronzeNails");
+                    var item = hook.Craftable && hook.Recipe.Count > 0
+                        ? new CustomItem("VDW_Hook_" + hook.Id, basePrefab, new ItemConfig
+                        {
+                            Amount = Math.Max(1, hook.CraftAmount),
+                            CraftingStation = hook.CraftingStation,
+                            MinStationLevel = Math.Max(1, hook.StationLevel),
+                            Requirements = hook.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
+                        })
+                        : new CustomItem("VDW_Hook_" + hook.Id, basePrefab);
+                    var shared = item.ItemDrop.m_itemData.m_shared;
+                    string name = HookDisplayName(hook);
+                    shared.m_name = name;
+                    shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\nSuits fish of {hook.MinKg:0.#}–{hook.MaxKg:0.#} kg. " +
+                                           (hook.NeverStraightens ? "Never straightens. " : "Smaller fish struggle to take it; bigger ones can straighten it, and much bigger ones won't bite. ") +
+                                           (hook.KeepChance > 0f ? $"{hook.KeepChance * 100f:0}% chance to survive a snapped line. " : "") +
+                                           (hook.Craftable ? ""
+                                               : BossFish.IsBossRelic("VDW_Hook_" + hook.Id) ? "\n\nCan't be crafted. Sometimes left behind by a boss fish."
+                                               : "\n\nCan't be crafted. Sometimes found inside a fish."));
+                    shared.m_weight = 0.05f;
+                    shared.m_maxStackSize = 50;
+
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "hook_" + hook.Id))
+                        GroundPose.FitCollider(item.ItemPrefab);
+
+                    ItemManager.Instance.AddItem(item);
+                    HookByItemName[name] = hook;
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogError($"Failed to register hook '{hook.Id}': {ex.Message}");
+                }
+            }
+        }
+
+        private static void RegisterRods()
+        {
+            foreach (var rod in Rods)
+            {
+                try
+                {
+                    // A rod that isn't craftable (e.g. sold by Haldor) keeps its recipe switched off: it never shows
+                    // for crafting, but Valheim repairs items at their recipe's station, so it can still be repaired.
+                    var config = new ItemConfig
+                    {
+                        Enabled = rod.Craftable,
+                        CraftingStation = rod.CraftingStation,
+                        MinStationLevel = Math.Max(1, rod.StationLevel),
+                        Requirements = rod.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
+                    };
+
+                    var item = new CustomItem(RodPrefabName(rod), "FishingRod", config);
+                    var shared = item.ItemDrop.m_itemData.m_shared;
+                    string name = Loc.Token("vdw_rod_" + rod.Id, string.IsNullOrWhiteSpace(rod.Name) ? rod.Id : rod.Name);
+                    shared.m_itemType = ItemDrop.ItemData.ItemType.OneHandedWeapon;
+                    shared.m_name = name;
+                    string source = rod.TraderPrice > 0 && !rod.Craftable ? $"\n\nSold only by Haldor ({rod.TraderPrice} coins)." : "";
+                    shared.m_description = Loc.Token("vdw_rod_" + rod.Id + "_desc", $"{rod.Description}\n\n{RodStats(rod)}{source}");
+                    RodItems[rod.Id] = item.ItemDrop;
+                    shared.m_weight = 2f;
+
+                    // Vanilla durability: shows the bar, and the rod is repaired at its recipe's station.
+                    shared.m_useDurability = rod.Durability > 0f;
+                    shared.m_maxDurability = rod.Durability;
+                    shared.m_durabilityPerLevel = 0f;
+                    shared.m_useDurabilityDrain = 0f;
+                    shared.m_canBeReparied = true;
+                    shared.m_destroyBroken = false;
+                    item.ItemDrop.m_itemData.m_durability = rod.Durability;
+
+                    // A model just for this rod (rod_<id>) if there is one, else the shared rod model.
+                    if (!CustomModels.ApplyToPrefab(item.ItemPrefab, "rod_" + rod.Id))
+                        CustomModels.ApplyToPrefab(item.ItemPrefab, "rod");
+
+                    ItemManager.Instance.AddItem(item);
+                    RodByItemName[name] = rod;
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogError($"Failed to register rod '{rod.Id}': {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Haldor sells any rod with a TraderPrice (the vanilla rod is taken out in RemoveVanillaFishingGear).
+        /// </summary>
+        private static void SetUpHaldor()
+        {
+            var trader = PrefabManager.Instance.GetPrefab("Haldor")?.GetComponent<Trader>();
+            if (trader == null)
+            {
+                Plugin.Log.LogWarning("Haldor not found; his rods are unchanged.");
+                return;
+            }
+
+            foreach (var rod in Rods.Where(r => r.TraderPrice > 0))
+            {
+                if (!RodItems.TryGetValue(rod.Id, out var drop)) continue;
+                trader.m_items.Add(new Trader.TradeItem
+                {
+                    m_prefab = drop,
+                    m_stack = 1,
+                    m_price = rod.TraderPrice,
+                    m_requiredGlobalKey = rod.TraderRequiredKey ?? ""
+                });
+            }
+        }
+
+        private static string RodStats(RodDefinition r) =>
+            $"Cast: {r.CastDistance:0} m\nLine: {r.LineCapacity:0} m\nLine strength: {r.BreakTension:0}\n" +
+            $"Reel speed: {r.ReelSpeed:0.0} m/s\nPower: {r.Power:0.##}\nHook bonus: +{r.HookBonus * 100f:0}%\n" +
+            $"Reel stamina: {r.StaminaUse * 100f:0}%";
+
+        /// <summary>
+        /// Finds a vanilla prefab to clone. Tries the requested name, a "_cave" variant (vanilla names the
+        /// fourth fish "Fish4_cave"), then the fallback, so a bad name in the JSON can never abort registration.
+        /// </summary>
+        private static string ResolveBasePrefab(string wanted, string fallback)
+        {
+            foreach (var candidate in new[] { wanted, wanted + "_cave", fallback })
+            {
+                if (string.IsNullOrWhiteSpace(candidate)) continue;
+                if (PrefabManager.Instance.GetPrefab(candidate) == null) continue;
+
+                if (candidate != wanted)
+                    Plugin.Log.LogWarning($"Base prefab '{wanted}' not found; using '{candidate}' instead.");
+                return candidate;
+            }
+
+            return fallback;
+        }
+
+        private static void RegisterBaits()
+        {
+            foreach (var bait in Baits.Values)
+            {
+                try
+                {
+                    string basePrefab = ResolveBasePrefab(bait.VanillaFallbackPrefab, "FishingBait");
+                    // Only baits with no natural source (see BaitSources) carry a recipe.
+                    var item = bait.Recipe.Count > 0
+                        ? new CustomItem("VDW_Bait_" + bait.Id, basePrefab, new ItemConfig
+                        {
+                            Amount = Math.Max(1, bait.CraftAmount),
+                            CraftingStation = bait.CraftingStation,
+                            MinStationLevel = Math.Max(1, bait.StationLevel),
+                            Requirements = bait.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
+                        })
+                        : new CustomItem("VDW_Bait_" + bait.Id, basePrefab);
+                    if (item.ItemPrefab == null || item.ItemDrop == null)
+                    {
+                        Plugin.Log.LogWarning($"Could not create bait '{bait.Id}' from '{basePrefab}'.");
+                        continue;
+                    }
+
+                    string itemName = Loc.Token("vdw_bait_" + bait.Id, string.IsNullOrWhiteSpace(bait.Name) ? bait.Id : bait.Name);
+                    item.ItemDrop.m_itemData.m_shared.m_name = itemName;
+                    item.ItemDrop.m_itemData.m_shared.m_description = Loc.Token("vdw_bait_" + bait.Id + "_desc", bait.Description);
+                    item.ItemDrop.m_itemData.m_shared.m_weight = 0.1f;
+                    ItemManager.Instance.AddItem(item);
+                    BaitItems[bait.Id] = item.ItemPrefab;
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "bait_" + bait.Id))
+                        GroundPose.FitCollider(item.ItemPrefab);
+                    BaitByItemName[itemName] = bait;
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogError($"Failed to register bait '{bait.Id}': {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// A vanilla fish is used as it is: its prefab swims and is shown on the hook, landing it gives its vanilla
+        /// item (so vanilla cooking, recipes and food all apply), and its name comes from the game. Nothing about
+        /// the vanilla prefab is changed except allowing the size classes as quality.
+        /// </summary>
+        private static void RegisterVanillaFish(FishDefinition fish)
+        {
+            var prefab = PrefabManager.Instance.GetPrefab(fish.VanillaPrefab);
+            if (prefab == null || prefab.GetComponent<global::Fish>() == null)
+            {
+                Plugin.Log.LogWarning($"Fish '{fish.Id}': vanilla fish '{fish.VanillaPrefab}' not found; it can't be caught.");
+                return;
+            }
+
+            FishItems[fish.Id] = prefab;
+            FishIdByPrefab[prefab.name] = fish.Id;
+
+            var drop = DropFor(fish);
+            if (drop != null)
+            {
+                var shared = drop.m_itemData.m_shared;
+                shared.m_maxQuality = Math.Max(shared.m_maxQuality, FishSize.MaxClass);
+                if (Localization.instance != null) fish.Name = Localization.instance.Localize(shared.m_name);
+            }
+
+            // It takes Deep Waters bait (PreferredBaits in Fish.json); its vanilla baits are taken out of the game.
+            foreach (var setting in prefab.GetComponent<global::Fish>().m_baits)
+                if (setting?.m_bait != null) VanillaFishingGear.Add(setting.m_bait.name);
+        }
+
+        /// <summary>Vanilla fishing items Deep Waters replaces: the vanilla rod and every vanilla fishing bait.</summary>
+        private static readonly HashSet<string> VanillaFishingGear = new() { "FishingRod" };
+
+        private static bool IsVanillaFishingGear(GameObject? prefab) =>
+            prefab != null && (VanillaFishingGear.Contains(prefab.name) || prefab.name.StartsWith("FishingBait"));
+
+        /// <summary>
+        /// Takes the vanilla rod and baits out of the game: no trader sells them and they can't be crafted.
+        /// Traders are cleaned now; recipes each time the ObjectDB is (re)built.
+        /// </summary>
+        private static void RemoveVanillaFishingGear()
+        {
+            foreach (var name in new[] { "Haldor", "Hildir", "BogWitch" })
+            {
+                var trader = PrefabManager.Instance.GetPrefab(name)?.GetComponent<Trader>();
+                trader?.m_items.RemoveAll(t => t.m_prefab != null && IsVanillaFishingGear(t.m_prefab.gameObject));
+            }
+
+            ItemManager.OnItemsRegistered -= RemoveVanillaFishingRecipes;
+            ItemManager.OnItemsRegistered += RemoveVanillaFishingRecipes;
+        }
+
+        private static void RemoveVanillaFishingRecipes()
+        {
+            ObjectDB.instance?.m_recipes.RemoveAll(r => r != null && r.m_item != null && IsVanillaFishingGear(r.m_item.gameObject));
+        }
+
+        private static void RegisterFish()
+        {
+            foreach (var fish in Fish.Values)
+            {
+                try
+                {
+                    // Baitfish land as bait, so they have no fish item of their own; the bait item doubles as
+                    // their swimming and hooked visual.
+                    if (!string.IsNullOrWhiteSpace(fish.CatchBait))
+                    {
+                        if (BaitItems.TryGetValue(fish.CatchBait, out var baitPrefab)) FishItems[fish.Id] = baitPrefab;
+                        else Plugin.Log.LogWarning($"Fish '{fish.Id}': CatchBait '{fish.CatchBait}' isn't a bait id.");
+                        continue;
+                    }
+
+                    if (fish.IsVanilla)
+                    {
+                        RegisterVanillaFish(fish);
+                        continue;
+                    }
+                    FishIdByPrefab["VDW_Fish_" + fish.Id] = fish.Id;
+
+                    string basePrefab = ResolveBasePrefab(fish.VanillaFallbackPrefab, "Fish1");
+                    var item = new CustomItem("VDW_Fish_" + fish.Id, basePrefab);
+                    if (item.ItemPrefab == null || item.ItemDrop == null)
+                    {
+                        Plugin.Log.LogWarning($"Could not create fish '{fish.Id}' from '{basePrefab}'.");
+                        continue;
+                    }
+
+                    item.ItemDrop.m_itemData.m_shared.m_name = Loc.Token("vdw_fish_" + fish.Id, string.IsNullOrWhiteSpace(fish.Name) ? fish.Id : fish.Name);
+                    item.ItemDrop.m_itemData.m_shared.m_description = Loc.Token("vdw_fish_" + fish.Id + "_desc", fish.Description);
+                    item.ItemDrop.m_itemData.m_shared.m_maxQuality = FishSize.MaxClass; // size classes (see FishSize)
+                    ItemManager.Instance.AddItem(item);
+                    FishItems[fish.Id] = item.ItemPrefab;
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "fish_" + fish.Id))
+                        GroundPose.FitCollider(item.ItemPrefab);
+                    GroundPose.PrepareFishPrefab(item.ItemPrefab);
+                    Cooking.PriceRawFish(fish, item.ItemPrefab);
+
+                    try { Cooking.RegisterCookedFish(fish, item.ItemPrefab); }
+                    catch (Exception ex) { Plugin.Log.LogError($"Failed to register cooked item for '{fish.Id}': {ex.Message}"); }
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogError($"Failed to register fish '{fish.Id}': {ex.Message}");
+                }
+            }
+        }
+    }
+}

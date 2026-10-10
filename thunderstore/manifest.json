@@ -1,0 +1,10 @@
+{
+  "name": "Valheim_Deep_Waters",
+  "version_number": "0.14.0",
+  "website_url": "",
+  "description": "A fishing overhaul: fish that swim up, nibble and bite, a tension and drag fight, rods for every era, hook sizes, bait from the world, fishing buffs, trophies, and every vanilla fish catchable.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2351",
+    "ValheimModding-Jotunn-2.30.2"
+  ]
+}

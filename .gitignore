@@ -1,0 +1,12 @@
+# build output
+bin/
+obj/
+dist/
+# local backups (zips)
+archive/
+*.zip
+# editor / OS
+.vs/
+.vscode/
+*.user
+Thumbs.db

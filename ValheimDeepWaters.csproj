@@ -1,0 +1,122 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>ValheimDeepWaters</AssemblyName>
+    <RootNamespace>ValheimDeepWaters</RootNamespace>
+    <Version>0.14.0</Version>
+    <Platforms>AnyCPU</Platforms>
+
+    <!-- Fixes for Private Members and Assembly Conflicts -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+
+    <!-- Base Paths -->
+    <ValheimDir Condition="'$(ValheimDir)' == ''">D:\SteamLibrary\steamapps\common\Valheim</ValheimDir>
+    <ThunderstoreProfile Condition="'$(ThunderstoreProfile)' == ''">C:\Users\tripp\AppData\Roaming\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Test\BepInEx</ThunderstoreProfile>
+    <BepInExDir Condition="'$(BepInExDir)' == ''">$(ThunderstoreProfile)\core</BepInExDir>
+    <PluginsDir Condition="'$(PluginsDir)' == ''">$(ThunderstoreProfile)\plugins</PluginsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Valheim Game Assemblies -->
+    <Reference Include="assembly_valheim">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\assembly_valheim.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\assembly_utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SoftReferenceableAssets">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\SoftReferenceableAssets.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\assembly_guiutils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ValheimDir)\valheim_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- BepInEx & Harmony References -->
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExDir)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Jotunn Reference -->
+    <Reference Include="Jotunn">
+      <HintPath>$(PluginsDir)\ValheimModding-Jotunn\Jotunn.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

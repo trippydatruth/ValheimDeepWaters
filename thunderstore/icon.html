@@ -1,0 +1,191 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Deep Waters icon</title>
+<!-- Source for icon.png (256 x 256). Render with headless Edge:
+     msedge --headless=new --window-size=256,256 --force-device-scale-factor=1 --screenshot=icon.png icon.html
+     valheim_logo.png sits next to this file. -->
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 256px; height: 256px; overflow: hidden; background: #050d12; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#06161e"/><stop offset=".5" stop-color="#123c4c"/><stop offset=".78" stop-color="#0a2a36"/><stop offset="1" stop-color="#020a0e"/>
+    </linearGradient>
+    <radialGradient id="moon" cx=".7" cy=".55" r=".55">
+      <stop offset="0" stop-color="#9fdce8" stop-opacity=".55"/><stop offset=".4" stop-color="#3f8aa0" stop-opacity=".2"/><stop offset="1" stop-color="#3f8aa0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e5c6c"/><stop offset=".5" stop-color="#0a2a34"/><stop offset="1" stop-color="#01080b"/>
+    </linearGradient>
+    <linearGradient id="scales" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5a5a92"/><stop offset=".35" stop-color="#2c3352"/><stop offset=".7" stop-color="#161c2c"/><stop offset="1" stop-color="#0a0e18"/>
+    </linearGradient>
+    <linearGradient id="belly" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a90b8"/><stop offset="1" stop-color="#d8dcf0"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a74b0"/><stop offset="1" stop-color="#1e2236"/>
+    </linearGradient>
+    <radialGradient id="maw" cx=".5" cy=".5" r=".6">
+      <stop offset="0" stop-color="#1a0408"/><stop offset=".7" stop-color="#6a1420"/><stop offset="1" stop-color="#a8384a"/>
+    </radialGradient>
+    <radialGradient id="eye" cx=".4" cy=".4" r=".6">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#c8e8ff"/><stop offset=".75" stop-color="#5a8ad8"/><stop offset="1" stop-color="#1a2a5a"/>
+    </radialGradient>
+    <linearGradient id="ice" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#bff4ff"/><stop offset=".55" stop-color="#4fb8dc"/><stop offset=".62" stop-color="#e8fbff"/><stop offset="1" stop-color="#2a6f9a"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" result="b"/>
+      <feFlood flood-color="#4fd2ff" flood-opacity=".85"/><feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="eyeglow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="haze" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".6"/></filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .07 0"/>
+    </filter>
+    <pattern id="scalepat" width="8" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
+      <path d="M0,6 C2,1 6,1 8,6" fill="none" stroke="#9a9ad8" stroke-width=".7" opacity=".45"/>
+    </pattern>
+  </defs>
+
+  <!-- Stormy night sky: moonlit cloud behind the fish, a fork of lightning far off. -->
+  <rect width="256" height="256" fill="url(#sky)"/>
+  <rect width="256" height="256" fill="url(#moon)"/>
+  <g fill="#0a2430" opacity=".9" filter="url(#haze)">
+    <path d="M0,130 C30,116 60,128 90,118 C120,108 150,124 180,114 C210,104 236,118 256,110 L256,150 L0,150 Z"/>
+  </g>
+  <path d="M34,104 L42,120 L36,122 L46,142" fill="none" stroke="#bfe8ff" stroke-width="1.4" opacity=".5" filter="url(#eyeglow)"/>
+
+  <!-- Rough sea. -->
+  <path d="M0,176 C20,170 40,180 64,172 C90,164 110,178 140,170 C170,162 200,176 226,168 C240,164 250,168 256,166 L256,256 L0,256 Z" fill="url(#sea)"/>
+  <g fill="none" stroke="#9fdce4" stroke-linecap="round">
+    <path d="M6,190 C20,184 34,190 48,186" stroke-width="1.4" opacity=".5"/>
+    <path d="M10,214 C30,206 52,214 70,208" stroke-width="1.2" opacity=".35"/>
+    <path d="M196,202 C214,196 232,204 250,198" stroke-width="1.4" opacity=".45"/>
+    <path d="M170,230 C196,222 220,232 252,224" stroke-width="1.2" opacity=".3"/>
+  </g>
+
+  <!-- The angler is off-frame to the left; only the taut line shows. -->
+  <!-- Moder Scale Fish, built by the script below: a big armored body arching up out of the sea, a crest of
+       spines, a huge underbite full of needle fangs, and a pale glowing eye. -->
+  <g id="moder"></g>
+
+  <!-- A crown of spray where it bursts out, and flying droplets. -->
+  <g fill="#e8f8f4" opacity=".6">
+    <path d="M70,240 C72,220 82,206 90,204 C86,218 88,230 94,238 Z"/>
+    <path d="M88,232 C86,208 96,192 104,190 C98,206 100,220 106,230 Z"/>
+    <path d="M128,236 C132,214 144,204 152,204 C144,214 140,226 140,238 Z"/>
+    <path d="M140,242 C152,228 166,222 174,226 C164,230 156,236 152,246 Z"/>
+    <path d="M60,246 C66,236 72,232 78,232 C74,238 72,242 72,248 Z"/>
+  </g>
+  <path d="M52,246 C74,234 100,232 118,238 C136,232 160,232 182,242 C160,252 74,256 52,246 Z" fill="#d8f4f0" opacity=".65"/>
+  <g fill="#e8f8f4" opacity=".85">
+    <circle cx="80" cy="196" r="1.8"/><circle cx="88" cy="180" r="1.4"/><circle cx="98" cy="170" r="1.2"/><circle cx="156" cy="214" r="1.6"/>
+    <circle cx="176" cy="210" r="1.8"/><circle cx="190" cy="198" r="1.3"/><circle cx="68" cy="214" r="1.3"/><circle cx="236" cy="190" r="1.4"/>
+    <circle cx="246" cy="202" r="1.1"/><circle cx="108" cy="158" r="1"/><circle cx="166" cy="226" r="1.2"/><circle cx="60" cy="226" r="1.1"/>
+  </g>
+
+  <!-- Title, like the Valheim 1.0 / Deep North art: the Valheim logo with an icy DEEP WATERS beneath. -->
+  <rect x="0" y="0" width="256" height="256" fill="url(#grain)"/>
+  <image href="valheim_logo.png" x="10" y="4" width="236" height="93"/>
+  <g font-family="Metamorphous, serif" text-anchor="middle" filter="url(#glow)">
+    <text x="138" y="114" font-size="22" letter-spacing="1" fill="url(#ice)" stroke="#0a2a44" stroke-width="2.2" paint-order="stroke">DEEP WATERS</text>
+  </g>
+</svg>
+<script>
+// Builds the Moder Scale Fish into <g id="moder">: the body is a taper along a curved spine so the leap arches
+// smoothly; spines follow the back, fangs line both jaws.
+(function () {
+  const bez = (p, t) => { const u = 1 - t; return [0, 1].map(i => u*u*u*p[0][i] + 3*u*u*t*p[1][i] + 3*u*t*t*p[2][i] + t*t*t*p[3][i]); };
+  // Spine: tail low in the splash, rising and arching to the head up and right.
+  const spine = [[78, 226], [84, 188], [122, 158], [182, 152]];
+  const at = t => bez(spine, t);
+  const normal = t => { const a = at(Math.max(0, t - .005)), b = at(Math.min(1, t + .005)); let dx = b[0] - a[0], dy = b[1] - a[1]; const l = Math.hypot(dx, dy); return [-dy / l, dx / l]; };
+  // Thickness: slim at the tail wrist, deep through the shoulders.
+  const width = t => 12 + 50 * Math.pow(Math.sin(Math.PI * Math.min(1, .15 + t * .7)), 1.2);
+  const N = 60, back = [], belly = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, [x, y] = at(t), [nx, ny] = normal(t), w = width(t) / 2;
+    back.push([x - nx * w, y - ny * w]);    // upper-left side
+    belly.push([x + nx * w, y + ny * w]);   // lower-right side
+  }
+  const pts = a => a.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L");
+  const head = [182, 152];
+  let s = "";
+
+  // Forked tail.
+  const [tx, ty] = at(0);
+  s += `<path d="M${tx - 6},${ty - 4} C${tx - 22},${ty + 4} ${tx - 36},${ty + 10} ${tx - 46},${ty + 16} C${tx - 30},${ty + 18} ${tx - 14},${ty + 14} ${tx - 2},${ty + 8} C${tx + 2},${ty + 16} ${tx + 6},${ty + 22} ${tx + 10},${ty + 30} C${tx + 14},${ty + 16} ${tx + 12},${ty + 4} ${tx + 8},${ty - 4} Z" fill="url(#fin)" stroke="#05070c" stroke-width="2" stroke-linejoin="round"/>`;
+
+  // Crest of spines along the back, joined by a torn membrane.
+  let crest = "", membrane = `M${back[10][0].toFixed(1)},${back[10][1].toFixed(1)}`;
+  for (let i = 10; i <= 50; i += 4) {
+    const t = i / N, [nx, ny] = normal(t), [bx, by] = back[i], len = 10 + 12 * Math.sin(Math.PI * (i - 10) / 40);
+    const tip = [bx - nx * len - ny * 4, by - ny * len + nx * 4];
+    crest += `<path d="M${bx.toFixed(1)},${by.toFixed(1)} L${tip[0].toFixed(1)},${tip[1].toFixed(1)}" stroke="#05070c" stroke-width="2.8" stroke-linecap="round"/><path d="M${bx.toFixed(1)},${by.toFixed(1)} L${tip[0].toFixed(1)},${tip[1].toFixed(1)}" stroke="#9a94d0" stroke-width="1.2" stroke-linecap="round"/>`;
+    membrane += ` L${tip[0].toFixed(1)},${tip[1].toFixed(1)} L${back[Math.min(50, i + 2)][0].toFixed(1)},${(back[Math.min(50, i + 2)][1] - 3).toFixed(1)}`;
+  }
+  membrane += ` L${back[50][0].toFixed(1)},${back[50][1].toFixed(1)} Z`;
+  s += `<path d="${membrane}" fill="url(#fin)" opacity=".85" stroke="#05070c" stroke-width="1.2" stroke-linejoin="round"/>` + crest;
+
+  // Body, scales, pale spotted belly.
+  const body = `M${pts(back)} L${pts(belly.slice().reverse())} Z`;
+  s += `<path d="${body}" fill="url(#scales)" stroke="#05070c" stroke-width="2.4" stroke-linejoin="round"/>`;
+  s += `<clipPath id="bodyclip"><path d="${body}"/></clipPath><g clip-path="url(#bodyclip)">`;
+  s += `<path d="${body}" fill="url(#scalepat)"/>`;
+  let bellyBand = "M" + pts(belly.slice(8)) + " L";
+  bellyBand += belly.slice(8).reverse().map((p, k, arr) => { const i = N - k, t = i / N, [nx, ny] = normal(t), w = width(t) * .32; return (p[0] - nx * w).toFixed(1) + "," + (p[1] - ny * w).toFixed(1); }).join(" L") + " Z";
+  s += `<path d="${bellyBand}" fill="url(#belly)" opacity=".5"/>`;
+  for (let i = 14; i <= 50; i += 3) { const t = i / N, [nx, ny] = normal(t), [x, y] = at(t), k = (i % 2 ? .1 : -.15) * width(t); s += `<ellipse cx="${(x - nx * k).toFixed(1)}" cy="${(y - ny * k).toFixed(1)}" rx="1.8" ry="1.3" fill="#d8dcff" opacity=".55"/>`; }
+  s += `<path d="M${pts(back.slice(12, 56).map(p => [p[0] + 3, p[1] + 4]))}" fill="none" stroke="#c8d0ff" stroke-width="2" opacity=".45" stroke-linecap="round"/>`;
+  s += `</g>`;
+
+  // Head: a heavy armored skull at the front of the body.
+  const [hx, hy] = head;
+  s += `<path d="M${hx - 16},${hy - 24} C${hx - 2},${hy - 36} ${hx + 24},${hy - 36} ${hx + 36},${hy - 22} C${hx + 44},${hy - 8} ${hx + 44},${hy + 12} ${hx + 36},${hy + 22} C${hx + 22},${hy + 34} ${hx},${hy + 32} ${hx - 14},${hy + 24} Z" fill="url(#scales)" stroke="#05070c" stroke-width="2.4" stroke-linejoin="round"/>`;
+  s += `<path d="M${hx - 4},${hy - 28} C${hx + 4},${hy - 10} ${hx + 4},${hy + 12} ${hx - 4},${hy + 28}" fill="none" stroke="#05070c" stroke-width="2.6" opacity=".8"/>`;
+  s += `<path d="M${hx + 2},${hy - 24} C${hx + 10},${hy - 8} ${hx + 10},${hy + 8} ${hx + 4},${hy + 22}" fill="none" stroke="#a8a8e8" stroke-width="1.2" opacity=".5"/>`;
+  s += `<path d="M${hx + 8},${hy - 30} C${hx + 16},${hy - 26} ${hx + 24},${hy - 24} ${hx + 32},${hy - 24}" fill="none" stroke="#c8d0ff" stroke-width="2" opacity=".5"/>`;
+
+  // Jaws gaping up and to the right: dark maw, a heavy underbite, long needle fangs.
+  const ux = hx + 34, uy = hy - 20, jaw = 1.4, jawStart = s.length;
+  s += `<path d="M${ux},${uy} C${ux + 8},${uy - 10} ${ux + 16},${uy - 16} ${ux + 24},${uy - 18} C${ux + 22},${uy + 2} ${ux + 16},${uy + 14} ${ux + 8},${uy + 22} C${ux + 18},${uy + 26} ${ux + 26},${uy + 34} ${ux + 26},${uy + 46} C${ux + 14},${uy + 46} ${ux + 4},${uy + 42} ${ux},${uy + 38} Z" fill="url(#maw)" stroke="#05070c" stroke-width="2" stroke-linejoin="round"/>`;
+  s += `<path d="M${ux - 2},${uy} C${ux + 8},${uy - 10} ${ux + 16},${uy - 16} ${ux + 24},${uy - 18} L${ux + 22},${uy - 12} C${ux + 14},${uy - 8} ${ux + 8},${uy - 2} ${ux + 2},${uy + 6} Z" fill="url(#scales)" stroke="#05070c" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<path d="M${ux},${uy + 38} C${ux + 6},${uy + 46} ${ux + 18},${uy + 50} ${ux + 28},${uy + 48} L${ux + 26},${uy + 42} C${ux + 18},${uy + 42} ${ux + 8},${uy + 38} ${ux + 2},${uy + 32} Z" fill="url(#belly)" stroke="#05070c" stroke-width="1.8" stroke-linejoin="round"/>`;
+  let fangs = "";
+  for (let k = 0; k < 6; k++) { const x = ux + 4 + k * 3.6, y = uy - 2 - k * 2.6, len = 7 + (k % 2) * 4; fangs += `<path d="M${(x - 1.4).toFixed(1)},${y.toFixed(1)} L${(x + .8).toFixed(1)},${(y + len).toFixed(1)} L${(x + 2).toFixed(1)},${(y - .6).toFixed(1)} Z"/>`; }
+  for (let k = 0; k < 6; k++) { const x = ux + 4 + k * 3.8, y = uy + 38 + k * 1.6, len = 8 + (k % 2) * 5; fangs += `<path d="M${(x - 1.4).toFixed(1)},${y.toFixed(1)} L${(x + .6).toFixed(1)},${(y - len).toFixed(1)} L${(x + 2).toFixed(1)},${(y + .6).toFixed(1)} Z"/>`; }
+  s += `<g fill="#f4f0e4" stroke="#05070c" stroke-width=".5">${fangs}</g>`;
+  // Hook caught in the corner of the jaw.
+  s += `<path d="M${ux + 4},${uy + 18} C${ux + 9},${uy + 22} ${ux + 9},${uy + 28} ${ux + 4},${uy + 28}" fill="none" stroke="#e8c870" stroke-width="1.8"/>`;
+
+  s = s.slice(0, jawStart) + `<g transform="translate(${ux - 4},${uy + 14}) scale(${jaw}) translate(${-(ux - 4)},${-(uy + 14)})">` + s.slice(jawStart) + `</g>`;
+
+  // The eye, under a heavy brow plate.
+  const ex = hx + 18, ey = hy - 14;
+  s += `<path d="M${ex - 12},${ey - 6} C${ex - 4},${ey - 14} ${ex + 8},${ey - 14} ${ex + 14},${ey - 6}" fill="none" stroke="#05070c" stroke-width="3.4" stroke-linecap="round"/>`;
+  s += `<circle cx="${ex}" cy="${ey}" r="8.6" fill="#05070c"/><circle cx="${ex}" cy="${ey}" r="7" fill="url(#eye)" filter="url(#eyeglow)"/>`;
+  s += `<circle cx="${ex}" cy="${ey}" r="2" fill="#0a1030"/><circle cx="${ex - 2}" cy="${ey - 2}" r="1.6" fill="#fff"/>`;
+
+  // Pectoral fin, swept back like a wing.
+  const [px, py] = at(.84);
+  s += `<path d="M${px + 6},${py + 14} C${px - 6},${py + 26} ${px - 18},${py + 36} ${px - 30},${py + 42} C${px - 10},${py + 42} ${px + 6},${py + 32} ${px + 16},${py + 20} Z" fill="url(#fin)" stroke="#05070c" stroke-width="1.6" stroke-linejoin="round"/>`;
+  s += `<path d="M${px + 4},${py + 18} L${px - 22},${py + 38} M${px + 8},${py + 20} L${px - 12},${py + 38}" stroke="#05070c" stroke-width=".8" opacity=".6"/>`;
+
+  // Taut line from the rod tip to the jaw.
+  s += `<path d="M-4,166 L${(ux - 4 + 9 * jaw).toFixed(1)},${(uy + 14 + 8 * jaw).toFixed(1)}" stroke="#e8f4f0" stroke-width="1" opacity=".9"/>`;
+
+  document.getElementById("moder").outerHTML = `<g filter="url(#drop)">${s}</g>`;
+})();
+</script>
+</body></html>
