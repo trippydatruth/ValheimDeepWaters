@@ -142,6 +142,7 @@ namespace ValheimDeepWaters
             bool rodActive = _rodEquipped && !player.IsDead();
             RodMotion.Apply(player, _session, rodActive, _reelingNow);
             RodMotion.ApplyOthers(player);           // everyone else fishing nearby, from what they share
+            BossWeather.Share(player);               // a boss encounter's weather and music, for everyone near it
             FishingFx.UpdateReel(player, rodActive && _reelingNow, _session != null ? _session.Tension / Mathf.Max(1f, _session.Rod.BreakTension) : 0f,
                 rodActive && _session != null ? _session.DragSlip : 0f);
             AnimationOverride.SetActive(player, rodActive);

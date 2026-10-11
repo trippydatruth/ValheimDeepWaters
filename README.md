@@ -170,6 +170,10 @@ float, a sign appears, bubbles rise and the float shudders - then it strikes. Yo
 set the hook. Reeling in during the omen calls it off and keeps the lure; it's only used up once the fish is
 hooked. In the wrong place nothing answers, and you're told where it hunts.
 
+From the omen to the end of the fight the boss brings **its namesake boss's weather** - Eikthyr's storm, the
+Elder's mist, Bonemass's rot, Moder's blizzard, Yagluth's embers, the Queen's gloom. Everyone within about 150 m
+sees it and hears the boss music, so friends can come and watch.
+
 The fight brings up a **boss bar** with its name - its stamina, which drains faster the harder you fight it
 (tight drag, high tension) and recovers if you give it slack, so no two fights are alike. It plays its boss's
 **music** and goes through **phases**: at two thirds it's enraged (pulls harder, leaps more), at one third

@@ -2,6 +2,9 @@
 
 ## 0.14.0
 ### Added
+- **Boss weather**: from the omen to the end of the fight, a boss fish brings the weather of the boss it's named
+  after (Eikthyr's storm, the Elder's mist, Bonemass, Moder, Yagluth, the Queen). It's shared: everyone within about
+  150 m of the encounter gets the weather and the boss music, including players who walk up mid-fight.
 - **Animated fish models**: a rigged fish with Swim, Thrash and Flop animations swims, thrashes on the line,
   flops on land and holds still as a trophy. Static models still work.
 - **Rigged rods**: a rod model with a skeleton (bones `Rod.1`..`Rod.N` up the blank, `Rod.Tip`, `Rod.BendDir`,

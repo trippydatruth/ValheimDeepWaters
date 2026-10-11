@@ -20,6 +20,8 @@ namespace ValheimDeepWaters
         public string MaterialName = "", MaterialBase = "", MaterialDescription = "";
         public Func<Vector3, bool, float, Heightmap.Biome, bool> Conditions = (_, _, _, _) => true;
         public string? Music;              // resolved from the boss's own event the first time it's needed
+        public string[] Weathers = { "ThunderStorm" };   // the weather it brings: the first of these the world has (BossWeather)
+        public string? Environment;        // which one that is, found the first time it's needed
     }
 
     /// <summary>
@@ -38,6 +40,7 @@ namespace ValheimDeepWaters
                 FishId = "eikthyr_elver", Title = "Stormcaller of the Rivers", BossPrefab = "Eikthyr", LureId = "lure_antler",
                 Omen = "Lightning stirs beneath the river...", Hint = "It hunts the rivers of the Meadows while thunder rolls.",
                 MaterialName = "Storm Barbel", MaterialBase = "HardAntler",
+                Weathers = new[] { "Eikthyr", "ThunderStorm" },
                 Conditions = (spot, ocean, depth, biome) => !ocean && biome == Heightmap.Biome.Meadows && Weather("Thunder"),
             },
             new BossInfo
@@ -45,6 +48,7 @@ namespace ValheimDeepWaters
                 FishId = "elder_bass", Title = "Ancient of the Black Lakes", BossPrefab = "gd_king", LureId = "lure_root",
                 Omen = "The roots beneath the lake are moving...", Hint = "It rises in the lakes of the Black Forest, at night.",
                 MaterialName = "Elder Scale", MaterialBase = "Root",
+                Weathers = new[] { "GDKing", "DeepForest Mist", "Misty" },
                 Conditions = (spot, ocean, depth, biome) => !ocean && biome == Heightmap.Biome.BlackForest && EnvMan.IsNight(),
             },
             new BossInfo
@@ -52,6 +56,7 @@ namespace ValheimDeepWaters
                 FishId = "bonemass_catfish", Title = "Rot of the Mire", BossPrefab = "Bonemass", LureId = "lure_ooze",
                 Omen = "Something foul rises from the mire...", Hint = "It stirs in the waters of the Swamp when the rain falls.",
                 MaterialName = "Mire Whisker", MaterialBase = "Ooze",
+                Weathers = new[] { "Bonemass", "SwampRain", "Rain" },
                 Conditions = (spot, ocean, depth, biome) => !ocean && biome == Heightmap.Biome.Swamp && EnvMan.IsWet(),
             },
             new BossInfo
@@ -59,6 +64,7 @@ namespace ValheimDeepWaters
                 FishId = "moder_scale", Title = "Wyrm of the Deep", BossPrefab = "Dragon", LureId = "lure_wyrm",
                 Omen = "The cold deep stirs...", Hint = "It hunts the cold seas off the Deep North, in storms and snow.",
                 MaterialName = "Frostwyrm Scale", MaterialBase = "FreezeGland",
+                Weathers = new[] { "Moder", "SnowStorm", "Twilight_SnowStorm" },
                 Conditions = (spot, ocean, depth, biome) => ocean && Near(spot, Heightmap.Biome.DeepNorth) && Weather("Snow", "Storm", "Thunder"),
             },
             new BossInfo
@@ -66,6 +72,7 @@ namespace ValheimDeepWaters
                 FishId = "yagluthgill", Title = "Ember of the Drowned King", BossPrefab = "GoblinKing", LureId = "lure_ember",
                 Omen = "Embers glow beneath the waves...", Hint = "It rises in the deep sea off the Plains, at night.",
                 MaterialName = "Ember Gill", MaterialBase = "SurtlingCore",
+                Weathers = new[] { "GoblinKing", "Ashrain", "ThunderStorm" },
                 Conditions = (spot, ocean, depth, biome) => ocean && depth >= DeepWater && Near(spot, Heightmap.Biome.Plains) && EnvMan.IsNight(),
             },
             new BossInfo
@@ -73,6 +80,7 @@ namespace ValheimDeepWaters
                 FishId = "queen_eel", Title = "Mother of the Abyss", BossPrefab = "SeekerQueen", LureId = "lure_chitin",
                 Omen = "Something vast uncoils in the deep...", Hint = "It hunts the deep sea off the Mistlands.",
                 MaterialName = "Queen's Fang", MaterialBase = "Carapace",
+                Weathers = new[] { "Queen", "Mistlands_thunder", "Mistlands_rain" },
                 Conditions = (spot, ocean, depth, biome) => ocean && depth >= DeepWater && Near(spot, Heightmap.Biome.Mistlands),
             },
         };
@@ -256,7 +264,8 @@ namespace ValheimDeepWaters
 
         /// <summary>
         /// Boss music for a boss fish, through the same override vanilla uses for its bosses: from the omen on the water,
-        /// through the strike, to the end of the fight (the track loops on its own). It plays at Valheim's music volume.
+        /// through the strike, to the end of the fight (the track loops on its own), for everyone near the encounter. It
+        /// plays at Valheim's music volume.
         /// </summary>
         [HarmonyPatch(typeof(RandEventSystem), nameof(RandEventSystem.GetMusicOverride))]
         private static class MusicPatch
@@ -265,16 +274,15 @@ namespace ValheimDeepWaters
 
             private static void Postfix(ref string __result)
             {
-                string? boss = null;
-                var s = FishingController.Session;
-                bool encounter = s?.Boss != null && (s.Phase != FishingPhase.Waiting || s.OmenStep >= 1);
-                if (__result == null && encounter) boss = MusicFor(s!.Boss!);
+                // the nearest boss encounter, the local angler's or anyone else's nearby (BossWeather shares them)
+                var near = BossWeather.Near();
+                string? boss = __result == null && near != null ? MusicFor(near) : null;
                 if (boss != null) __result = boss;
                 if (boss != _playing)
                 {
                     Plugin.Log.LogInfo(boss != null
-                        ? $"Boss music: {boss} (phase {s!.Phase}, omen {s.OmenStep})."
-                        : $"Boss music stopped: {(s == null ? "the cast ended" : s.Boss == null ? "the boss is gone" : encounter ? "another event's music took over" : "back to waiting")}.");
+                        ? $"Boss music: {boss} ({near!.FishId})."
+                        : $"Boss music stopped: {(near == null ? "no boss encounter near" : "another event's music took over")}.");
                     _playing = boss;
                 }
             }

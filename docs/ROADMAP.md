@@ -15,6 +15,7 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
 8. **More custom fish.**
 9. **Boss fight music.** It didn't play for the whole fight. *Fixed: it plays from the omen to the end of the fight. (The silence in testing was the game's music volume at 5%.)*
 10. **Weather in boss fights.** Weather effects during some fights, synced across players if needed.
+    *Done: each boss brings its namesake boss's weather and music to everyone within 150 m.*
 11. **Valheim style.** Restyle models and textures to fit Valheim's look better.
 12. **Queen Eel.** Make the model larger and the fight feel like a sea serpent fight.
 13. **Anything that makes the mod feel more fleshed out.**
