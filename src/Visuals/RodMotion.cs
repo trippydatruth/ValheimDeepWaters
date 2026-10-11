@@ -1,78 +1,212 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
 namespace ValheimDeepWaters
 {
-    internal enum RodEvent { None, Cast, CatchLift, Snap }
+    internal enum RodEvent { None, Cast, CatchLift, Snap, HookSet, Twitch, Nibble }
 
     /// <summary>
-    /// Client-side procedural rod animation. The rod's item instance is a child of the hand bone, so the
-    /// animator never touches its local rotation; we reset it to the captured base every LateUpdate and then
-    /// apply a world-space pitch about the player's right axis (positive pitch = tip down).
+    /// One angler's rod: found on their right hand, measured once (tip, grip, axis, reel), then each frame placed in
+    /// their hands by <see cref="AnglerPose"/>, bent toward the line and its reel turned. One-off moments (cast, hook
+    /// set, twitch, nibble, snap, landing) play for a short while.
+    /// </summary>
+    internal sealed class RodAnimator
+    {
+        public Transform? Rod;
+        public RodRig? Rig;
+        public Quaternion BaseLocal = Quaternion.identity;
+        public Vector3 BaseLocalPos;
+
+        // measured once per rod, in the rod's own space
+        public bool HasTip;
+        public Vector3 TipLocal, GripLocal, AxisLocal = Vector3.up, UpLocal = Vector3.forward;
+        public bool HasReel;
+        public Vector3 ReelLocal, AxleLocal = Vector3.right;
+
+        public RodEvent Event = RodEvent.None;
+        public float EventStart;
+
+        // eased body pose (AnglerPose)
+        public float Lean, Elevation = 35f;
+        public float IdleW;          // the left hand put on the rod over Valheim's hold animation (no line out)
+        public float PoseW;          // 0 Valheim's own animation (no line out, a cast) .. 1 our pose
+        public bool Placed;
+
+        public void Capture(Transform rod, Player player)
+        {
+            Rod = rod;
+            BaseLocal = rod.localRotation;
+            BaseLocalPos = rod.localPosition;
+            Rig = rod.GetComponentInChildren<RodRig>(true);
+            Rig?.Rest();
+            RodMotion.ComputeTip(this, rod);
+
+            GripLocal = Rig?.Grip != null ? rod.InverseTransformPoint(Rig.Grip.position) : Vector3.zero;
+            Vector3 tip = Rig?.Tip != null ? rod.InverseTransformPoint(Rig.Tip.position) : HasTip ? TipLocal : GripLocal + Vector3.up;
+            AxisLocal = (tip - GripLocal).sqrMagnitude > 1e-6f ? (tip - GripLocal).normalized : Vector3.up;
+            // which way is "up" round the rod: as the hold animation has it now, so the reel stays on its usual side
+            Vector3 up = Vector3.ProjectOnPlane(rod.InverseTransformDirection(player.transform.up), AxisLocal);
+            UpLocal = up.sqrMagnitude > 1e-6f ? up.normalized : Vector3.Cross(AxisLocal, Vector3.right).normalized;
+
+            HasReel = Rig?.Spool != null;
+            if (HasReel)
+            {
+                ReelLocal = rod.InverseTransformPoint(Rig!.Spool!.position);
+                AxleLocal = rod.InverseTransformDirection(Rig.SpoolAxis).normalized;
+            }
+            if (player == Player.m_localPlayer)
+            {
+                float s = rod.lossyScale.x, along = Vector3.Dot(ReelLocal - GripLocal, AxisLocal) * s;
+                Plugin.Log.LogInfo($"Rod rig: {rod.name}, reel {(HasReel ? $"{along:0.00} m from the grip point, {Vector3.ProjectOnPlane(ReelLocal - GripLocal, AxisLocal).magnitude * s:0.00} m off the rod" : "none")}, scale {s:0.00}.");
+            }
+            Placed = false;
+        }
+
+        public void Restore()
+        {
+            if (Rod != null) { Rod.localRotation = BaseLocal; Rod.localPosition = BaseLocalPos; }
+            Rig?.Rest();
+        }
+
+        public void Trigger(RodEvent e) { Event = e; EventStart = Time.time; }
+
+        public float Since(RodEvent e) => Event == e ? Time.time - EventStart : 99f;
+    }
+
+    /// <summary>
+    /// The rod animation for every angler. The local angler's comes from their fishing session; other players' from the
+    /// state they share (AnglerSync), so everyone sees everyone fish. Runs every LateUpdate, after the animator.
     /// </summary>
     internal static class RodMotion
     {
-        // The equipped item's visual GameObject.
         private static readonly FieldInfo? VisRightItem = AccessTools.Field(typeof(VisEquipment), "m_rightItemInstance");
-
-        private static Transform? _rod;
-        private static RodRig? _rig; // set when the rod model is rigged: it bends and its reel turns
-        private static Quaternion _baseLocal = Quaternion.identity;
-        private static Vector3 _baseLocalPos;
-        private static bool _hasTip;
-        private static Vector3 _tipLocal;
+        private static readonly Dictionary<int, RodAnimator> Anglers = new();
         private static bool _warnedNoRod;
-
-        private static RodEvent _event = RodEvent.None;
-        private static float _eventStart;
 
         private static bool _charging;
         private static float _chargeFraction;
 
-        /// <summary>Called every frame while the player holds Attack to charge a cast; fraction is 0..1.</summary>
+        private static RodAnimator? Local => Player.m_localPlayer != null && Anglers.TryGetValue(Player.m_localPlayer.GetInstanceID(), out var a) ? a : null;
+
+        /// <summary>
+        /// Called every frame while the player holds Attack to charge a cast; fraction is 0..1. Plays Valheim's own rod
+        /// draw (as a bow's: a held animation state and how far drawn), which the animator syncs to everyone.
+        /// </summary>
         public static void SetCharge(bool active, float fraction)
         {
+            var zanim = LocalAnim(out var attack);
+            if (zanim != null && attack != null && attack.m_drawAnimationState != "")
+            {
+                if (active) { zanim.SetBool(attack.m_drawAnimationState, true); zanim.SetFloat("drawpercent", Mathf.Clamp01(fraction)); }
+                else if (_charging) zanim.SetBool(attack.m_drawAnimationState, false);
+            }
             _charging = active;
             _chargeFraction = Mathf.Clamp01(fraction);
         }
 
+        /// <summary>A one-off moment on the local angler's rod, shared with everyone (a cast plays Valheim's throw).</summary>
         public static void Trigger(RodEvent e)
         {
-            _event = e;
-            _eventStart = Time.time;
+            Local?.Trigger(e);
+            if (Player.m_localPlayer != null) AnglerSync.Event(Player.m_localPlayer, e);
+            if (e == RodEvent.Cast)
+            {
+                var zanim = LocalAnim(out var attack);
+                if (zanim != null && attack != null && attack.m_attackAnimation != "") zanim.SetTrigger(attack.m_attackAnimation);
+            }
         }
 
-        private static float _tapTime = -100f, _tapStrength;
+        private static readonly FieldInfo? ZAnimField = AccessTools.Field(typeof(Character), "m_zanim");
 
-        /// <summary>A fish nibbling a lure: the rod tip nods down sharply and springs back (there's no float to watch).</summary>
-        public static void Tap(float strength)
+        /// <summary>The local player's synced animator and their rod's attack (its animation names), if a rod is out.</summary>
+        private static ZSyncAnimation? LocalAnim(out Attack? attack)
         {
-            _tapTime = Time.time;
-            _tapStrength = Mathf.Clamp01(strength);
+            attack = null;
+            var p = Player.m_localPlayer;
+            var weapon = p != null ? p.GetCurrentWeapon() : null;
+            if (p == null || weapon == null || !ContentRegistry.IsRod(weapon)) return null;
+            attack = weapon.m_shared.m_attack;
+            return ZAnimField?.GetValue(p) as ZSyncAnimation;
         }
 
-        private static float TapPulse(float t)
-        {
-            float e = (t - _tapTime) / 0.35f;
-            return e < 0f || e > 1f ? 0f : Mathf.Sin(e * Mathf.PI) * (1f - e * 0.5f) * _tapStrength;
-        }
+        /// <summary>A fish nibbling a lure: the rod tip nods (there's no float to watch).</summary>
+        public static void Tap(float strength) => Trigger(RodEvent.Nibble);
 
         public static void Reset()
         {
-            Restore();
-            _rod = null;
-            _rig = null;
-            _hasTip = false;
-            _event = RodEvent.None;
+            foreach (var a in Anglers.Values) a.Restore();
+            Anglers.Clear();
             _charging = false;
         }
 
-        private static void Restore()
+        public static bool TryGetTip(out Vector3 tip)
         {
-            if (_rod != null) { _rod.localRotation = _baseLocal; _rod.localPosition = _baseLocalPos; }
-            if (_rig != null) _rig.Rest();
+            var a = Local;
+            if (a?.Rod != null && a.Rig != null && a.Rig.Tip != null) { tip = a.Rig.Tip.position; return true; }
+            if (a?.Rod != null && a.HasTip) { tip = a.Rod.TransformPoint(a.TipLocal); return true; }
+            tip = Vector3.zero;
+            return false;
+        }
+
+        /// <summary>The local angler, from their session.</summary>
+        public static void Apply(Player player, FishingSession? s, bool rodActive, bool reeling)
+        {
+            var st = new AnglerState { RodOut = rodActive, Charging = _charging, Charge = _chargeFraction, Reeling = reeling };
+            if (s != null)
+            {
+                st.Phase = s.Phase == FishingPhase.Waiting ? 1 : s.Phase == FishingPhase.Bite ? 2 : 3;
+                st.Pulling = s.Pulling;
+                st.Running = s.Running;
+                st.Lure = s.Lure != null;
+                st.Load = s.Phase == FishingPhase.Fighting ? Mathf.Clamp01(s.Tension / Mathf.Max(1f, s.Rod.BreakTension)) : 0f;
+                st.Angle = s.Angle;
+                var end = FishingController.CurrentBobberPosition();
+                st.HasTarget = end.HasValue;
+                if (end.HasValue) st.Target = end.Value;
+            }
+            AnglerSync.Write(player, st);
+            Animate(player, st, RodEvent.None);
+        }
+
+        /// <summary>Everyone else holding a Deep Waters rod, from what they share.</summary>
+        public static void ApplyOthers(Player local)
+        {
+            foreach (var p in Player.GetAllPlayers())
+            {
+                if (p == null || p == local) continue;
+                var st = AnglerSync.Read(p, out var fresh);
+                st.RodOut &= !p.IsDead() && ContentRegistry.IsRod(p.GetCurrentWeapon());
+                Animate(p, st, fresh);
+            }
+            // forget anglers who've gone
+            if (Anglers.Count > 8)
+            {
+                var gone = new List<int>();
+                foreach (var kv in Anglers) if (kv.Value.Rod == null) gone.Add(kv.Key);
+                foreach (var k in gone) Anglers.Remove(k);
+            }
+        }
+
+        private static void Animate(Player player, in AnglerState st, RodEvent fresh)
+        {
+            int id = player.GetInstanceID();
+            Transform? rod = st.RodOut ? FindRod(player) : null;
+            Anglers.TryGetValue(id, out var a);
+            if (rod == null)
+            {
+                if (a != null) { a.Restore(); Anglers.Remove(id); }
+                return;
+            }
+            if (a == null) Anglers[id] = a = new RodAnimator();
+            if (a.Rod != rod) { a.Restore(); a.Capture(rod, player); }
+            if (fresh != RodEvent.None) a.Trigger(fresh);
+
+            a.Restore();
+            AnglerPose.Pose(player, a, st);
+            if (a.Rig != null) PoseRig(player, a, st);
+            if (a.Event != RodEvent.None && Time.time - a.EventStart > 1.2f) a.Event = RodEvent.None;
         }
 
         private static Transform? FindRod(Player player)
@@ -80,15 +214,11 @@ namespace ValheimDeepWaters
             GameObject? go = null;
             try
             {
-                if (VisRightItem != null)
-                {
-                    var vis = player.GetComponent<VisEquipment>();
-                    if (vis != null) go = VisRightItem.GetValue(vis) as GameObject;
-                }
+                var vis = player.GetComponent<VisEquipment>();
+                if (vis != null && VisRightItem != null) go = VisRightItem.GetValue(vis) as GameObject;
             }
             catch { }
-
-            if (go == null && !_warnedNoRod)
+            if (go == null && player == Player.m_localPlayer && !_warnedNoRod)
             {
                 _warnedNoRod = true;
                 Plugin.Log.LogWarning("Rod animation: could not find the equipped rod instance; rod motion and line anchoring are disabled.");
@@ -96,75 +226,107 @@ namespace ValheimDeepWaters
             return go != null ? go.transform : null;
         }
 
-        private static void CaptureRod(Transform rod)
+        /// <summary>
+        /// Bends a rigged rod toward the line (back on the wind-up, a whip on release, loaded by a fish, hauled hard when
+        /// pulled back) and turns its reel: winding in while reeling, spinning backward as line pays out.
+        /// </summary>
+        private static void PoseRig(Player player, RodAnimator a, in AnglerState st)
         {
-            _rod = rod;
-            _baseLocal = rod.localRotation;
-            _baseLocalPos = rod.localPosition;
-            _rig = rod.GetComponentInChildren<RodRig>(true);
-            ComputeTip(rod);
+            float bend = 0f, spin = 0f, dt = Time.deltaTime, t = Time.time;
+            Vector3 ahead = player.transform.position + player.transform.forward * 12f + Vector3.down * 2f;
+            Vector3? toward = st.HasTarget ? st.Target : ahead;
 
-            // A rigged rod with a grip marker: its unbent axis (grip to tip) in the rod's own space, for aiming it
-            // through the left hand.
-            _hasAxis = false;
-            if (_rig != null && _rig.Grip != null && _rig.Tip != null)
+            if (st.Charging)
             {
-                _rig.Rest();
-                var along = _rig.Tip.position - _rig.Grip.position;
-                if (along.sqrMagnitude > 1e-6f)
+                bend = -16f * st.Charge;      // loading backward
+                toward = ahead;
+            }
+            else if (a.Event == RodEvent.Cast || a.Event == RodEvent.CatchLift || a.Event == RodEvent.Snap || a.Event == RodEvent.HookSet)
+            {
+                float e = t - a.EventStart;
+                switch (a.Event)
                 {
-                    _gripLocal = rod.InverseTransformPoint(_rig.Grip.position);
-                    _axisLocal = rod.InverseTransformDirection(along.normalized);
-                    _hasAxis = true;
+                    case RodEvent.Cast:
+                        toward = ahead;
+                        bend = e < 0.06f ? Mathf.Lerp(-16f, 30f, e / 0.06f)
+                                         : 30f * Mathf.Exp(-(e - 0.06f) * 7f) * Mathf.Cos((e - 0.06f) * 28f);
+                        if (e < 0.6f) spin = -2200f * dt;          // line flying off the reel
+                        break;
+                    case RodEvent.CatchLift:
+                        bend = 32f * Mathf.Sin(Mathf.Clamp01(e / 0.8f) * Mathf.PI);   // the fish's weight
+                        toward = player.transform.position + player.transform.forward * 2f + Vector3.down * 3f;
+                        break;
+                    case RodEvent.Snap:
+                        float k = 1f - Mathf.Clamp01(e / 0.5f);
+                        bend = -24f * k * Mathf.Cos(e * 40f); // springing back when the line breaks
+                        break;
+                    case RodEvent.HookSet:
+                        bend = 46f * Mathf.Sin(Mathf.Clamp01(e / 0.55f) * Mathf.PI);   // the hook biting home
+                        break;
                 }
             }
+            else
+            {
+                switch (st.Phase)
+                {
+                    case 1:
+                        // the tip drooping toward where the line goes into the water, more with a lure being worked
+                        bend = (st.Lure ? (st.Reeling ? 20f : 12f) : 14f) + Mathf.Sin(t * 1.5f) * 2f + AnglerPose.Pop(a) * 18f + AnglerPose.Nod(a) * 14f;
+                        break;
+                    case 2:
+                        bend = 22f + Mathf.Sin(t * 35f) * 8f;
+                        break;
+                    case 3:
+                        bend = 72f * Mathf.Pow(st.Load, 0.85f);
+                        if (st.Pulling) bend = Mathf.Max(bend, 40f) * 1.25f;             // hauling back on it
+                        if (st.Running) bend += Mathf.Sin(t * 28f) * 5f * (0.4f + st.Load);
+                        if (st.Reeling) bend += Mathf.Sin(t * 14f) * 1.5f;
+                        if (st.Running && !st.Reeling) spin -= 600f * st.Load * dt;   // line stripping off against the drag
+                        break;
+                }
+            }
+            if (st.Reeling) spin += 900f * dt;          // winding in, about two and a half turns a second
+
+            a.Rig!.Pose(bend, toward, spin);
         }
 
-        private static bool _hasAxis;
-        private static Vector3 _gripLocal, _axisLocal;
-
-        /// <summary>
-        /// The hold animation was made for the vanilla rod, so a custom rod can miss the left hand. Turns the rod about
-        /// its grip so its axis runs through the left hand - small corrections only, while the hand is on the rod.
-        /// </summary>
-        private static void AimThroughLeftHand(Player player)
+        /// <summary>Degrees the rod tips down (negative: up) during a one-off moment.</summary>
+        internal static float EventPitch(RodAnimator a)
         {
-            if (!_hasAxis || _rod == null) return;
-            var left = player.GetComponent<VisEquipment>()?.m_leftHand;
-            if (left == null) return;
-            Vector3 grip = _rod.TransformPoint(_gripLocal);
-            Vector3 axis = _rod.TransformDirection(_axisLocal);
-            Vector3 toHand = left.position - grip;
-            float along = Vector3.Dot(toHand, axis);
-            if (along < 0.15f || along > 1.4f) return;                       // the hand isn't on the rod
-            var turn = Quaternion.FromToRotation(axis, toHand.normalized);
-            turn.ToAngleAxis(out float angle, out Vector3 turnAxis);
-            if (angle > 180f) angle -= 360f;
-            if (Mathf.Abs(angle) > 30f || turnAxis.sqrMagnitude < 1e-6f) return;
-            // About the grip, which stays in the right hand.
-            Vector3 pivot = grip;
-            _rod.rotation = turn * _rod.rotation;
-            _rod.position += pivot - _rod.TransformPoint(_gripLocal);
+            float e = Time.time - a.EventStart;
+            switch (a.Event)
+            {
+                case RodEvent.Cast:
+                    // snaps forward within a couple of frames of release, then settles
+                    if (e > 0.3f) return 0f;
+                    if (e < 0.06f) return Mathf.Lerp(-48f, 32f, e / 0.06f);
+                    return Mathf.Lerp(32f, 0f, Mathf.Clamp01((e - 0.06f) / 0.24f));
+                case RodEvent.CatchLift:
+                    return e > 0.8f ? 0f : -40f * Mathf.Sin(Mathf.Clamp01(e / 0.8f) * Mathf.PI);
+                case RodEvent.Snap:
+                {
+                    if (e > 0.5f) return 0f;
+                    float k = 1f - Mathf.Clamp01(e / 0.5f);
+                    return -40f * k + Mathf.Sin(e * 45f) * 6f * k;
+                }
+                default:
+                    return 0f;
+            }
         }
 
         /// <summary>
         /// Finds the rod's tip in rod-local space: along the mesh's longest axis, the end farther from the grip
         /// (the local origin) is the tip, and the vertex closest to that end is used. Runs once per equip.
         /// </summary>
-        private static void ComputeTip(Transform rod)
+        internal static void ComputeTip(RodAnimator a, Transform rod)
         {
-            _hasTip = false;
-
+            a.HasTip = false;
             var filters = rod.GetComponentsInChildren<MeshFilter>();
-
             Vector3 min = Vector3.zero, max = Vector3.zero;
             bool any = false;
-
             foreach (var mf in filters)
             {
-                var mesh = mf.sharedMesh;
-                if (mesh == null) continue;
-
+                if (mf.sharedMesh == null) continue;
                 foreach (var local in EnumeratePoints(rod, mf))
                 {
                     if (!any) { min = max = local; any = true; continue; }
@@ -172,50 +334,30 @@ namespace ValheimDeepWaters
                     max = Vector3.Max(max, local);
                 }
             }
-
             if (!any) return;
 
             Vector3 extent = max - min;
             int axis = 0;
             if (extent.y > extent.x && extent.y >= extent.z) axis = 1;
             else if (extent.z > extent.x && extent.z >= extent.y) axis = 2;
-
             float minAlong = axis == 0 ? min.x : axis == 1 ? min.y : min.z;
             float maxAlong = axis == 0 ? max.x : axis == 1 ? max.y : max.z;
-            bool tipIsMax = Mathf.Abs(maxAlong) >= Mathf.Abs(minAlong);
-            float target = tipIsMax ? maxAlong : minAlong;
+            float target = Mathf.Abs(maxAlong) >= Mathf.Abs(minAlong) ? maxAlong : minAlong;
 
             float bestDist = float.MaxValue;
-            Vector3 bestPoint = Vector3.zero;
-            bool found = false;
-
             foreach (var mf in filters)
             {
-                var mesh = mf.sharedMesh;
-                if (mesh == null) continue;
-
+                if (mf.sharedMesh == null) continue;
                 foreach (var local in EnumeratePoints(rod, mf))
                 {
                     float v = axis == 0 ? local.x : axis == 1 ? local.y : local.z;
                     float d = Mathf.Abs(v - target);
-                    if (d < bestDist)
-                    {
-                        bestDist = d;
-                        bestPoint = local;
-                        found = true;
-                    }
+                    if (d < bestDist) { bestDist = d; a.TipLocal = local; a.HasTip = true; }
                 }
-            }
-
-            if (found)
-            {
-                _tipLocal = bestPoint;
-                _hasTip = true;
             }
         }
 
-        /// <summary>Yields every mesh point (real vertices if readable, else the 8 bounds corners), already
-        /// converted into the rod's local space.</summary>
+        /// <summary>Every mesh point (real vertices if readable, else the 8 bounds corners), in the rod's local space.</summary>
         private static IEnumerable<Vector3> EnumeratePoints(Transform rod, MeshFilter mf)
         {
             var mesh = mf.sharedMesh;
@@ -235,173 +377,6 @@ namespace ValheimDeepWaters
                         (i & 4) == 0 ? -b.extents.z : b.extents.z);
                     yield return rod.InverseTransformPoint(mf.transform.TransformPoint(corner));
                 }
-            }
-        }
-
-        public static bool TryGetTip(out Vector3 tip)
-        {
-            // A rigged rod: the tip marker, which follows the bend.
-            if (_rod != null && _rig != null && _rig.Tip != null)
-            {
-                tip = _rig.Tip.position;
-                return true;
-            }
-            if (_rod != null && _hasTip)
-            {
-                tip = _rod.TransformPoint(_tipLocal);
-                return true;
-            }
-            tip = Vector3.zero;
-            return false;
-        }
-
-        public static void Apply(Player player, FishingSession? s, bool rodActive, bool reeling)
-        {
-            Transform? rod = rodActive ? FindRod(player) : null;
-
-            if (rod != _rod)
-            {
-                Restore();
-                _rod = null;
-                _hasTip = false;
-                if (rod != null) CaptureRod(rod);
-            }
-
-            if (_rod == null) return;
-
-            _rod.localRotation = _baseLocal;
-            _rod.localPosition = _baseLocalPos;
-            AimThroughLeftHand(player);
-            float pitch = 0f;
-            float t = Time.time;
-
-            if (_charging)
-            {
-                // Wind-up: tip pulls back the longer Attack is held.
-                pitch = -Mathf.Lerp(0f, 48f, _chargeFraction);
-            }
-            else if (_event != RodEvent.None)
-            {
-                float e = t - _eventStart;
-                float done;
-                pitch = EventPitch(_event, e, out done);
-                if (done >= 1f) _event = RodEvent.None;
-            }
-            else if (s != null)
-            {
-                switch (s.Phase)
-                {
-                    case FishingPhase.Waiting:
-                        pitch = Mathf.Sin(t * 1.5f) * 1.5f + TapPulse(t) * 7f;
-                        break;
-                    case FishingPhase.Bite:
-                        pitch = 9f + Mathf.Sin(t * 35f) * 5f;
-                        break;
-                    case FishingPhase.Fighting:
-                        float load = Mathf.Clamp01(s.Tension / Mathf.Max(1f, s.Rod.BreakTension));
-                        // A rigged rod shows the load in its bend, so the whole rod tips less.
-                        pitch = Mathf.Lerp(2f, _rig != null ? 12f : 28f, load);
-                        if (s.Running) pitch += Mathf.Sin(t * 28f) * 3.5f * (0.4f + load);
-                        if (reeling) pitch += Mathf.Sin(t * 14f) * 1.5f;
-                        break;
-                }
-            }
-
-            if (Mathf.Abs(pitch) > 0.01f)
-                _rod.rotation = Quaternion.AngleAxis(pitch, player.transform.right) * _rod.rotation;
-
-            // The rod follows a fish that's pulled the line off to one side.
-            if (s != null && s.Phase == FishingPhase.Fighting && Mathf.Abs(s.Angle) > 0.5f)
-                _rod.rotation = Quaternion.AngleAxis(s.Angle * 0.35f, Vector3.up) * _rod.rotation;
-
-            if (_rig != null) PoseRig(player, s, reeling, t);
-        }
-
-        /// <summary>
-        /// Bends a rigged rod toward the line (back on the wind-up, a whip on release, loaded by a fish) and turns its
-        /// reel: winding in while reeling, spinning backward as line pays out on a cast or a running fish.
-        /// </summary>
-        private static void PoseRig(Player player, FishingSession? s, bool reeling, float t)
-        {
-            float bend = 0f, spin = 0f, dt = Time.deltaTime;
-            Vector3 ahead = player.transform.position + player.transform.forward * 12f + Vector3.down * 2f;
-            Vector3? toward = FishingController.CurrentBobberPosition() ?? ahead;
-
-            if (_charging)
-            {
-                bend = -16f * _chargeFraction;      // loading backward
-                toward = ahead;
-            }
-            else if (_event != RodEvent.None)
-            {
-                float e = t - _eventStart;
-                switch (_event)
-                {
-                    case RodEvent.Cast:
-                        toward = ahead;
-                        bend = e < 0.06f ? Mathf.Lerp(-16f, 30f, e / 0.06f)
-                                         : 30f * Mathf.Exp(-(e - 0.06f) * 7f) * Mathf.Cos((e - 0.06f) * 28f);
-                        spin = -2200f * dt;          // line flying off the reel
-                        break;
-                    case RodEvent.CatchLift:
-                        bend = 32f * Mathf.Sin(Mathf.Clamp01(e / 0.8f) * Mathf.PI);   // the fish's weight
-                        toward = player.transform.position + player.transform.forward * 2f + Vector3.down * 3f;
-                        break;
-                    case RodEvent.Snap:
-                        float k = 1f - Mathf.Clamp01(e / 0.5f);
-                        bend = -24f * k * Mathf.Cos(e * 40f); // springing back when the line breaks
-                        break;
-                }
-            }
-            else if (s != null)
-            {
-                switch (s.Phase)
-                {
-                    case FishingPhase.Waiting:
-                        bend = 4f + Mathf.Sin(t * 1.5f) * 1.5f + TapPulse(t) * 14f;
-                        break;
-                    case FishingPhase.Bite:
-                        bend = 10f + Mathf.Sin(t * 35f) * 7f;
-                        break;
-                    case FishingPhase.Fighting:
-                        float load = Mathf.Clamp01(s.Tension / Mathf.Max(1f, s.Rod.BreakTension));
-                        bend = 72f * Mathf.Pow(load, 0.85f);
-                        if (s.Running) bend += Mathf.Sin(t * 28f) * 5f * (0.4f + load);
-                        if (reeling) bend += Mathf.Sin(t * 14f) * 1.5f;
-                        if (s.Running && !reeling) spin -= 600f * load * dt;   // line stripping off against the drag
-                        break;
-                }
-            }
-            if (reeling) spin += 900f * dt;          // winding in, about two and a half turns a second
-
-            _rig!.Pose(bend, toward, spin);
-        }
-
-        private static float EventPitch(RodEvent ev, float e, out float done)
-        {
-            switch (ev)
-            {
-                case RodEvent.Cast:
-                {
-                    // Snaps forward within a couple of frames of release, then settles.
-                    done = e / 0.3f;
-                    if (e < 0.06f) return Mathf.Lerp(-48f, 32f, e / 0.06f);
-                    return Mathf.Lerp(32f, 0f, Mathf.Clamp01((e - 0.06f) / 0.24f));
-                }
-                case RodEvent.CatchLift:
-                {
-                    done = e / 0.8f;
-                    return -40f * Mathf.Sin(Mathf.Clamp01(e / 0.8f) * Mathf.PI);
-                }
-                case RodEvent.Snap:
-                {
-                    done = e / 0.5f;
-                    float k = 1f - Mathf.Clamp01(e / 0.5f);
-                    return -40f * k + Mathf.Sin(e * 45f) * 6f * k;
-                }
-                default:
-                    done = 1f;
-                    return 0f;
             }
         }
     }

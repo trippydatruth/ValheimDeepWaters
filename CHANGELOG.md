@@ -84,6 +84,24 @@
   rod, the chum buckets, meads, totems and relics now use icons rendered from their 3D models (the worm and the
   Queen Eel coiled up).
 - `vdw_debug worms` shows the worm mounds near you and whether flies or rain worms can be out right now.
+- **Angler animations**, seen by everyone: casting uses Valheim's own draw and throw; with the line out the rod
+  is held in the left hand and the right hand winds the reel (Valheim's own reeling pump is gone); setting the hook
+  sweeps the rod up and back; a twitch pops the rod tip; a nibble on a lure nods it; a running fish drags the rod toward the water.
+  Each player shares their fishing state, so other players see them cast, reel, pull and fight.
+- **Pull back** (hold left click with a fish on): the angler hauls the rod up and leans back, bending it hard. It
+  tires the fish faster and wins a little line (not while it runs), but strains the line and costs stamina - pump
+  with left click, then wind down with right click.
+- The drag and reel speed gauges show their setting with lit pips only (DRAG in front, REEL on the bigger dial
+  behind); the exact value shows in the middle of the screen as it changes.
+- **Retrieves.** How you work a lure matters: Slow Roll, Steady and Burn (by reel speed), Stop & Go (reel and
+  pause), Twitch (left-click rod twitches while reeling) and Hop (twitches without reeling). Each lure kind has
+  retrieves it swims right on and each retrieve draws certain fish; a good match brings them more and makes them
+  likelier to strike, a poor one gets follows that turn away. The HUD names your retrieve (green when it suits the
+  lure).
+- **Reel speed** on Alt + mouse wheel (or, like drag, the mouse wheel or the mouse side buttons: Drag Control and
+  Reel Speed Control in the config), shown as a bigger dial behind the drag gauge: it sets the retrieve speed and the fight reel
+  speed (a slower reel strains the line less). Shift reels at full speed, now in fights too, and a lure burned in
+  with Shift can still draw strikes.
 
 ### Changed
 - The bobber floats lower, with 55% of its height under water (was 40%), so a stick float sits with its keel and
@@ -110,6 +128,11 @@
 - Much less log output.
 - The Pearl of Njord is a new model: a whole leather belt with the pearl set in front, worn in place of the vanilla
   belt. `vdw_debug pearlfit <scale> <up> <forward>` fits it in game.
+- The Rune of Njord has its own model: a silver rune pendant on a cord, its blue ring glowing, worn round the neck
+  (in place of the vanilla belt look). `vdw_debug runefit <scale> <up> <forward>` fits it in game.
+- The worn Pearl of Njord belt and Rune of Njord necklace are skinned to the wearer's skeleton when put on, so they
+  bend and twist with the body instead of riding stiffly on one bone.
+- Holding a rod with no line out, the left hand now holds the rod over Valheim's own hold animation.
 - The release ships its model bundles packed (`.vdwpak`), so asset rippers can't open the meshes and textures
   straight from the Models folder. Plain `.bundle` files still load (and win over a packed copy), so custom models
   work as before. The loose `bobber.obj` is no longer shipped (the bobber is in the rod bundle).

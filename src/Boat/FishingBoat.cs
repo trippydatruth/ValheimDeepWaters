@@ -622,6 +622,28 @@ namespace ValheimDeepWaters
                 }
         }
 
+        /// <summary>
+        /// Closes a hand's four fingers round something held across the palm: each finger from its open rest pose, its
+        /// three joints turned about <paramref name="axis"/> (world; turning a finger about it moves the tip toward the
+        /// palm's side). The thumb is left as it is.
+        /// </summary>
+        internal static void CurlFingers(Player p, string prefix, Vector3 axis)
+        {
+            if (axis.sqrMagnitude < 1e-6f) return;
+            float[] bend = { 50f, 65f, 45f };
+            foreach (var f in Fingers)
+            {
+                if (f == "Thumb") continue;
+                for (int j = 1; j <= 3; j++)
+                {
+                    var b = Bone(p, prefix + "Hand" + f + j);
+                    if (b == null) break;
+                    if (RestLocal(p, b) is Quaternion rest) b.localRotation = rest;
+                    b.rotation = Quaternion.AngleAxis(bend[j - 1], axis) * b.rotation;
+                }
+            }
+        }
+
         private static readonly Dictionary<int, Dictionary<Transform, Quaternion>> RestPose = new();
 
         /// <summary>A bone's rotation in the character's rest pose (from the skin's bind poses), relative to its parent.</summary>
@@ -777,7 +799,7 @@ namespace ValheimDeepWaters
 
         private static string[] BuildPosedBones()
         {
-            var names = new List<string> { "Spine1" };
+            var names = new List<string> { "Spine", "Spine1", "Spine2" };
             foreach (var side in new[] { "Left", "Right" })
             {
                 names.Add(side + "Arm"); names.Add(side + "ForeArm"); names.Add(side + "Hand");
@@ -797,6 +819,17 @@ namespace ValheimDeepWaters
                 if (map.TryGetValue(b, out var was) && b.localRotation == was.ours) b.localRotation = was.anim;   // not re-animated
                 map[b] = (b.localRotation, b.localRotation);
             }
+        }
+
+        /// <summary>
+        /// Mixes the pose set since BeginPose back toward the animator's: 0 is the animation untouched, 1 our pose. Call
+        /// before EndPose.
+        /// </summary>
+        internal static void BlendPose(Player p, float weight)
+        {
+            if (weight >= 1f || !Posed.TryGetValue(p.GetInstanceID(), out var map)) return;
+            foreach (var kv in map)
+                if (kv.Key != null) kv.Key.localRotation = Quaternion.Slerp(kv.Value.anim, kv.Key.localRotation, weight);
         }
 
         /// <summary>Notes the pose as we left it, to tell next frame whether the animator has been since.</summary>

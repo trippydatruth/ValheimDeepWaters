@@ -176,7 +176,7 @@ namespace ValheimDeepWaters
 
         /// <summary>Rolls the species of one fish swimming around the cast.</summary>
         internal static FishDefinition? RollSuitorFish(FishingSession s) =>
-            SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer);
+            SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer, s.Style);
 
         /// <summary>
         /// Chance a fish that comes to the bait actually wants it - vanilla's per-bait chance (TestBate). A fish
@@ -252,7 +252,8 @@ namespace ValheimDeepWaters
         }
 
         private static FishDefinition? SelectFish(BaitDefinition? bait, bool ocean, float depth, float legendaryBoost = 1f,
-            Heightmap.Biome biome = Heightmap.Biome.None, IEnumerable<string>? nearby = null, BaitDefinition? trailer = null)
+            Heightmap.Biome biome = Heightmap.Biome.None, IEnumerable<string>? nearby = null, BaitDefinition? trailer = null,
+            RetrieveStyle style = RetrieveStyle.None)
         {
             bool deep = ocean && depth >= DeepOceanDepth;
             // Boss fish are never caught by chance: only their lure brings them.
@@ -283,7 +284,7 @@ namespace ValheimDeepWaters
                 if (bait != null)
                 {
                     if (f.ForbiddenBaits != null && f.ForbiddenBaits.Contains(bait.Id)) w = 0f;
-                    else if (bait.IsLure) w *= Lures.WeightFactor(f, bait, trailer);   // its kind, its own list, its trailer
+                    else if (bait.IsLure) w *= Lures.WeightFactor(f, bait, trailer) * Retrieves.Factor(f, bait, style);   // its kind, list, trailer and how it's worked
                     else
                     {
                         if (bait.TargetFish != null && bait.TargetFish.Contains(f.Id)) w *= 3f;

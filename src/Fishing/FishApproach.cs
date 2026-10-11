@@ -24,6 +24,7 @@ namespace ValheimDeepWaters
         public bool TakesBait;      // false = inspects, nibbles once and leaves (vanilla's wrong-bait nibble)
         public bool HookTooSmall;   // why it won't take the bait: it's far too big for the hook
         public int FakeNibblesLeft;
+        public bool RetrieveChecked; // behind a lure: has it decided yet whether the retrieve tempts it
         public float NextNibble;
         public float LastNibble = -100f;
         public float LeaveUntil;
@@ -200,6 +201,18 @@ namespace ValheimDeepWaters
                             f.FakeNibblesLeft--;
                             f.LastNibble = now;
                             f.NextNibble = now + UnityEngine.Random.Range(0.9f, 1.9f);
+                        }
+                        else if (s.Lure != null && s.Boss == null && !f.RetrieveChecked)
+                        {
+                            // Behind a lure: whether it strikes depends on how the lure's being worked (Retrieves.cs).
+                            f.RetrieveChecked = true;
+                            float suits = Retrieves.Factor(f.Fish, s.Lure, s.Style);
+                            if (UnityEngine.Random.value < Retrieves.StrikeChance(suits)) biter = f;
+                            else
+                            {
+                                FishingController.Notify($"A {f.Fish.Name} follows your lure... and turns away. ({Retrieves.Name(s.Style)} isn't doing it for this one.)");
+                                Leave(f, bobberPos);
+                            }
                         }
                         else
                         {

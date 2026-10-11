@@ -150,6 +150,9 @@ namespace ValheimDeepWaters
         public BaitDefinition? Trailer;   // the trailer on that lure, if any
         public float LastMoved = -100f;    // when the line was last reeled while waiting (a lure only draws strikes while it moves)
         public float DragSlip;            // 0..1: how hard the drag is slipping (line pulled out against it, or a loose drag spinning)
+        public readonly RetrieveTracker Tracker = new();   // how the lure is being worked (Retrieves.cs)
+        public RetrieveStyle Style;                       // the retrieve right now
+        public bool Pulling;                              // left click held with a fish on: hauling the rod back
         public Vector3 FloatPos;          // where the float (or lure) is in the world while waiting: it stays put when you move
         public float Slack;               // how slack the line is, 0 (taut) .. 0.3 (hanging loose), as vanilla draws it
         public bool WornWarned;

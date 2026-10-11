@@ -42,7 +42,10 @@ Bait is only used up once a fish is hooked.
 | Set the hook | Right click on the bite |
 | Reel in early | Right click while waiting |
 | Reel | Hold right click |
-| Drag | Mouse wheel |
+| Drag | Mouse wheel (configurable) |
+| Reel speed | Alt + mouse wheel (configurable; Shift: full speed) |
+| Twitch a lure | Left click while retrieving |
+| Pull back on a fish | Hold left click |
 | Next bait / next hook | `B` / `H` |
 | Catch log | `J` |
 
@@ -194,9 +197,24 @@ Wriggling soil only grows in parts of the world generated after installing the m
 ## Lures and trailers
 
 A **lure** goes in the hook slot and needs no hook or bait. The bait slot then takes an optional **trailer**. With a
-lure there's no float: cast it further than bait, then **hold right click to retrieve it**. Fish only strike while
-the lure is moving, so keep it coming with pauses; a lure left sitting draws nothing. Each kind of lure draws its own
-fish and mostly gets ignored by the rest.
+lure there's no float: cast it further than bait, then work it back in. Fish only strike while the lure is moving; a
+lure left sitting draws nothing. Each kind of lure draws its own fish and mostly gets ignored by the rest.
+
+**Retrieves.** How you work the lure is a retrieve, and the HUD names the one you're doing (green when it suits the
+lure):
+
+| Retrieve | How | Suits | Draws |
+|---|---|---|---|
+| Slow Roll | Hold right click at a low reel speed | Spinners, soft baits, Texas rigs, swimbaits, flies | Perch, trout, char, grouper, halibut |
+| Steady | Hold right click at a medium speed | Spoons, spinners, crankbaits, swimbaits | Trout, salmon, herring, tetra |
+| Burn | High reel speed, or hold Shift | Spoons, crankbaits | Pike, mackerel, tuna, salmon |
+| Stop & Go | Reel, pause, reel, pause | Spoons, crankbaits, soft baits, poppers, flies | Pike, trollfish, mistfin, lingcod |
+| Twitch | Tap left click while reeling | Poppers, flies, jigs | Trout, tetra, mackerel, trollfish |
+| Hop | Tap left click with pauses, without reeling | Jigs, Texas rigs, soft baits | Coral cod, lingcod, halibut, grouper, pufferfish |
+
+The right retrieve brings the fish it draws more often and makes them likelier to strike; with the wrong one, fish
+follow the lure and turn away. **Alt + mouse wheel** sets the reel speed (also in a fight, where a slower reel
+strains the line less); Shift reels at full speed.
 
 | Lure | Kind | Fish | Made at |
 |---|---|---|---|
@@ -266,6 +284,7 @@ The config is `BepInEx/config/trippy.valheimdeepwaters.cfg`.
 | Rain Worms | on | |
 | Spawn Flies | on | |
 | Cycle Bait / Cycle Hook / Catch Log keys | B / H / J | |
+| Drag Control / Reel Speed Control | Mouse Wheel / Alt + Mouse Wheel | Either can be the mouse wheel, Alt + mouse wheel or the mouse side buttons (Mouse 5 up, Mouse 4 down) |
 
 ## Console commands
 
@@ -281,7 +300,13 @@ These need `devcommands`.
 - `vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn]`: moves a Fishing Boat seat (metres,
   degrees) to fit it by eye; prints the running total.
 - `vdw_debug pearlfit <scale> <up> <forward> [height] [depth]`: fits the worn Pearl of Njord belt (defaults 1,
-  0.29, 0.1, 1.1, 1.1).
+  0.29, 0.01, 1.1, 1.1).
+- `vdw_debug runefit <scale> <up> <forward> [width] [depth]`: fits the worn Rune of Njord necklace (defaults 1.2,
+  0.09, 0.06, 1, 1.15; up and forward from the base of the neck).
+- `vdw_debug runeskin <0-1>`: how fully the worn necklace bends with the body (default 0.5; 0 rides rigidly on the chest).
+- `vdw_debug idlehand <along>`: how far up the rod from the reel the left hand holds it with no line out (default 0.5).
+- `vdw_debug idleshift <right> <forward> [up]`: moves the whole no-line-out hold, both hands and the rod (default 0.06,
+  0.06, 0).
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug tokens`: exports the text for translating.
 

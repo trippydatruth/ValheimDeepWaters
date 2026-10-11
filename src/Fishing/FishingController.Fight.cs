@@ -182,6 +182,14 @@ namespace ValheimDeepWaters
                         if (!Retrieve(player, s)) return;
                         bobberPos = LineEnd(player, s);
                     }
+                    if (s.Lure != null)
+                    {
+                        // Left click twitches the rod: the lure darts a little way in.
+                        if (!blocked && ZInput.GetButtonDown("Attack") && !Twitch(player, s)) return;
+                        s.Tracker.Update(_reelingNow, FullSpeed, _reelSpeed, Time.time, Time.deltaTime);
+                        s.Style = s.Tracker.Style(Time.time, LurePause);
+                        bobberPos = LineEnd(player, s);
+                    }
                     if (s.Boss != null)
                     {
                         UpdateOmen(player, s, bobberPos);
@@ -234,16 +242,28 @@ namespace ValheimDeepWaters
         /// </summary>
         private static bool Retrieve(Player player, FishingSession s)
         {
-            // Run (Shift) held: wind straight in at full speed. A lure ripped in that fast draws no strikes.
-            bool fast = ZInput.GetButton("Run");
-            float speed = s.Rod.ReelSpeed * (fast ? 1f : RetrieveFraction) * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed));
+            // At the reel speed (Alt + wheel), or full speed with Shift (a burned lure).
+            float speed = s.Rod.ReelSpeed * RetrieveShare * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed));
             // Reeling takes up the slack first; only once the line is tight does the float (or lure) come in.
             s.LineDistance -= speed * Time.deltaTime;
+            return WorkedIn(player, s);
+        }
+
+        /// <summary>A rod twitch (left click with a lure out): the lure darts in a short way. Returns false if the cast ended.</summary>
+        private static bool Twitch(Player player, FishingSession s)
+        {
+            s.LineDistance -= TwitchDistance;
+            s.Tracker.Twitch(Time.time);
+            RodMotion.Trigger(RodEvent.Twitch);
+            return WorkedIn(player, s);
+        }
+
+        /// <summary>After the line's been taken in: moves the lure (or float) and ends the cast if it's come all the way in.</summary>
+        private static bool WorkedIn(Player player, FishingSession s)
+        {
             var before = s.FloatPos;
             KeepFloat(player, s);
-            bool moved = (s.FloatPos - before).sqrMagnitude > 1e-6f;
-            if (moved && !fast) s.LastMoved = Time.time;
-            else if (fast && s.Lure != null) s.LastMoved = -100f;
+            if ((s.FloatPos - before).sqrMagnitude > 1e-6f) s.LastMoved = Time.time;
             if (FlatDistance(player.transform.position, s.FloatPos) <= RetrieveEndDistance)
             {
                 Finish(player, s.Lure != null ? "You work the lure all the way in." : "You reel in your line.");
@@ -283,6 +303,7 @@ namespace ValheimDeepWaters
 
         private static void TryHook(Player player, FishingSession s, Vector3 bobberPos)
         {
+            RodMotion.Trigger(RodEvent.HookSet);   // the sweep, whether it sticks or not
             float bonus = s.Bait?.HookBonus ?? 0f;
             float chance = Mathf.Clamp01(BaseHookChance + bonus + s.Rod.HookBonus + FishingBuffs.Total(player, BuffStat.HookChance) + SkillHookChance * Skill(player));
             bool tooBig = HookTooBig(s.Hook, s.FishWeight);
@@ -466,6 +487,11 @@ namespace ValheimDeepWaters
             }
 
             _reelingNow = reeling;
+            // Left click held: haul the rod back against the fish (pumping) - it tires the fish and wins a little line,
+            // but strains the line and costs stamina.
+            bool pulling = !blocked && ZInput.GetButton("Attack") && player.GetStamina() > 0.01f;
+            if (pulling) player.UseStamina(PullStamina * s.Rod.StaminaUse * dt);
+            s.Pulling = pulling;
             bool exhausted = s.FishStamina <= 0f;
             float drag = Mathf.Clamp01(s.Drag);
 
@@ -502,7 +528,8 @@ namespace ValheimDeepWaters
             pull *= tensionMult * FishingBuffs.Reduction(player, BuffStat.Tension) / Mathf.Max(0.1f, s.Rod.Power);
 
             float delta = pull - LineRelaxRate;
-            if (reeling) delta += ReelTensionLoad;
+            if (reeling) delta += ReelTensionLoad * FightShare;   // a slower reel strains the line less
+            if (pulling) delta += PullTensionLoad;
 
             s.Tension = Mathf.Clamp(s.Tension + delta * dt, 0f, MaxTension);
 
@@ -533,7 +560,7 @@ namespace ValheimDeepWaters
             {
                 float eff = Mathf.Lerp(1f, 0.35f, freshness) * reelMult;
                 if (s.Running) eff *= 0.4f;
-                s.LineDistance -= s.Rod.ReelSpeed * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed)) * Mathf.Lerp(1f, SkillMaxReel, Skill(player)) * eff * dt;
+                s.LineDistance -= s.Rod.ReelSpeed * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed)) * Mathf.Lerp(1f, SkillMaxReel, Skill(player)) * eff * FightShare * dt;
 
                 // Vanilla raises Fishing every second of reeling, twice as fast with a fish on.
                 s.SkillTimer += dt * 2f;
@@ -546,11 +573,17 @@ namespace ValheimDeepWaters
                 float drain = FishStaminaDrain * (0.5f + s.Tension / 50f) * (s.Running ? 1.5f : 1f) * staminaMult;
                 s.FishStamina = Mathf.Max(0f, s.FishStamina - drain * dt);
             }
-            else
+            else if (!pulling)
             {
                 // Resting on the line lets a fish get its wind back; a legendary on a slack line recovers fast.
                 float recover = 0.5f + (s.Fish.Legendary && s.Tension < 10f ? 2.5f : 0f);
                 s.FishStamina = Mathf.Min(s.FishStaminaMax, s.FishStamina + recover * dt);
+            }
+
+            if (pulling)
+            {
+                s.FishStamina = Mathf.Max(0f, s.FishStamina - FishStaminaDrain * PullTire * staminaMult * dt);
+                if (!s.Running) s.LineDistance -= PullGain * dt;
             }
 
             float payout = s.Running ? strength * 1.2f * runLineMult : 0f;

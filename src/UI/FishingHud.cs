@@ -84,7 +84,7 @@ namespace ValheimDeepWaters
             }
             if (s != null) DrawLineOut(s, right, y);
 
-            DrawDrag(right - 66f, _height - 196f, FishingController.DragLevel);
+            DrawDials(right - 94f, _height - 160f, FishingController.DragLevel, FishingController.ReelSpeedLevel);
             DrawHint(s);
             if (s != null && FishingController.BossFightNow) DrawBossBar(s);
         }
@@ -198,15 +198,31 @@ namespace ValheimDeepWaters
             Fill(new Rect(bar.x, bar.y, bar.width * frac, bar.height), Color.Lerp(Amber, Ember, Mathf.InverseLerp(0.6f, 1f, frac)));
         }
 
-        /// <summary>A round brass-rimmed gauge with 12 pips that light up with drag.</summary>
-        private static void DrawDrag(float cx, float cy, float drag01)
+        /// <summary>
+        /// Two round brass-rimmed gauges, one behind the other: the drag in front (12 amber pips) and the reel speed on
+        /// the bigger one behind it (10 green pips round the rim, one per step). Lit pips show the setting; the exact
+        /// value is shown in the middle of the screen as it changes.
+        /// </summary>
+        private static void DrawDials(float cx, float cy, float drag01, float reel01)
         {
-            const float radius = 64f, pipRing = 49f, pip = 11f;
-            const int pips = 12;
-
+            const float outer = 92f, reelRing = 79f, reelPip = 10f;
             GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(cx - radius, cy - radius, radius * 2f, radius * 2f), _discTex);
+            GUI.DrawTexture(new Rect(cx - outer, cy - outer, outer * 2f, outer * 2f), _discTex);
+            int reelLit = Mathf.RoundToInt(Mathf.Clamp01(reel01) * 10f);
+            for (int i = 0; i < 10; i++)
+            {
+                // round the top three quarters, leaving the bottom for the label
+                float a = Mathf.Lerp(-135f, 135f, i / 9f) * Mathf.Deg2Rad;
+                var p = new Vector2(cx + Mathf.Sin(a) * reelRing, cy - Mathf.Cos(a) * reelRing);
+                GUI.color = i < reelLit ? Moss : new Color(0.35f, 0.30f, 0.24f, 0.9f);
+                GUI.DrawTexture(new Rect(p.x - reelPip / 2f, p.y - reelPip / 2f, reelPip, reelPip), _pipTex);
+            }
+            GUI.color = Color.white;
+            Label(new Rect(cx - outer, cy + reelRing - 12f, outer * 2f, 22f), "REEL", _smallBold, Gold, TextAnchor.MiddleCenter);
 
+            const float radius = 60f, pipRing = 46f, pip = 11f;
+            const int pips = 12;
+            GUI.DrawTexture(new Rect(cx - radius, cy - radius, radius * 2f, radius * 2f), _discTex);
             int lit = Mathf.RoundToInt(Mathf.Clamp01(drag01) * pips);
             for (int i = 0; i < pips; i++)
             {
@@ -216,15 +232,15 @@ namespace ValheimDeepWaters
                 GUI.DrawTexture(new Rect(p.x - pip / 2f, p.y - pip / 2f, pip, pip), _pipTex);
             }
             GUI.color = Color.white;
-
-            Label(new Rect(cx - radius, cy - 20f, radius * 2f, 30f), $"{drag01 * 100f:0}%", _big, Cream, TextAnchor.MiddleCenter);
-            Label(new Rect(cx - radius, cy + 8f, radius * 2f, 20f), "DRAG", _smallBold, Gold, TextAnchor.MiddleCenter);
+            Label(new Rect(cx - radius, cy - 11f, radius * 2f, 22f), "DRAG", _smallBold, Gold, TextAnchor.MiddleCenter);
         }
 
         /// <summary>One-line hint plus key prompts, in a small panel under Valheim's stamina bar.</summary>
         private static void DrawHint(FishingSession? s)
         {
             string bait = VdwConfig.CycleBaitKey.Value.ToString();
+            string drag = FishingController.ControlLabel(VdwConfig.DragControl.Value);
+            string speed = FishingController.ControlLabel(VdwConfig.ReelSpeedControl.Value);
             string text;
             Color color = Cream;
             (string key, string label)[] keys;
@@ -232,7 +248,7 @@ namespace ValheimDeepWaters
             if (s == null)
             {
                 text = "Hold to charge, release to cast";
-                keys = new[] { ("LMB", "Cast"), (bait, "Bait"), (VdwConfig.CycleHookKey.Value.ToString(), "Hook"), ("Wheel", "Drag") };
+                keys = new[] { ("LMB", "Cast"), (bait, "Bait"), (VdwConfig.CycleHookKey.Value.ToString(), "Hook"), (drag, "Drag") };
             }
             else switch (s.Phase)
             {
@@ -244,11 +260,22 @@ namespace ValheimDeepWaters
                 case FishingPhase.Fighting:
                     text = s.Running ? "The fish is running!" : "Reel it in";
                     if (s.Running) color = Amber;
-                    keys = new[] { ("Hold RMB", "Reel"), ("Wheel", "Drag") };
+                    keys = new[] { ("Hold RMB", "Reel"), ("Shift", "Full speed"), (speed, "Reel speed"), (drag, "Drag") };
                     break;
                 default:
-                    text = "Ignore the nibbles. Wait for the real bite";
-                    keys = new[] { ("RMB", "Reel in"), ("Wheel", "Drag") };
+                    if (s.Lure != null)
+                    {
+                        // the retrieve you're doing: green when it suits the lure, dim while the lure sits still
+                        text = s.Style == RetrieveStyle.None ? "Work the lure: reel, pause, twitch" : Retrieves.Name(s.Style) + " retrieve";
+                        if (s.Style == RetrieveStyle.None) color = Dim;
+                        else if (Retrieves.IsNatural(s.Lure, s.Style)) color = Moss;
+                        keys = new[] { ("Hold RMB", "Retrieve"), ("LMB", "Twitch"), (speed, "Speed"), (drag, "Drag") };
+                    }
+                    else
+                    {
+                        text = "Ignore the nibbles. Wait for the real bite";
+                        keys = new[] { ("RMB", "Reel in"), (drag, "Drag") };
+                    }
                     break;
             }
 

@@ -216,7 +216,7 @@ namespace ValheimDeepWaters
         private static Material? _vanillaLineMat;
         private static float _vanillaLineWidth = 1f;
         private static LineTextureMode _vanillaTextureMode = LineTextureMode.Tile;
-        private const float LineThickness = 0.02f;    // metres, close up (thinner further out)
+        private const float LineThickness = 0.028f;   // metres, close up (thinner further out)
         private static AnimationCurve? _vanillaLineCurve;
         private static bool _lookedForLine;
 

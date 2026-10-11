@@ -27,6 +27,23 @@ namespace ValheimDeepWaters
         /// <summary>Where the rod is held (marker Rod.Grip), if the model has one.</summary>
         public Transform? Grip { get { Init(); return _grip; } }
 
+        /// <summary>The reel's turning part (Reel.Spool), if the model has one.</summary>
+        public Transform? Spool { get { Init(); return _spool; } }
+
+        /// <summary>The reel's axle in world space, and how far it has turned (degrees).</summary>
+        public Vector3 SpoolAxis
+        {
+            get
+            {
+                Init();
+                if (_spool == null) return Vector3.right;
+                // turning about its own axle leaves the axle where it is: parent * rest * axis
+                var parent = _spool.parent != null ? _spool.parent.rotation : Quaternion.identity;
+                return (parent * (_spoolRest * _spoolAxis)).normalized;
+            }
+        }
+        public float Spin => _spin;
+
         private void Init()
         {
             if (_ready) return;
@@ -47,6 +64,22 @@ namespace ValheimDeepWaters
             _tip = Named("Rod.Tip") ?? (_blank.Length > 0 ? _blank[_blank.Length - 1] : null);
             _bendDir = Named("Rod.BendDir");
             _grip = Named("Rod.Grip");
+            // The handle doesn't bend: segments starting at or behind the grip (and just ahead of it, where the hands and
+            // reel are) keep still, so the bend can't swing the handle out of the angler's hands.
+            if (_grip != null && _tip != null && _blank.Length > 0)
+            {
+                Vector3 axisDir = _tip.position - _blank[0].position;
+                float scale = Mathf.Max(1e-4f, transform.lossyScale.x);
+                if (axisDir.sqrMagnitude > 1e-8f)
+                {
+                    axisDir.Normalize();
+                    float gripAt = Vector3.Dot(_grip.position - _blank[0].position, axisDir);
+                    for (int i = 0; i < _blank.Length; i++)
+                        if (Vector3.Dot(_blank[i].position - _blank[0].position, axisDir) < gripAt + 0.12f * scale) _share[i] = 0f;
+                    float kept = _share.Sum();
+                    if (kept > 1e-4f) for (int i = 0; i < _share.Length; i++) _share[i] /= kept;
+                }
+            }
             _spool = Named("Reel.Spool");
             var axis = Named("Reel.Axis");
             if (_spool != null)

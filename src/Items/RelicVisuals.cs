@@ -8,22 +8,25 @@ namespace ValheimDeepWaters
     /// How the two worn relics look. Jörmungandr's Scale is the vanilla linen cape with serpent-scale maps
     /// (buff_relic_scale_cape_Albedo / _Normal / _MetallicSmoothness / _Emission textures in a bundle) on both the
     /// dropped cloth and the worn cape. The Pearl of Njord is a whole belt with the pearl in front (the
-    /// buff_relic_pearl model): worn, it takes the vanilla belt's place round the wearer's hips; everyone sees it,
-    /// since the belt a player wears is synced and this runs on every client.
+    /// buff_relic_pearl model): worn, it takes the vanilla belt's place round the wearer's hips. The Rune of Njord is a
+    /// necklace (buff_rune_njord) hung at the base of the neck. Everyone sees them, since the belt a player wears is
+    /// synced and this runs on every client.
     /// </summary>
     internal static class RelicVisuals
     {
         private const string ScaleCape = "buff_relic_scale_cape";
         private const string PearlModel = "buff_relic_pearl";
         private const string PearlItem = "VDW_Buff_relic_pearl";
+        private const string RuneModel = "buff_rune_njord";
+        private const string RuneItem = "VDW_Buff_rune_njord";
 
         public static void Apply(GameObject prefab, string baseName)
         {
             if (baseName == "buff_relic_scale") RetextureCape(prefab);
-            if (baseName == PearlModel) HideWornBelt(prefab);
+            if (baseName == PearlModel || baseName == RuneModel) HideWornBelt(prefab);
         }
 
-        /// <summary>The pearl replaces the belt it's cloned from: the vanilla belt (attach_skin) isn't shown when worn.</summary>
+        /// <summary>The pearl and the rune replace the belt they're cloned from: the vanilla belt (attach_skin) isn't shown when worn.</summary>
         private static void HideWornBelt(GameObject prefab)
         {
             var skin = prefab.transform.Find("attach_skin");
@@ -99,9 +102,47 @@ namespace ValheimDeepWaters
             Plugin.Log.LogInfo($"Jörmungandr's Scale: linen cape retextured ({made.Count} material(s)).");
         }
 
-        // ------------------------------------------------------------------ the pearl on the belt
-        private static int _pearlHash;
-        private static int PearlHash => _pearlHash != 0 ? _pearlHash : _pearlHash = PearlItem.GetStableHashCode();
+
+        // ------------------------------------------------------------------ relics worn on the body
+        /// <summary>
+        /// A relic shown on whoever wears it, in place of the vanilla belt it's cloned from: its model is placed against
+        /// one bone in the skeleton's rest pose (Fit: y up and z forward of it, metres; w its scale; Shape stretches it
+        /// across, tall and front to back), then skinned to the body's bones so it bends with it (WornSkinning) - or, if that
+        /// can't be done, carried rigidly by one bone.
+        /// </summary>
+        private sealed class Worn
+        {
+            public string Item = "", Model = "", Label = "";
+            public string[] Anchor = { "Hips" };      // placed against the first of these the skeleton has
+            public string Parent = "Hips";            // and moves with this one, if it can't be skinned
+            public string[] Bones = { "Hips" };       // skinned to these (see WornSkinning)
+            public float Strength = 1f;               // how fully it follows them (0: rigid on Parent, 1: fully skinned)
+            public Vector4 Fit;
+            public Vector3 Shape = Vector3.one;
+            private int _hash;
+            public int Hash => _hash != 0 ? _hash : _hash = Item.GetStableHashCode();
+        }
+
+        // The pearl: a whole belt round the hips (38 cm across, build_pearl_belt.py), a little taller and deeper than the
+        // model so it doesn't clip into the body. Fitted in game.
+        private static readonly Worn Pearl = new Worn
+        {
+            Item = PearlItem, Model = PearlModel, Label = "Pearl belt",
+            Fit = new Vector4(0f, 0.29f, 0.01f, 1f), Shape = new Vector3(1f, 1.1f, 1.1f),
+            Bones = new[] { "Hips", "Spine", "Spine1", "LeftUpLeg", "RightUpLeg" },
+        };
+        // The Rune of Njord: a necklace (cord loop 20 cm across, build_rune_necklace.py) whose back lies at the base of the
+        // neck, moving with the upper chest so it doesn't swing with every turn of the head.
+        private static readonly Worn Rune = new Worn
+        {
+            Item = RuneItem, Model = RuneModel, Label = "Rune necklace",
+            Anchor = new[] { "Neck", "Spine2" }, Parent = "Spine2",
+            Bones = new[] { "Spine1", "Spine2", "Neck", "LeftShoulder", "RightShoulder" },
+            Strength = 0.5f,                          // half: it bends with the chest without denting at every vertex
+            Fit = new Vector4(0f, 0.09f, 0.06f, 1.2f), Shape = new Vector3(1f, 1f, 1.15f),   // fitted in game
+        };
+        private static readonly Worn[] WornRelics = { Pearl, Rune };
+
         private static readonly System.Reflection.FieldInfo? UtilityHash = AccessTools.Field(typeof(VisEquipment), "m_currentUtilityItemHash");
 
         [HarmonyPatch(typeof(VisEquipment), "UpdateEquipmentVisuals")]
@@ -110,36 +151,51 @@ namespace ValheimDeepWaters
             private static void Postfix(VisEquipment __instance)
             {
                 if (UtilityHash == null || __instance.m_bodyModel == null) return;
-                bool wearing = UtilityHash.GetValue(__instance) is int h && h == PearlHash;
-                var have = __instance.GetComponent<PearlOnBelt>();
-                if (wearing && have == null) __instance.gameObject.AddComponent<PearlOnBelt>().Attach(__instance);
-                else if (!wearing && have != null) have.Remove();
-                if (wearing) __instance.GetComponent<PearlOnBelt>()?.HideBelt(__instance);
+                int worn = UtilityHash.GetValue(__instance) is int h ? h : 0;
+                foreach (var spec in WornRelics)
+                {
+                    bool wearing = worn == spec.Hash;
+                    var have = __instance.GetComponents<WornRelic>().FirstOrDefault(w => w.Spec == spec);
+                    if (wearing && have == null) (have = __instance.gameObject.AddComponent<WornRelic>()).Attach(__instance, spec);
+                    else if (!wearing && have != null) { have.Remove(); have = null; }
+                    if (have != null) have.HideBelt(__instance);
+                }
             }
         }
 
-        // How the belt sits: y up from the hips bone, z forward from it (metres), w its overall scale; Shape stretches it
-        // on its own axes (x across, y tall, z front to back - a little deeper and taller than the model so it doesn't
-        // clip into the body). The model is 38 cm across (build_pearl_belt.py); vdw_debug pearlfit changes these in game.
-        private static Vector4 Fit = new Vector4(0f, 0.29f, 0.1f, 1f);   // fitted in game
-        private static Vector3 Shape = new Vector3(1f, 1.1f, 1.1f);
+        /// <summary>vdw_debug pearlfit: sets the pearl belt's scale, height, forward offset and stretch, and refits it on everyone.</summary>
+        internal static string PearlFit(float scale, float up, float forward, float tall, float deep) =>
+            Refit(Pearl, new Vector4(0f, up, forward, scale), new Vector3(1f, tall, deep));
 
-        /// <summary>vdw_debug pearlfit: sets the belt's scale, height, forward offset and stretch, and refits it on everyone.</summary>
-        internal static string PearlFit(float scale, float up, float forward, float tall, float deep)
+        /// <summary>vdw_debug runefit: the same for the rune necklace (width instead of height: it lies round the neck).</summary>
+        internal static string RuneFit(float scale, float up, float forward, float wide, float deep) =>
+            Refit(Rune, new Vector4(0f, up, forward, scale), new Vector3(wide, 1f, deep));
+
+        /// <summary>vdw_debug runeskin: how fully the necklace follows the body (0 rigid on the chest, 1 fully skinned).</summary>
+        internal static string RuneSkin(float strength)
         {
-            Fit = new Vector4(0f, up, forward, scale);
-            Shape = new Vector3(1f, tall, deep);
+            Rune.Strength = Mathf.Clamp01(strength);
+            return Refit(Rune, Rune.Fit, Rune.Shape) + $" Skinning {Rune.Strength:0.00}.";
+        }
+
+        private static string Refit(Worn spec, Vector4 fit, Vector3 shape)
+        {
+            spec.Fit = fit;
+            spec.Shape = shape;
             int n = 0;
-            foreach (var p in Object.FindObjectsByType<PearlOnBelt>(FindObjectsSortMode.None)) { p.Refit(); n++; }
-            string msg = $"Pearl belt: scale {scale:0.00}, up {up:0.00}, forward {forward:0.00}, height x{tall:0.00}, depth x{deep:0.00} (refitted on {n} wearer(s)).";
+            foreach (var w in Object.FindObjectsByType<WornRelic>(FindObjectsSortMode.None))
+                if (w.Spec == spec) { w.Refit(); n++; }
+            string msg = $"{spec.Label}: scale {fit.w:0.00}, up {fit.y:0.00}, forward {fit.z:0.00}, stretch x{shape.x:0.00} y{shape.y:0.00} z{shape.z:0.00} (refitted on {n} wearer(s)).";
             Plugin.Log.LogInfo(msg);
             return msg;
         }
 
-        private sealed class PearlOnBelt : MonoBehaviour
+        private sealed class WornRelic : MonoBehaviour
         {
-            private GameObject? _pearl;
+            public Worn? Spec;
+            private GameObject? _model;
             private GameObject? _hiddenBelt;
+            private VisEquipment? _vis;
 
             /// <summary>Hides the worn vanilla belt once per belt instance Valheim spawns.</summary>
             public void HideBelt(VisEquipment vis)
@@ -150,62 +206,74 @@ namespace ValheimDeepWaters
                 _hiddenBelt = list[0];
             }
 
-            public void Attach(VisEquipment vis)
+            public void Attach(VisEquipment vis, Worn spec)
             {
-                var model = CustomModels.GetBundlePrefab(PearlModel);
-                var hips = vis.m_bodyModel.bones.FirstOrDefault(b => b != null && b.name == "Hips");
-                if (model == null || hips == null) return;
-                _pearl = Instantiate(model);
-                _pearl.name = "VDW_PearlOnBelt";
-                foreach (var c in _pearl.GetComponentsInChildren<Collider>(true)) Destroy(c);
-                foreach (var rb in _pearl.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
-                // Round the hips at the vanilla belt line, the pearl to the front, squared to the character - worked out
-                // against the hips in the skeleton's rest pose (not wherever the walk or idle has twisted them right now,
-                // which left the belt turned), then carried along by the hips as they move.
-                var root = vis.transform;
-                var rest = RestHips(vis.m_bodyModel, hips);
-                var frame = new GameObject("vdw_rest_hips").transform;
-                frame.SetPositionAndRotation(rest.pos, rest.rot);
-                frame.localScale = hips.lossyScale;
-                _pearl.transform.SetPositionAndRotation(rest.pos + root.forward * Fit.z + root.up * Fit.y,
-                    Quaternion.LookRotation(root.forward, root.up));
-                _pearl.transform.localScale = Shape * Fit.w;
-                _pearl.transform.SetParent(frame, true);
-                Vector3 lp = _pearl.transform.localPosition, ls = _pearl.transform.localScale;
-                Quaternion lr = _pearl.transform.localRotation;
-                _pearl.transform.SetParent(hips, false);
-                _pearl.transform.localPosition = lp; _pearl.transform.localRotation = lr; _pearl.transform.localScale = ls;
-                Destroy(frame.gameObject);
+                Spec = spec;
                 _vis = vis;
+                var model = CustomModels.GetBundlePrefab(spec.Model);
+                Transform? Find(string name) => vis.m_bodyModel.bones.FirstOrDefault(b => b != null && b.name == name);
+                var anchor = spec.Anchor.Select(Find).FirstOrDefault(b => b != null);
+                var parent = Find(spec.Parent);
+                if (model == null || anchor == null || parent == null) return;
+                _model = Instantiate(model);
+                _model.name = "VDW_Worn_" + spec.Model;
+                foreach (var c in _model.GetComponentsInChildren<Collider>(true)) Destroy(c);
+                foreach (var rb in _model.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
+                // Placed against the anchor bone and squared to the character - worked out in the skeleton's rest pose (not
+                // wherever the walk or idle has twisted the bones right now, which left the belt turned), then carried
+                // along by the parent bone as it moves.
+                var root = vis.transform;
+                var at = RestBone(vis.m_bodyModel, anchor);
+                var carry = RestBone(vis.m_bodyModel, parent);
+                var frame = new GameObject("vdw_rest_bone").transform;
+                frame.SetPositionAndRotation(carry.pos, carry.rot);
+                frame.localScale = parent.lossyScale;
+                _model.transform.SetPositionAndRotation(at.pos + root.forward * spec.Fit.z + root.up * spec.Fit.y,
+                    Quaternion.LookRotation(root.forward, root.up));
+                _model.transform.localScale = spec.Shape * spec.Fit.w;
+                // Skinned to the body so it bends with it; if that can't be done, carried rigidly by the parent bone.
+                var skinned = WornSkinning.Skin(vis.m_bodyModel, _model,
+                    $"{spec.Model}|{spec.Fit}|{spec.Shape}|{spec.Strength}", spec.Bones, spec.Parent, spec.Strength);
+                if (skinned != null)
+                {
+                    Destroy(frame.gameObject);
+                    Destroy(_model);
+                    _model = skinned;
+                    return;
+                }
+                _model.transform.SetParent(frame, true);
+                Vector3 lp = _model.transform.localPosition, ls = _model.transform.localScale;
+                Quaternion lr = _model.transform.localRotation;
+                _model.transform.SetParent(parent, false);
+                _model.transform.localPosition = lp; _model.transform.localRotation = lr; _model.transform.localScale = ls;
+                Destroy(frame.gameObject);
             }
 
-            /// <summary>Where the hips bone would be in the rest pose (from the skin's bind poses), as the body stands now.</summary>
-            private static (Vector3 pos, Quaternion rot) RestHips(SkinnedMeshRenderer body, Transform hips)
+            /// <summary>Where a bone would be in the rest pose (from the skin's bind poses), as the body stands now.</summary>
+            private static (Vector3 pos, Quaternion rot) RestBone(SkinnedMeshRenderer body, Transform bone)
             {
-                int i = System.Array.IndexOf(body.bones, hips);
+                int i = System.Array.IndexOf(body.bones, bone);
                 var bind = body.sharedMesh != null ? body.sharedMesh.bindposes : null;
-                if (i < 0 || bind == null || i >= bind.Length) return (hips.position, hips.rotation);
+                if (i < 0 || bind == null || i >= bind.Length) return (bone.position, bone.rotation);
                 var m = body.transform.localToWorldMatrix * bind[i].inverse;
                 return (m.GetColumn(3), m.rotation);
             }
 
-            private VisEquipment? _vis;
-
-            /// <summary>Puts the belt back with the current fit (vdw_debug pearlfit).</summary>
+            /// <summary>Puts the model back with the current fit (vdw_debug pearlfit / runefit).</summary>
             public void Refit()
             {
-                if (_vis == null || _pearl == null) return;
-                Destroy(_pearl);
-                Attach(_vis);
+                if (_vis == null || Spec == null) return;
+                if (_model != null) Destroy(_model);
+                Attach(_vis, Spec);
             }
 
             public void Remove()
             {
-                if (_pearl != null) Destroy(_pearl);
+                if (_model != null) Destroy(_model);
                 Destroy(this);
             }
 
-            private void OnDestroy() { if (_pearl != null) Destroy(_pearl); }
+            private void OnDestroy() { if (_model != null) Destroy(_model); }
         }
     }
 }

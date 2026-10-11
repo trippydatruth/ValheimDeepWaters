@@ -43,8 +43,13 @@ namespace ValheimDeepWaters
         // moves, or just after it stops).
         private const float LureCastFactor = 1.5f;   // lures cast this much further than a float rig
         private const float LureWaitFactor = 0.5f;   // and fish find them twice as fast
-        private const float RetrieveFraction = 0.35f; // the retrieve, as a share of the rod's reel speed (4.5 m/s -> 1.6 m/s)
+        // Reel speed (Alt + wheel, 0.1..1; Shift reels at full speed): the retrieve runs at a share of the rod's reel
+        // speed, and the fight reels at a share of its full rate (with less line strain when slower).
+        private const float ReelSpeedStep = 0.1f;
+        private const float RetrieveSlowest = 0.1f, RetrieveFastest = 0.6f;   // of the rod's reel speed (default 0.6 -> 0.4)
+        private const float FightSlowest = 0.3f, FightFastest = 1f;          // of the full fight reel rate (Shift = 1)
         private const float LurePause = 1.2f;        // a lure stays alive this long after you stop reeling
+        private const float TwitchDistance = 0.35f;  // how far a rod twitch (left click) darts the lure in
         private const float RetrieveEndDistance = 2.5f;
         private const float HookWindowSeconds = 1.2f;      // time after the real bite to set the hook
         private const float BaseHookChance = 0.72f;
@@ -53,6 +58,8 @@ namespace ValheimDeepWaters
         // tension but reels faster, tires the fish faster and gives up less line on a run.
         internal const float MaxTension = 100f;
         private const float ReelTensionLoad = 10f;
+        // Pulling back (left click with a fish on): extra line strain, extra tiring, a little line won, stamina used.
+        private const float PullTensionLoad = 7f, PullTire = 1.2f, PullGain = 0.6f, PullStamina = 4f;
         private const float LineRelaxRate = 8f;
         private const float PlayerStaminaDrain = 3f;       // per second while reeling, before the fish's strength
         private const float PlayerStaminaPerStrength = 1.2f;
@@ -82,6 +89,7 @@ namespace ValheimDeepWaters
         private static bool _logOpen;
         private static bool _reelingNow;
         private static float _dragLevel = 0.5f;
+        private static float _reelSpeed = 0.6f;
 
         // Charge-cast state, live only while _session == null.
         private static bool _charging;
@@ -96,6 +104,12 @@ namespace ValheimDeepWaters
         // Read by FishingHud.
         internal static FishingSession? Session => _session;
         internal static float DragLevel => _dragLevel;
+        internal static float ReelSpeedLevel => _reelSpeed;
+
+        /// <summary>Shift held: reel at full speed.</summary>
+        private static bool FullSpeed => ZInput.GetButton("Run");
+        private static float RetrieveShare => FullSpeed ? 1f : Mathf.Lerp(RetrieveSlowest, RetrieveFastest, _reelSpeed);
+        private static float FightShare => FullSpeed ? 1f : Mathf.Lerp(FightSlowest, FightFastest, _reelSpeed);
         internal static bool LogOpen => _logOpen;
         internal static BaitStack? ActiveBait(Player player) => GetActiveBait(player);
 
@@ -127,6 +141,7 @@ namespace ValheimDeepWaters
 
             bool rodActive = _rodEquipped && !player.IsDead();
             RodMotion.Apply(player, _session, rodActive, _reelingNow);
+            RodMotion.ApplyOthers(player);           // everyone else fishing nearby, from what they share
             FishingFx.UpdateReel(player, rodActive && _reelingNow, _session != null ? _session.Tension / Mathf.Max(1f, _session.Rod.BreakTension) : 0f,
                 rodActive && _session != null ? _session.DragSlip : 0f);
             AnimationOverride.SetActive(player, rodActive);
@@ -156,6 +171,7 @@ namespace ValheimDeepWaters
             }
 
             bool blocked = InputBlocked();
+            if (!blocked) UpdateSideButtons();
 
             if (!blocked && VdwConfig.CycleBaitKey.Value.IsDown())
                 Tackle.CycleSlot(player, Tackle.BaitSlot);
@@ -170,8 +186,9 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>
-        /// Called from Plugin.OnGUI. Drag reads the wheel from IMGUI events rather than ZInput, because
-        /// ScrollSuppression zeroes ZInput's scroll for every caller while the rod is out.
+        /// Called from Plugin.OnGUI. The wheel is read from IMGUI events rather than ZInput, because ScrollSuppression
+        /// zeroes ZInput's scroll for every caller while the rod is out. Drag and reel speed each go on the control
+        /// chosen in the config (by default the wheel for drag, Alt + wheel for reel speed).
         /// </summary>
         public static void ProcessScrollEvent()
         {
@@ -180,17 +197,43 @@ namespace ValheimDeepWaters
             if (e == null || e.type != EventType.ScrollWheel) return;
             if (InputBlocked()) return;
 
-            // IMGUI reports scrolling down as positive; scroll up = more drag.
+            // IMGUI reports scrolling down as positive: scroll up = more.
             float scroll = -e.delta.y;
-            if (Mathf.Abs(scroll) > 0.0001f)
+            if (Mathf.Abs(scroll) > 0.0001f) Step(e.alt ? StepControl.AltMouseWheel : StepControl.MouseWheel, Mathf.Sign(scroll));
+            e.Use();
+        }
+
+        /// <summary>The mouse side buttons, if drag or reel speed is set to them: Mouse 5 (forward) up, Mouse 4 (back) down.</summary>
+        private static void UpdateSideButtons()
+        {
+            if (VdwConfig.DragControl.Value != StepControl.MouseSideButtons && VdwConfig.ReelSpeedControl.Value != StepControl.MouseSideButtons) return;
+            if (BepInEx.UnityInput.Current.GetKeyDown(KeyCode.Mouse4)) Step(StepControl.MouseSideButtons, 1f);
+            if (BepInEx.UnityInput.Current.GetKeyDown(KeyCode.Mouse3)) Step(StepControl.MouseSideButtons, -1f);
+        }
+
+        /// <summary>One step up or down on a control: drag if it's on that control, else reel speed if that is.</summary>
+        private static void Step(StepControl control, float dir)
+        {
+            if (VdwConfig.DragControl.Value == control)
             {
-                _dragLevel = Mathf.Clamp01(_dragLevel + Mathf.Sign(scroll) * DragStep);
+                _dragLevel = Mathf.Clamp01(_dragLevel + dir * DragStep);
                 if (_session != null) _session.Drag = _dragLevel;
                 Msg($"Drag: {_dragLevel * 100f:0}%");
             }
-
-            e.Use();
+            else if (VdwConfig.ReelSpeedControl.Value == control)
+            {
+                _reelSpeed = Mathf.Clamp(Mathf.Round((_reelSpeed + dir * ReelSpeedStep) * 10f) / 10f, 0.1f, 1f);
+                Msg($"Reel speed: {_reelSpeed * 100f:0}%");
+            }
         }
+
+        /// <summary>How a control is shown in the key prompts.</summary>
+        internal static string ControlLabel(StepControl control) => control switch
+        {
+            StepControl.AltMouseWheel => "Alt+Wheel",
+            StepControl.MouseSideButtons => "Mouse 4/5",
+            _ => "Wheel",
+        };
 
         private static void CancelCharge()
         {
@@ -295,6 +338,25 @@ namespace ValheimDeepWaters
 
             __result = false;
             return false;
+        }
+    }
+}
+
+namespace ValheimDeepWaters
+{
+    /// <summary>
+    /// With a Deep Waters rod out, right click reels and left click casts, twitches and pulls back - all read by the mod.
+    /// Valheim mustn't also see them: right click is its block button, and on a rod that plays its own reeling pump
+    /// animation. Both are taken out of the player's controls (the rest - moving, jumping, running - go through).
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(Player), nameof(Player.SetControls))]
+    internal static class NoVanillaRodControls
+    {
+        private static void Prefix(Player __instance, ref bool attack, ref bool attackHold, ref bool block, ref bool blockHold)
+        {
+            if (!VdwConfig.Enabled.Value || __instance != Player.m_localPlayer) return;
+            if (!ContentRegistry.IsRod(__instance.GetCurrentWeapon())) return;
+            attack = attackHold = block = blockHold = false;
         }
     }
 }

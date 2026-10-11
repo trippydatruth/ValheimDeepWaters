@@ -22,6 +22,8 @@ namespace ValheimDeepWaters
         public static ConfigEntry<KeyboardShortcut> CycleBaitKey = null!;
         public static ConfigEntry<KeyboardShortcut> CycleHookKey = null!;
         public static ConfigEntry<KeyboardShortcut> LogKey = null!;
+        public static ConfigEntry<StepControl> DragControl = null!;
+        public static ConfigEntry<StepControl> ReelSpeedControl = null!;
 
         public static string FishFile => Path.Combine(Plugin.ConfigDirectory, "Fish.json");
         public static string BaitFile => Path.Combine(Plugin.ConfigDirectory, "Baits.json");
@@ -55,6 +57,19 @@ namespace ValheimDeepWaters
             CycleBaitKey = cfg.Bind("3 Controls", "Cycle Bait Key", new KeyboardShortcut(KeyCode.B), "Swaps in the next bait you're carrying.");
             CycleHookKey = cfg.Bind("3 Controls", "Cycle Hook Key", new KeyboardShortcut(KeyCode.H), "Swaps in the next hook you're carrying.");
             LogKey = cfg.Bind("3 Controls", "Catch Log Key", new KeyboardShortcut(KeyCode.J), "Opens the catch log.");
+            DragControl = cfg.Bind("3 Controls", "Drag Control", StepControl.MouseWheel, "What sets the drag while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). If drag and reel speed use the same control, drag gets it.");
+            ReelSpeedControl = cfg.Bind("3 Controls", "Reel Speed Control", StepControl.AltMouseWheel, "What sets the reel speed while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). Shift always reels at full speed.");
         }
+    }
+}
+
+namespace ValheimDeepWaters
+{
+    /// <summary>A control that steps a setting (drag, reel speed) up and down.</summary>
+    public enum StepControl
+    {
+        MouseWheel,      // wheel up = more
+        AltMouseWheel,   // Alt held + wheel
+        MouseSideButtons // Mouse 5 (forward) = more, Mouse 4 (back) = less
     }
 }
