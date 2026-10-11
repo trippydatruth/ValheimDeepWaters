@@ -25,9 +25,9 @@ namespace ValheimDeepWaters
 
         /// <summary>
         /// customModelKey ("fish_&lt;id&gt;" / "bait_&lt;id&gt;") is tried first; without a custom model the
-        /// prefab's own meshes are copied.
+        /// prefab's own meshes are copied. <paramref name="scale"/> shows it bigger (or smaller) than the model.
         /// </summary>
-        public static HookedFishVisual? Create(GameObject? prefab, string? customModelKey = null)
+        public static HookedFishVisual? Create(GameObject? prefab, string? customModelKey = null, float scale = 1f)
         {
             var go = new GameObject("VDW_FishVisual");
             bool any = false;
@@ -77,6 +77,7 @@ namespace ValheimDeepWaters
                 return null;
             }
 
+            go.transform.localScale = Vector3.one * Mathf.Max(0.01f, scale);   // a boss can be shown bigger than its model
             // go is still at the world origin, so the bounds' top is the model's top relative to its origin.
             var renderers = go.GetComponentsInChildren<Renderer>();
             var bounds = renderers[0].bounds;
@@ -152,7 +153,30 @@ namespace ValheimDeepWaters
             var rotation = _facing * Quaternion.Euler(0f, swish, 0f);
 
             float leap = Time.time < _leapEnd ? Mathf.InverseLerp(_leapStart, _leapEnd, Time.time) : -1f;
-            if (leap >= 0f)
+            float rear = Time.time - _rearStart;
+            float hump = Time.time < _humpEnd ? Mathf.InverseLerp(_humpStart, _humpEnd, Time.time) : -1f;
+            if (rear >= 0f && rear < _rearRise + _rearHold + _rearFall)
+            {
+                // Reared up out of the water toward the angler, swaying, then crashing back down.
+                float up, pitch;
+                if (rear < _rearRise) { float k = Mathf.SmoothStep(0f, 1f, rear / _rearRise); up = k; pitch = -65f * k; }
+                else if (rear < _rearRise + _rearHold) { up = 1f; pitch = -65f + Mathf.Sin((rear - _rearRise) * 3f) * 6f; }
+                else { float k = (rear - _rearRise - _rearHold) / _rearFall; up = 1f - k * k; pitch = Mathf.Lerp(-65f, 20f, k); }
+                Vector3 face = _rearFace - displayPos; face.y = 0f;
+                if (face.sqrMagnitude > 0.01f) _facing = Quaternion.Slerp(_facing, Quaternion.LookRotation(face.normalized, Vector3.up), 1f - Mathf.Exp(-6f * Time.deltaTime));
+                float surface = SurfaceAt(displayPos) ?? displayPos.y;
+                displayPos.y = Mathf.Lerp(displayPos.y, surface + _rearHeight, up);
+                rotation = _facing * Quaternion.Euler(pitch, 0f, Mathf.Sin(rear * 2.2f) * 8f * up);
+            }
+            else if (hump >= 0f)
+            {
+                // A serpent's back rolling up through the surface and down again as it swims.
+                float surface = SurfaceAt(displayPos) ?? displayPos.y;
+                float k = Mathf.Sin(hump * Mathf.PI);
+                displayPos.y = Mathf.Max(displayPos.y, surface - _topOffset + _humpHeight * k - 0.05f);
+                rotation *= Quaternion.Euler(Mathf.Lerp(-12f, 12f, hump), 0f, 0f);
+            }
+            else if (leap >= 0f)
             {
                 // Arcs clear of the water, nose up on the way out and down on the way back in.
                 displayPos.y = Mathf.Max(displayPos.y, _leapBaseY + 4f * _leapHeight * leap * (1f - leap));
@@ -166,6 +190,33 @@ namespace ValheimDeepWaters
         }
 
         private float _leapStart, _leapEnd, _leapHeight, _leapBaseY;
+        private float _humpStart, _humpEnd, _humpHeight;
+        private float _rearStart = -999f, _rearRise, _rearHold, _rearFall, _rearHeight;
+        private Vector3 _rearFace;
+
+        /// <summary>
+        /// Rolls its back up through the surface, <paramref name="height"/> metres clear at the top, and down again over
+        /// <paramref name="duration"/> seconds (a sea serpent's hump).
+        /// </summary>
+        public void Surface(float height, float duration)
+        {
+            _humpStart = Time.time;
+            _humpEnd = Time.time + Mathf.Max(0.3f, duration);
+            _humpHeight = height;
+        }
+
+        /// <summary>
+        /// Rears up out of the water facing <paramref name="toward"/>: rises over <paramref name="rise"/> seconds, sways
+        /// for <paramref name="hold"/>, crashes down over <paramref name="fall"/>. <paramref name="height"/> lifts its middle
+        /// above the surface; tipped nose-up, the front half stands well clear and the rest stays under.
+        /// </summary>
+        public void Rear(Vector3 toward, float height, float rise, float hold, float fall)
+        {
+            _rearStart = Time.time;
+            _rearFace = toward;
+            _rearHeight = height;
+            _rearRise = rise; _rearHold = hold; _rearFall = fall;
+        }
 
         /// <summary>Marks this as bait on the hook: an animated model with a "Hooked" clip dangles and wriggles.</summary>
         public void SetOnHook()

@@ -209,7 +209,18 @@ namespace ValheimDeepWaters
         // Legendary fights (bosses and mini-bosses): 0 fresh, 1 enraged, 2 desperate. Never goes back down.
         public int FightPhase;
         public float NextDive;
+        // a sea-serpent boss's moves (FishingController.Serpent)
+        public SerpentMove Serpent;
+        public float SerpentStart, SerpentUntil, NextSerpentMove, NextHump;
+        public float CircleDir = 1f;
+        public bool RearCrashed;
 
         public float MaxLine => Mathf.Max(StartDistance, Rod.LineCapacity);
     }
+}
+
+namespace ValheimDeepWaters
+{
+    /// <summary>What a sea-serpent boss is doing: nothing special, circling the angler, charging at them, or reared up.</summary>
+    internal enum SerpentMove { None, Circle, Charge, Rear }
 }

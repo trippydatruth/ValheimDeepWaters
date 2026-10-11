@@ -327,7 +327,7 @@ namespace ValheimDeepWaters
 
                 if (ContentRegistry.FishItems.TryGetValue(s.Fish.Id, out var fishPrefab))
                 {
-                    s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish));
+                    s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish), BossFish.ScaleFor(s.Fish.Id));
                     if (s.HookedFish != null) s.HookedFish.StayUnder = 0.05f;
                 }
 
@@ -341,6 +341,8 @@ namespace ValheimDeepWaters
                 FishingFx.HookSet(bobberPos);
                 if (s.Swirl != null) { UnityEngine.Object.Destroy(s.Swirl); s.Swirl = null; }
                 s.FightPhase = 0;
+                s.Serpent = SerpentMove.None;
+                s.NextSerpentMove = Time.time + 1.5f;   // a sea serpent starts circling almost at once
                 Msg(s.Boss != null ? $"{BossFish.Phrase(s.Fish.Name)} is hooked!" : "Hook set!");
             }
             else
@@ -445,10 +447,11 @@ namespace ValheimDeepWaters
 
             if (s.AngleSpeed != 0f)
             {
-                float next = Mathf.Clamp(s.Angle + s.AngleSpeed * dt, -MaxLineAngle, MaxLineAngle);
+                float maxAngle = IsSerpent(s) ? SerpentMaxAngle : MaxLineAngle;
+                float next = Mathf.Clamp(s.Angle + s.AngleSpeed * dt, -maxAngle, maxAngle);
                 var p = player.transform.position + Quaternion.AngleAxis(next, Vector3.up) * s.CastDir * s.LineDistance;
                 bool shore = ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(p) > s.WaterY - 0.6f;
-                if (shore || Mathf.Abs(next) >= MaxLineAngle) s.AngleSpeed = -s.AngleSpeed;
+                if (shore || Mathf.Abs(next) >= maxAngle) s.AngleSpeed = -s.AngleSpeed;
                 else s.Angle = next;
             }
 
@@ -457,7 +460,8 @@ namespace ValheimDeepWaters
                 s.LeapEnd = 0f;
                 FishingFx.FishSplash(FishPos(player, s), 0.6f + s.FishWeight / 15f);
             }
-            if (s.LeapEnd <= 0f && s.Running && !exhausted && UnityEngine.Random.value < LeapChancePerSecond * Mathf.Sqrt(strength) * PhaseLeap(s) * dt)
+            // (a sea serpent doesn't leap: it humps, charges and rears instead)
+            if (s.LeapEnd <= 0f && s.Running && !exhausted && !IsSerpent(s) && UnityEngine.Random.value < LeapChancePerSecond * Mathf.Sqrt(strength) * PhaseLeap(s) * dt)
             {
                 float height = Mathf.Clamp(0.6f + s.FishWeight / 30f, 0.6f, 2f);
                 float duration = Mathf.Lerp(0.7f, 1.2f, height / 2f);
@@ -514,6 +518,7 @@ namespace ValheimDeepWaters
             if (s.Fish.Legendary)
                 UpdateLegendaryPhase(player, s, s.FishStaminaMax > 0f ? Mathf.Clamp01(s.FishStamina / s.FishStaminaMax) : 0f, exhausted, strength);
 
+            if (IsSerpent(s)) UpdateSerpent(player, s, dt, exhausted, pulling);
             UpdateRunPath(player, s, dt, exhausted);
 
             float tensionMult = Mathf.Lerp(DragTensionLoose, DragTensionTight, drag);

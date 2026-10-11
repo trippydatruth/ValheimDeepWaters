@@ -174,6 +174,10 @@ From the omen to the end of the fight the boss brings **its namesake boss's weat
 Elder's mist, Bonemass's rot, Moder's blizzard, Yagluth's embers, the Queen's gloom. Everyone within about 150 m
 sees it and hears the boss music, so friends can come and watch.
 
+The **Queen Eel** fights like a sea serpent: a 7.5 m monster that circles you, its back humping through the waves;
+once enraged it charges straight at you - reel hard to keep the line tight - and rears out of the water before
+crashing down. Pull back while it's reared up: that's when it tires fastest.
+
 The fight brings up a **boss bar** with its name - its stamina, which drains faster the harder you fight it
 (tight drag, high tension) and recovers if you give it slack, so no two fights are alike. It plays its boss's
 **music** and goes through **phases**: at two thirds it's enraged (pulls harder, leaps more), at one third

@@ -18,4 +18,5 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
     *Done: each boss brings its namesake boss's weather and music to everyone within 150 m.*
 11. **Valheim style.** Restyle models and textures to fit Valheim's look better.
 12. **Queen Eel.** Make the model larger and the fight feel like a sea serpent fight.
+    *Done: shown at 7.5 m, with a sea-serpent fight (circling, charges, rearing up, tail slaps).*
 13. **Anything that makes the mod feel more fleshed out.**

@@ -108,7 +108,7 @@ namespace ValheimDeepWaters
             }
 
             // Desperate: sudden dives that rip line off the reel and spike the tension.
-            if (s.FightPhase == 2 && !exhausted && Time.time >= s.NextDive)
+            if (s.FightPhase == 2 && !exhausted && Time.time >= s.NextDive && s.Serpent == SerpentMove.None)
             {
                 s.NextDive = Time.time + Random.Range(5f, 9f);
                 s.LineDistance += 2.5f + strength;

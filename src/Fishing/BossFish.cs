@@ -22,6 +22,8 @@ namespace ValheimDeepWaters
         public string? Music;              // resolved from the boss's own event the first time it's needed
         public string[] Weathers = { "ThunderStorm" };   // the weather it brings: the first of these the world has (BossWeather)
         public string? Environment;        // which one that is, found the first time it's needed
+        public float Scale = 1f;           // shown this much bigger than its model, swimming, hooked and landed
+        public bool Serpent;               // fights like a sea serpent: circles, charges and rears (FishingController.Serpent)
     }
 
     /// <summary>
@@ -81,6 +83,7 @@ namespace ValheimDeepWaters
                 Omen = "Something vast uncoils in the deep...", Hint = "It hunts the deep sea off the Mistlands.",
                 MaterialName = "Queen's Fang", MaterialBase = "Carapace",
                 Weathers = new[] { "Queen", "Mistlands_thunder", "Mistlands_rain" },
+                Scale = 2f, Serpent = true,                   // a 7.5 m sea serpent
                 Conditions = (spot, ocean, depth, biome) => ocean && depth >= DeepWater && Near(spot, Heightmap.Biome.Mistlands),
             },
         };
@@ -102,6 +105,8 @@ namespace ValheimDeepWaters
         public static BossInfo? ForFish(string fishId) => All.FirstOrDefault(b => b.FishId == fishId);
         public static BossInfo? ForLure(string baitId) => All.FirstOrDefault(b => b.LureId == baitId);
         public static bool IsBoss(string fishId) => All.Any(b => b.FishId == fishId);
+        /// <summary>How much bigger than its model a fish is shown (a boss can be bigger).</summary>
+        public static float ScaleFor(string fishId) => ForFish(fishId)?.Scale ?? 1f;
 
         public static string Phrase(string name) => name.StartsWith("The ", StringComparison.OrdinalIgnoreCase) ? name : "The " + name;
 
@@ -149,6 +154,7 @@ namespace ValheimDeepWaters
         {
             if (!ContentRegistry.FishItems.TryGetValue(fish.Id, out var fishPrefab)) return;
             var prefab = PrefabManager.Instance.CreateClonedPrefab("VDW_Trophy_" + fish.Id, fishPrefab);
+            prefab.transform.localScale = Vector3.one;   // a boss landed bigger than its model still mounts at model size
             // A trophy shouldn't swim off when dropped in water.
             var swim = prefab.GetComponent<global::Fish>();
             if (swim != null) UnityEngine.Object.DestroyImmediate(swim);
