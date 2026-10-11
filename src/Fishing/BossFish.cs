@@ -108,6 +108,22 @@ namespace ValheimDeepWaters
         /// <summary>How much bigger than its model a fish is shown (a boss can be bigger).</summary>
         public static float ScaleFor(string fishId) => ForFish(fishId)?.Scale ?? 1f;
 
+        /// <summary>
+        /// A boss fish item (landed, dropped, or swimming in the world) is shown at the boss's size. Valheim sets an item's
+        /// scale from its quality (our size class) every time it spawns or loads, so the boss's scale goes on after that.
+        /// Trophies are other prefabs and stay at model size, so they still fit a trophy mount.
+        /// </summary>
+        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.SetQuality))]
+        private static class ItemScalePatch
+        {
+            private static void Postfix(ItemDrop __instance)
+            {
+                if (!ContentRegistry.FishIdByPrefab.TryGetValue(Utils.GetPrefabName(__instance.gameObject), out var id)) return;
+                float scale = ScaleFor(id);
+                if (scale != 1f) __instance.transform.localScale *= scale;
+            }
+        }
+
         public static string Phrase(string name) => name.StartsWith("The ", StringComparison.OrdinalIgnoreCase) ? name : "The " + name;
 
         // ------------------------------------------------------------------ conditions
@@ -154,7 +170,6 @@ namespace ValheimDeepWaters
         {
             if (!ContentRegistry.FishItems.TryGetValue(fish.Id, out var fishPrefab)) return;
             var prefab = PrefabManager.Instance.CreateClonedPrefab("VDW_Trophy_" + fish.Id, fishPrefab);
-            prefab.transform.localScale = Vector3.one;   // a boss landed bigger than its model still mounts at model size
             // A trophy shouldn't swim off when dropped in water.
             var swim = prefab.GetComponent<global::Fish>();
             if (swim != null) UnityEngine.Object.DestroyImmediate(swim);

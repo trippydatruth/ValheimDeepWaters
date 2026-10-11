@@ -625,11 +625,8 @@ namespace ValheimDeepWaters
                     item.ItemDrop.m_itemData.m_shared.m_maxQuality = FishSize.MaxClass; // size classes (see FishSize)
                     ItemManager.Instance.AddItem(item);
                     FishItems[fish.Id] = item.ItemPrefab;
-                    bool modelled = CustomModels.ApplyToPrefab(item.ItemPrefab, "fish_" + fish.Id);
-                    // a boss shown bigger than its model is that big landed, too
-                    float scale = BossFish.ScaleFor(fish.Id);
-                    if (scale != 1f) item.ItemPrefab.transform.localScale = Vector3.one * scale;
-                    if (modelled) GroundPose.FitCollider(item.ItemPrefab);
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "fish_" + fish.Id))
+                        GroundPose.FitCollider(item.ItemPrefab);
                     GroundPose.PrepareFishPrefab(item.ItemPrefab);
                     Cooking.PriceRawFish(fish, item.ItemPrefab);
 
