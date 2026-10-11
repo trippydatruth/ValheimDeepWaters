@@ -31,15 +31,15 @@ namespace ValheimDeepWaters
         /// <summary>The fish each kind of lure draws, by fish id.</summary>
         internal static readonly Dictionary<LureKind, string[]> KindTargets = new()
         {
-            [LureKind.Spoon] = new[] { "pike", "trout", "salmon", "frostchar", "herring", "mackerel", "tuna", "serpentfin", "surtling_sardine" },
-            [LureKind.Spinner] = new[] { "perch", "trout", "pike", "tetra", "frostchar", "dvergr_dace", "salmon", "greydwarf_goby" },
+            [LureKind.Spoon] = new[] { "pike", "trout", "salmon", "frostchar", "glacier_grayling", "rimejaw_cod", "herring", "mackerel", "tuna", "serpentfin", "surtling_sardine" },
+            [LureKind.Spinner] = new[] { "perch", "trout", "pike", "tetra", "frostchar", "glacier_grayling", "dvergr_dace", "salmon", "greydwarf_goby" },
             [LureKind.Crankbait] = new[] { "pike", "perch", "trollfish", "mistfin", "grouper", "magmafish" },
-            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish" },
-            [LureKind.SoftPlastic] = new[] { "perch", "trout", "greydwarf_goby", "trollfish", "tetra", "mistfin", "pufferfish" },
+            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish" },
+            [LureKind.SoftPlastic] = new[] { "perch", "trout", "frost_sculpin", "greydwarf_goby", "trollfish", "tetra", "mistfin", "pufferfish" },
             [LureKind.TexasRig] = new[] { "trollfish", "pike", "mistfin", "perch", "anglerfish", "greydwarf_goby" },
             [LureKind.Swimbait] = new[] { "pike", "tuna", "grouper", "lingcod", "halibut", "salmon", "serpentfin", "anglerfish", "fenringfin" },
             [LureKind.Topwater] = new[] { "pike", "trollfish", "mackerel", "tuna", "magmafish", "odinfin" },
-            [LureKind.Fly] = new[] { "trout", "salmon", "frostchar", "dvergr_dace", "tetra", "perch" },
+            [LureKind.Fly] = new[] { "trout", "salmon", "frostchar", "glacier_grayling", "dvergr_dace", "tetra", "perch" },
         };
 
         private const float DrawnWeight = 3f;          // a fish the lure draws is this much likelier to be the one that comes

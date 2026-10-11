@@ -9,6 +9,16 @@
   it circles you in wide sweeps, its back rolling up through the surface. Enraged, it charges straight at you (reel in
   the slack or it shakes the hook) and rears out of the water, head high, before crashing down - pull back while it's
   reared to tire it fast. Desperate, it lashes the water with its tail as well.
+- **Deep North**: a seventh boss fish, the **Fimbul Salmon** (Kall Fimbulbringer's), summoned in Deep North rivers at
+  night with a **Crown Lure** from his Crown Jewel - the biggest fish in the mod (4.6 m, up to 250 kg), with the
+  Frozen King's weather and music; its Rimefrost Fin forges the **Fimbul Hook** (never bends, kept half the time).
+  Three new Deep North fish (Rimejaw Cod, Glacier Grayling, Frost Sculpin), **Northern Bait** (seal blubber and
+  lingonberries, Valheim's Deep North bait look), the **Frostwood Fishing Rod**, the **Ice Spoon** and
+  **Frostcore Jig** lures, **Blubber Chum** and **Lingonberry Angler's Mead**.
+- Better rods hold much more line: from 45 m on the Copper rod up to 260 m on the Leviathan (Wooden stays 30 m).
+  A data file still on the old defaults is updated; line you set yourself is kept.
+- **Working jaws** on the boss fish with open mouths (Fimbul Salmon, Moder Scale Fish, Yagluth Gill, Eikthyr Elver):
+  they breathe while swimming, snap shut when thrashing and gasp on land.
 - **Animated fish models**: a rigged fish with Swim, Thrash and Flop animations swims, thrashes on the line,
   flops on land and holds still as a trophy. Static models still work.
 - **Rigged rods**: a rod model with a skeleton (bones `Rod.1`..`Rod.N` up the blank, `Rod.Tip`, `Rod.BendDir`,

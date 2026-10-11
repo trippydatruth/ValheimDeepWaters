@@ -465,6 +465,9 @@ namespace ValheimDeepWaters
             {
                 float height = Mathf.Clamp(0.6f + s.FishWeight / 30f, 0.6f, 2f);
                 float duration = Mathf.Lerp(0.7f, 1.2f, height / 2f);
+                // a boss shown bigger than its model leaps higher and hangs longer, so all of it clears the water
+                float big = 1f + ((s.Boss?.Scale ?? 1f) - 1f) * 0.5f;
+                height *= big; duration *= Mathf.Sqrt(big);
                 s.LeapEnd = Time.time + duration;
                 s.HookedFish?.Leap(height, duration);
                 s.Tension += 8f; // head shake at the top of the leap

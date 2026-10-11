@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace ValheimDeepWaters
 {
-    /// <summary>One of the six boss fish: how it's summoned, how it's announced, and what it leaves behind.</summary>
+    /// <summary>One of the boss fish: how it's summoned, how it's announced, and what it leaves behind.</summary>
     internal sealed class BossInfo
     {
         public string FishId = "";
@@ -27,7 +27,7 @@ namespace ValheimDeepWaters
     }
 
     /// <summary>
-    /// The six legendary fish named after Valheim's bosses are boss fights. Each is summoned with a lure carved
+    /// The seven legendary fish named after Valheim's bosses are boss fights. Each is summoned with a lure carved
     /// from that boss's trophy, cast in the right water at the right time; an omen plays, then it strikes. The
     /// fight gets a boss bar (the fish's stamina), the boss's music and phase messages, and landing it drops a
     /// trophy the first time and a crafting material every time, and tells the whole server. The other three
@@ -85,6 +85,16 @@ namespace ValheimDeepWaters
                 Weathers = new[] { "Queen", "Mistlands_thunder", "Mistlands_rain" },
                 Scale = 2f, Serpent = true,                   // a 7.5 m sea serpent
                 Conditions = (spot, ocean, depth, biome) => ocean && depth >= DeepWater && Near(spot, Heightmap.Biome.Mistlands),
+            },
+            new BossInfo
+            {
+                FishId = "fimbul_salmon", Title = "Herald of the Long Winter", BossPrefab = "FrozenKing", LureId = "lure_crown",
+                Omen = "The river freezes over around your line...", Hint = "It hunts the rivers of the Deep North, at night.",
+                MaterialName = "Rimefrost Fin", MaterialBase = "FrostCore",
+                MaterialDescription = "Taken from the Fimbul Salmon. A smith can forge it into a hook that never bends.",
+                Weathers = new[] { "FrozenKing", "SnowStorm", "Twilight_SnowStorm" },
+                Scale = 1.9f,                                 // 4.6 m: bigger than the Moder Scale Fish (3.9 m)
+                Conditions = (spot, ocean, depth, biome) => !ocean && biome == Heightmap.Biome.DeepNorth && EnvMan.IsNight(),
             },
         };
 
@@ -198,7 +208,7 @@ namespace ValheimDeepWaters
             var shared = item.ItemDrop.m_itemData.m_shared;
             shared.m_name = Loc.Token("vdw_bossmat_" + boss.FishId, boss.MaterialName);
             shared.m_description = Loc.Token("vdw_bossmat_" + boss.FishId + "_desc",
-                $"Taken from the {fish.Name}. One from each of the six great fish strings the Leviathan Rod.");
+                string.IsNullOrEmpty(boss.MaterialDescription) ? $"Taken from the {fish.Name}. One from each of the six great fish strings the Leviathan Rod." : boss.MaterialDescription);
             shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
             shared.m_maxStackSize = 20;
             shared.m_weight = 1f;

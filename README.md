@@ -64,6 +64,7 @@ strength, reel speed, power, hook bonus, stamina use and durability.
 | Black Metal | Forge 5 | Fine wood 6, Black metal 6, Linen thread 6 |
 | Yggdrasil | Black forge 1 | Yggdrasil wood 10, Carapace 4, Eitr 2 |
 | Ashwood | Black forge 2 | Blackwood 10, Flametal 4, Asksvin hide 2 |
+| Frostwood | Black forge 3 | Timberwood 10, Frostcore 3, Moose sinew 4 |
 | Leviathan | Black forge 2 | One material from each of the six boss fish, Yggdrasil wood 10, Flametal 6 |
 | Haldor's Gilded Rod | Haldor only | 6000 coins |
 
@@ -82,6 +83,7 @@ You need a hook to cast, and each size suits a range of fish weights.
 | Large 2/0 | 8–40 kg | Forge 2 | Iron 1 (4) |
 | Heavy 5/0 | 25–100 kg | Forge 3 | Iron 1, Silver 1 (3) |
 | Giant 8/0 | 60–250 kg | Forge 5 | Black metal 2 (3) |
+| Fimbul 12/0 | 0–300 kg, never bends, kept half the time the line breaks | Forge 5 | Rimefrost Fin 1, Silver 2 (1) |
 
 - **Too big for the fish:** much harder to hook.
 - **Too small:** a big fish can straighten it mid-fight, and a fish far too big won't bite at all.
@@ -99,7 +101,7 @@ they can't be crafted.
 
 ## Deep Waters fish
 
-24 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
+27 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
 bite in any sea; fresh-water fish only in their biomes.
 
 **Fresh water**
@@ -111,6 +113,8 @@ bite in any sea; fresh-water fish only in their biomes.
 | Trout | River | Meadows, Black Forest, Mountain | 4 kg |
 | Frost Char | Lake | Mountain, Deep North | 6 kg |
 | Mistfin | Lake | Swamp, Mistlands | 12 kg |
+| Glacier Grayling | River | Deep North | 3 kg |
+| Frost Sculpin | Lake | Deep North | 4 kg |
 
 **Ocean**
 
@@ -119,6 +123,7 @@ bite in any sea; fresh-water fish only in their biomes.
 | Surtling Sardine | 2 kg |
 | Mackerel | 3 kg |
 | Serpentfin | 28 kg |
+| Rimejaw Cod (Deep North coasts and deep lakes) | 18 kg |
 
 **Deep ocean** (15 m of water or more)
 
@@ -142,6 +147,7 @@ bite in any sea; fresh-water fish only in their biomes.
 | Queen Eel | Deep ocean | 50 kg |
 | Yagluth Gill | Deep ocean | 100 kg |
 | Moder Scale Fish | Deep ocean | 180 kg |
+| Fimbul Salmon | Deep North river | 250 kg |
 
 **Bait fish** (land as bait instead of food; use a Tiny hook)
 
@@ -153,8 +159,9 @@ bite in any sea; fresh-water fish only in their biomes.
 
 ## Boss fish
 
-Six legendaries are named after Valheim's bosses, and they're boss fights. They never bite by chance: you
-summon one with a **lure** carved from that boss's trophy (workbench), cast in the right water at the right time.
+Seven legendaries are named after Valheim's bosses, and they're boss fights. They never bite by chance: you
+summon one with a **lure** carved from that boss's trophy (or, for Kall Fimbulbringer, his Crown Jewel), cast in the
+right water at the right time.
 
 | Boss fish | Lure | Where | When |
 |---|---|---|---|
@@ -164,6 +171,7 @@ summon one with a **lure** carved from that boss's trophy (workbench), cast in t
 | Moder Scale Fish | Wyrm Lure (Moder trophy) | Sea off the Deep North | Storm or snow |
 | Yagluth Gill | Ember Lure (Yagluth trophy) | Deep sea off the Plains | Night |
 | Queen Eel | Chitin Lure (The Queen trophy) | Deep sea off the Mistlands | Any time |
+| Fimbul Salmon | Crown Lure (Kall Fimbulbringer's Crown Jewel, black forge) | Deep North river or lake | Night |
 
 Cast the lure in the right place and an **omen** begins: the water goes still, a dark swirl spreads around the
 float, a sign appears, bubbles rise and the float shudders - then it strikes. You get twice the usual time to
@@ -199,6 +207,7 @@ way (phases and all), with no bar, music or messages, and drop their trophy the 
 | Leeches | Dropped by swamp leeches |
 | Minnows, Large Baitfish, Shrimp | Catch them as small fish with worms, grubs or flies on a Tiny hook; they swim in schools where they live |
 | Abyssal, Frost and Runed bait | Crafted at the cauldron or forge |
+| Northern Bait | Crafted at the cauldron (seal blubber and lingonberries); the Deep North's fish want it |
 
 Wriggling soil only grows in parts of the world generated after installing the mod.
 
@@ -260,9 +269,12 @@ Tiered items that unlock as you progress:
 
 - **Meads** (cauldron): Angler's Mead (faster bites), Steady-Hand Tonic (easier hookset), Troll-Grip Mead
   (reel speed and stamina).
+- **Lingonberry Angler's Mead** (cauldron 5): a strong all-rounder for the Deep North - faster bites, easier hookset
+  and longer fights.
 - **Rune of Njord** (forge, worn as a belt): bigger fish, more legendaries.
 - **Chum** (cauldron): set the bucket down on the bank to draw more, less picky fish to the water around it for
   5 minutes, for anyone fishing there.
+  **Blubber Chum** (seal blubber, lingonberries) is the strongest and lasts 6 minutes.
 - **Totems** (hammer): the Fisherman's Totem and Shrine of Njord buff anyone fishing nearby.
 - **Relics** (can't be crafted): the **Horn of Ægir** is very rarely found inside a landed fish (more often in
   legendaries, never in bait fish). The **Pearl of Njord**, **Jörmungandr's Scale** and the **Golden Hook** are

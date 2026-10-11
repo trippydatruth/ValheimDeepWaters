@@ -120,6 +120,20 @@ namespace ValheimDeepWaters
             ("Baits", "lure_chitin", "TrophySeekerQueen:1,Carapace:2"),
         };
 
+        /// <summary>
+        /// Default numbers that changed: a file entry still on the old value (the player never changed it) gets the new
+        /// default. (file, id, field, old value)
+        /// </summary>
+        private static readonly (string kind, string id, string field, double oldValue)[] UpdatedStats =
+        {
+            // more line on every rod past the first, the most on the best (0.14.0)
+            ("Rods", "copper", "LineCapacity", 40), ("Rods", "finewood", "LineCapacity", 50),
+            ("Rods", "ancientbark", "LineCapacity", 60), ("Rods", "silver", "LineCapacity", 70),
+            ("Rods", "blackmetal", "LineCapacity", 85), ("Rods", "yggdrasil", "LineCapacity", 100),
+            ("Rods", "ashwood", "LineCapacity", 120), ("Rods", "frostwood", "LineCapacity", 135),
+            ("Rods", "haldor", "LineCapacity", 140), ("Rods", "leviathan", "LineCapacity", 160),
+        };
+
         private static string RecipeKey(JToken? recipe) =>
             recipe is JArray a ? string.Join(",", a.OfType<JObject>().Select(r => $"{(string?)r["Item"]}:{(int?)r["Amount"] ?? 1}")) : "";
 
@@ -195,6 +209,16 @@ namespace ValheimDeepWaters
                     if (d == null) continue;
                     foreach (var field in new[] { "Recipe", "CraftingStation", "StationLevel", "CraftAmount" })
                         if (d[field] != null) entry[field] = d[field]!.DeepClone();
+                    changed = true;
+                }
+
+                foreach (var (k, id, field, oldValue) in UpdatedStats)
+                {
+                    if (k != kind || !byId.TryGetValue(id, out var entry) || entry[field] == null) continue;
+                    if (Math.Abs((double)entry[field]! - oldValue) > 1e-6) continue;
+                    var d = defaults.OfType<JObject>().FirstOrDefault(o => (string?)o["Id"] == id);
+                    if (d?[field] == null) continue;
+                    entry[field] = d[field]!.DeepClone();
                     changed = true;
                 }
 
