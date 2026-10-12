@@ -46,8 +46,12 @@ namespace ValheimDeepWaters
             GripLocal = Rig?.Grip != null ? rod.InverseTransformPoint(Rig.Grip.position) : Vector3.zero;
             Vector3 tip = Rig?.Tip != null ? rod.InverseTransformPoint(Rig.Tip.position) : HasTip ? TipLocal : GripLocal + Vector3.up;
             AxisLocal = (tip - GripLocal).sqrMagnitude > 1e-6f ? (tip - GripLocal).normalized : Vector3.up;
-            // which way is "up" round the rod: as the hold animation has it now, so the reel stays on its usual side
-            Vector3 up = Vector3.ProjectOnPlane(rod.InverseTransformDirection(player.transform.up), AxisLocal);
+            // which way is "up" round the rod: away from its Rod.BendDir marker, which every rigged rod has on its underside (the
+            // side it bends toward), so every rod sits the same way up whatever twist its model has in the hand. A rod without
+            // one keeps whatever side the hold animation has up now.
+            Vector3 up = Rig?.BendDir != null
+                ? -Vector3.ProjectOnPlane(rod.InverseTransformPoint(Rig.BendDir.position) - GripLocal, AxisLocal)
+                : Vector3.ProjectOnPlane(rod.InverseTransformDirection(player.transform.up), AxisLocal);
             UpLocal = up.sqrMagnitude > 1e-6f ? up.normalized : Vector3.Cross(AxisLocal, Vector3.right).normalized;
 
             HasReel = Rig?.Spool != null;

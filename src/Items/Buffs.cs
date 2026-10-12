@@ -200,6 +200,14 @@ namespace ValheimDeepWaters
             return se;
         }
 
+        /// <summary>A lasting status effect for worn gear (an armour set's bonus): its fishing stats count like any buff's.</summary>
+        internal static StatusEffect MakeGearStatus(BuffDefinition b, Sprite? icon)
+        {
+            var se = MakeStatus(b, icon, 0f);
+            se.m_category = "vdw_gear_" + b.Id;
+            return se;
+        }
+
         /// <summary>A safe vanilla item of the same kind (and, for wearables, the same slot) to clone instead.</summary>
         private static string DefaultBase(BuffDefinition b)
         {

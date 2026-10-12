@@ -145,7 +145,7 @@ namespace ValheimDeepWaters
         /// the vertices it shares an edge with, several times over (vertices split at UV seams count as one). Then the
         /// skinning is eased by <paramref name="strength"/> toward moving rigidly with one bone (1: fully skinned).
         /// </summary>
-        private static BoneWeight[] Soften(BoneWeight[] raw, Vector3[] pos, int[] tris, int boneCount, int rigid, float strength)
+        internal static BoneWeight[] Soften(BoneWeight[] raw, Vector3[] pos, int[] tris, int boneCount, int rigid, float strength, int passes = 8)
         {
             int n = raw.Length;
             // one id per position, so a seam doesn't split the smoothing
@@ -179,7 +179,7 @@ namespace ValheimDeepWaters
                 }
 
             var next = new float[m, boneCount];
-            for (int pass = 0; pass < 8; pass++)
+            for (int pass = 0; pass < passes; pass++)
             {
                 for (int id = 0; id < m; id++)
                 {
@@ -212,7 +212,7 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>Blends the weights of the nearest body points, the nearest counting most.</summary>
-        private static BoneWeight FromBody(Vector3 p, List<Vector3> pts, List<BoneWeight> wts)
+        internal static BoneWeight FromBody(Vector3 p, List<Vector3> pts, List<BoneWeight> wts)
         {
             var best = new (float d, int i)[Neighbours];
             for (int k = 0; k < Neighbours; k++) best[k] = (float.MaxValue, -1);
@@ -250,7 +250,7 @@ namespace ValheimDeepWaters
             return Top4(sum);
         }
 
-        private static BoneWeight Top4(Dictionary<int, float> sum)
+        internal static BoneWeight Top4(Dictionary<int, float> sum)
         {
             var top = sum.OrderByDescending(kv => kv.Value).Take(4).ToArray();
             float total = top.Sum(kv => kv.Value);

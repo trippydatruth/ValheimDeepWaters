@@ -156,6 +156,15 @@ namespace ValheimDeepWaters
                     float v = args.Length > 1 && float.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : 0.5f;
                     Console.instance.Print(RelicVisuals.RuneSkin(v));
                 }
+                else if (args[0].Equals("coatflow", StringComparison.OrdinalIgnoreCase))
+                {
+                    // vdw_debug coatflow <trail seconds> <wind metres> [max degrees]: how much the oilskin coat's skirt swings
+                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
+                    FisherSkirt.Trail = F(1, FisherSkirt.Trail); FisherSkirt.Wind = F(2, FisherSkirt.Wind); FisherSkirt.MaxAngle = F(3, FisherSkirt.MaxAngle);
+                    string msg = $"Coat skirt: trails {FisherSkirt.Trail:0.00} s of movement, sways {FisherSkirt.Wind:0.00} m in a gale, up to {FisherSkirt.MaxAngle:0} degrees.";
+                    Plugin.Log.LogInfo(msg);
+                    Console.instance.Print(msg);
+                }
                 else if (args[0].Equals("idleshift", StringComparison.OrdinalIgnoreCase))
                 {
                     // vdw_debug idleshift <right> <forward> [up]: moves the whole no-line-out hold (both hands and the rod), metres

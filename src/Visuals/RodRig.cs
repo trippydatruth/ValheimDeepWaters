@@ -27,6 +27,9 @@ namespace ValheimDeepWaters
         /// <summary>Where the rod is held (marker Rod.Grip), if the model has one.</summary>
         public Transform? Grip { get { Init(); return _grip; } }
 
+        /// <summary>The marker on the side the rod bends toward (Rod.BendDir) - its underside - if the model has one.</summary>
+        public Transform? BendDir { get { Init(); return _bendDir; } }
+
         /// <summary>The reel's turning part (Reel.Spool), if the model has one.</summary>
         public Transform? Spool { get { Init(); return _spool; } }
 

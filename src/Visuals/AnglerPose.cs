@@ -231,12 +231,15 @@ namespace ValheimDeepWaters
                 // the right hand (about the reel) toward where a left hand rests - in front of the belly - just as far as it
                 // takes for the left hand to reach IdleLeftAlong up it; if even turned all the way it can't, the hand comes
                 // back down the rod until it can.
-                Vector3 grip = a.Rod.TransformPoint(ReelFoot(a));
+                // It turns about the point the right hand holds (Rod.Grip), not the reel, so the butt stays in that hand on
+                // rods whose reel sits up the rod from the grip.
+                Vector3 grip = a.Rod.TransformPoint(a.GripLocal);
+                float footAlong = Vector3.Dot(ReelFoot(a) - a.GripLocal, a.AxisLocal) * s;   // grip to the reel's foot
                 Vector3 axis0 = (a.Rod.rotation * a.AxisLocal).normalized;
                 Vector3 rest = lUpper.position + t.forward * 0.38f - t.up * 0.38f + t.right * 0.12f;
                 Vector3 toward = (rest - grip).sqrMagnitude > 1e-4f ? (rest - grip).normalized : axis0;
                 float along = Mathf.Clamp(IdleLeftAlong, 0.05f, 1.5f);
-                bool Reaches(Vector3 d, float l) => Overreach(player, "Left", grip + d * l, 0.95f) <= 0f;
+                bool Reaches(Vector3 d, float l) => Overreach(player, "Left", grip + d * (footAlong + l), 0.95f) <= 0f;
                 Vector3 dir = toward;
                 for (int i = 0; i <= 10; i++)
                 {
@@ -251,7 +254,12 @@ namespace ValheimDeepWaters
                 }
                 dir = Vector3.Slerp(axis0, dir, a.IdleW);
                 a.Rod.rotation = Quaternion.FromToRotation(axis0, dir) * a.Rod.rotation;
-                a.Rod.position += grip - a.Rod.TransformPoint(ReelFoot(a));
+                // and turned about its own length so its underside (reel below) faces down, whatever twist the model has
+                Vector3 under = Vector3.ProjectOnPlane(a.Rod.rotation * -a.UpLocal, dir);
+                Vector3 down = Vector3.ProjectOnPlane(Vector3.down, dir);
+                if (under.sqrMagnitude > 1e-6f && down.sqrMagnitude > 1e-6f)
+                    a.Rod.rotation = Quaternion.AngleAxis(Vector3.SignedAngle(under, down, dir) * a.IdleW, dir) * a.Rod.rotation;
+                a.Rod.position += grip - a.Rod.TransformPoint(a.GripLocal);
 
                 Vector3 axis = dir;
                 Vector3 rodRight = Vector3.ProjectOnPlane(t.right, axis).normalized, rodUp = Vector3.Cross(axis, rodRight);

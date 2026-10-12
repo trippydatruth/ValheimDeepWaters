@@ -15,6 +15,10 @@
   Three new Deep North fish (Rimejaw Cod, Glacier Grayling, Frost Sculpin), **Northern Bait** (seal blubber and
   lingonberries, Valheim's Deep North bait look), the **Frostwood Fishing Rod**, the **Ice Spoon** and
   **Frostcore Jig** lures, **Blubber Chum** and **Lingonberry Angler's Mead**.
+- Every Deep North item but the three new fish has its own model and rendered icon: the Crown
+  Lure, Ice Spoon, Frostcore Jig, Northern Bait, Frostwood Rod, Fimbul Hook, Blubber Chum and Lingonberry Mead. The
+  seven boss materials (Storm Barbel, Elder Scale, Mire Whisker, Frostwyrm Scale, Ember Gill, Queen's Fang,
+  Rimefrost Fin) have their own models too, and the Fimbul Salmon its icon.
 - Better rods hold much more line: from 45 m on the Copper rod up to 260 m on the Leviathan (Wooden stays 30 m).
   A data file still on the old defaults is updated; line you set yourself is kept.
 - **Working jaws** on the boss fish with open mouths (Fimbul Salmon, Moder Scale Fish, Yagluth Gill, Eikthyr Elver):
@@ -160,6 +164,8 @@
   so they go into Fish Wraps, Fish Soup and the other fish dishes. Bigger size classes give more raw fish.
 
 ### Fixed
+- Rods other than the Leviathan sat rotated in the idle hold, the butt floating out to the right of the hand: the rod
+  turned about its reel instead of the grip in the hand. It now turns about the grip, so every rod sits in the hand.
 - Minnows, large baitfish and sea shrimp swam up to the bait and fought on the line as the vanilla bait model; they
   now use their own animated models.
 - Boss fish music only played while the fish was being fought; it now plays for the whole encounter, from the omen
