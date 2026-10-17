@@ -148,12 +148,13 @@ namespace ValheimDeepWaters
             ("Buffs", "hat_leather"), ("Buffs", "hat_troll"), ("Buffs", "hat_seafarer"),
             ("Buffs", "cape_seawolf"), ("Buffs", "cape_netweaver"), ("Buffs", "cape_ashen"),
             ("Fish", "cod"), ("Fish", "trolltrout"), ("Fish", "ashscale"),     // too close to vanilla fish
+            ("Fish", "dvergr_dace"),                                         // dropped (0.14.0)
         };
 
         /// <summary>Retired fish, and the vanilla fish that takes their place in a bait's TargetFish.</summary>
         private static readonly Dictionary<string, string> RetiredFishStandIn = new()
         {
-            ["cod"] = "coral_cod", ["trolltrout"] = "trollfish", ["ashscale"] = "magmafish",
+            ["cod"] = "coral_cod", ["trolltrout"] = "trollfish", ["ashscale"] = "magmafish", ["dvergr_dace"] = "trout",
         };
 
         /// <summary>

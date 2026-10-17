@@ -109,7 +109,6 @@ bite in any sea; fresh-water fish only in their biomes.
 | Fish | Water | Biomes | Max |
 |---|---|---|---|
 | Greydwarf Goby | Lake | Black Forest | 1.5 kg |
-| Dvergr Dace | River | Mistlands | 1 kg |
 | Trout | River | Meadows, Black Forest, Mountain | 4 kg |
 | Frost Char | Lake | Mountain, Deep North | 6 kg |
 | Mistfin | Lake | Swamp, Mistlands | 12 kg |
@@ -235,7 +234,7 @@ strains the line less); Shift reels at full speed.
 
 | Lure | Kind | Fish | Made at |
 |---|---|---|---|
-| Feather Fly | Fly | Trout, char, dace (0.05–3 kg) | Workbench |
+| Feather Fly | Fly | Trout, char, grayling (0.05–3 kg) | Workbench |
 | Flint Spinner | Spinner, takes a trailer | Perch, trout, pike (0.1–4 kg) | Workbench |
 | Leather Grub | Soft bait | Perch, trout, gobies (0.1–5 kg) | Workbench 2 |
 | Bronze Spoon | Spoon | Pike, trout, salmon, mackerel (0.3–10 kg) | Forge |

@@ -2,6 +2,15 @@
 
 ## 0.14.0
 ### Added
+- **Twelve fish get their own models**, each its own kind of fish (Sketchfab models, credited in
+  Mesh/Sourced/CREDITS.md), rigged and animated like the bosses, with their own icons: Trout, Mackerel, Halibut (swims
+  flat), Frost Sculpin, Frost Char, Greydwarf Goby (mossy green), Bonemaw (a viperfish), Jotunn Perch, Odin's Eye (an
+  opah), Thor's Hammerhead, Serpentfin (an oarfish) and Surtling Sardine. Five more on Tripo models: Rimejaw Cod (frost-rimed),
+  Glacier Grayling (glowing fin dots), Lingcod, Mistfin (pale, misty, faint glowing flecks) and the Fenringfin (a wolffish,
+  swimming like an eel). Fish with open mouths keep them shut in the idle swim and snap them open on the line.
+### Removed
+- **Dvergr Dace**: taken out. It leaves an existing fish.json once, and baits that targeted it lose it (trout takes its
+  place where a bait didn't already have it).
 - **Boss weather**: from the omen to the end of the fight, a boss fish brings the weather of the boss it's named
   after (Eikthyr's storm, the Elder's mist, Bonemass, Moder, Yagluth, the Queen). It's shared: everyone within about
   150 m of the encounter gets the weather and the boss music, including players who walk up mid-fight.
