@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using System;
@@ -311,7 +311,7 @@ namespace ValheimDeepWaters
                 if (boss != null) __result = boss;
                 if (boss != _playing)
                 {
-                    Plugin.Log.LogInfo(boss != null
+                    Plugin.Log.LogDebug(boss != null
                         ? $"Boss music: {boss} ({near!.FishId})."
                         : $"Boss music stopped: {(near == null ? "no boss encounter near" : "another event's music took over")}.");
                     _playing = boss;

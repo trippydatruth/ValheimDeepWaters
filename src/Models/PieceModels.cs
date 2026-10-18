@@ -60,7 +60,7 @@ namespace ValheimDeepWaters
             // Like vanilla statues and stones, it may sit into the ground.
             var piece = prefab.GetComponent<Piece>();
             piece.m_clipGround = true;
-            Plugin.Log.LogInfo($"Custom models: '{baseName}' is a piece model (from '{source}'), {b.size.y:0.##} m tall.");
+            Plugin.Log.LogDebug($"Custom models: '{baseName}' is a piece model (from '{source}'), {b.size.y:0.##} m tall.");
             return true;
         }
 
@@ -105,7 +105,7 @@ namespace ValheimDeepWaters
                 AddGarnish(still.transform, baseName);
                 foreach (var r in still.GetComponentsInChildren<Renderer>(true)) r.gameObject.AddComponent<StandOnlyModel>();
             }
-            Plugin.Log.LogInfo($"Custom models: '{baseName}' is a whole model (from '{source}'), {renderers.Length} parts.");
+            Plugin.Log.LogDebug($"Custom models: '{baseName}' is a whole model (from '{source}'), {renderers.Length} parts.");
             return true;
         }
 

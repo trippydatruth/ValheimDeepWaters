@@ -22,7 +22,7 @@ namespace ValheimDeepWaters
                 (prefab.GetComponentInChildren<Animator>(true) != null || prefab.GetComponentInChildren<Animation>(true) != null))
             {
                 result = prefab;
-                Plugin.Log.LogInfo($"Custom models: '{baseName}' is animated (from '{source}').");
+                Plugin.Log.LogDebug($"Custom models: '{baseName}' is animated (from '{source}').");
             }
             AnimatedCache[baseName] = result;
             return result;

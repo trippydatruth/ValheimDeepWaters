@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -75,7 +75,7 @@ namespace ValheimDeepWaters
             new Milestone { Species = 5,  Label = "3 Minor Angler's Mead and 100 coins", Items = new[] { ("VDW_Buff_angler_minor", 3), ("Coins", 100) } },
             new Milestone { Species = 10, Label = "2 Steady-Hand Tonics and 300 coins",  Items = new[] { ("VDW_Buff_steady_medium", 2), ("Coins", 300) } },
             new Milestone { Species = 15, Label = "3 Bloodbait Chum and 500 coins",      Items = new[] { ("VDW_Buff_chum_blood", 3), ("Coins", 500) } },
-            new Milestone { Species = 20, Label = "the Horn of Ã†gir",                    Items = new[] { ("VDW_Buff_relic_horn", 1) } },
+            new Milestone { Species = 20, Label = "the Horn of Ægir",                    Items = new[] { ("VDW_Buff_relic_horn", 1) } },
             new Milestone { Species = AllSpecies, Label = "the Pearl of Njord",          Items = new[] { ("VDW_Buff_relic_pearl", 1) } },
         };
 

@@ -41,7 +41,7 @@ namespace ValheimDeepWaters
             var model = CustomModels.GetBundlePrefab(ModelKey);
             if (model == null)
             {
-                Plugin.Log.LogInfo("Fishing Boat: no 'fishing_boat' model in the bundles; the boat isn't added.");
+                Plugin.Log.LogWarning("Fishing Boat: no 'fishing_boat' model in the bundles; the boat isn't added.");
                 return;
             }
             if (PrefabManager.Instance.GetPrefab("Raft") == null)
@@ -67,7 +67,7 @@ namespace ValheimDeepWaters
             if (!Build(piece.PiecePrefab, model)) return;
             ItemIcons.Apply(piece.PiecePrefab, ModelKey);
             PieceManager.Instance.AddPiece(piece);
-            Plugin.Log.LogInfo("Fishing Boat added.");
+            Plugin.Log.LogDebug("Fishing Boat added.");
         }
 
         private static bool Build(GameObject prefab, GameObject model)
@@ -315,7 +315,7 @@ namespace ValheimDeepWaters
                 var rb = f.GetComponent<Rigidbody>();
                 if (rb != null) rb.mass = isOar ? 3f : 2f;
             }
-            Plugin.Log.LogInfo($"Fishing Boat: wreckage of {plank} planks and {oar} oars.");
+            Plugin.Log.LogDebug($"Fishing Boat: wreckage of {plank} planks and {oar} oars.");
             return wreck;
         }
 
@@ -339,7 +339,7 @@ namespace ValheimDeepWaters
             }
             if (planks == null)
             {
-                Plugin.Log.LogInfo("Fishing Boat: Valheim's ship planks weren't found; the hull keeps its own planks.");
+                Plugin.Log.LogWarning("Fishing Boat: Valheim's ship planks weren't found; the hull keeps its own planks.");
                 return;
             }
 
@@ -359,7 +359,7 @@ namespace ValheimDeepWaters
                 var use = r.name == "hull" ? wood : r.name.StartsWith("oarlocks") ? iron : null;
                 if (use != null) r.sharedMaterials = Enumerable.Repeat(use, r.sharedMaterials.Length).ToArray();
             }
-            Plugin.Log.LogInfo($"Fishing Boat: hull in Valheim's ship planks ({planks.shader.name}, vanilla tiling {vanillaScale}).");
+            Plugin.Log.LogDebug($"Fishing Boat: hull in Valheim's ship planks ({planks.shader.name}, vanilla tiling {vanillaScale}).");
         }
 
         /// <summary>
@@ -397,36 +397,6 @@ namespace ValheimDeepWaters
                 __result = 0f;
                 return false;
             }
-        }
-
-        private static readonly Dictionary<string, Vector4> SeatNudges = new Dictionary<string, Vector4>();
-
-        /// <summary>
-        /// vdw_debug boatseat: moves a seat (rower, passenger or holdfast) on every Fishing Boat loaded, in the boat's own
-        /// frame (right, up, toward the bow, in metres) and turns it (degrees), to fit it by eye. Returns the running total
-        /// since the game started, to be put into the build, or null for an unknown seat.
-        /// </summary>
-        internal static string? NudgeSeat(string which, Vector3 move, float turn)
-        {
-            which = which.ToLowerInvariant();
-            if (which != "rower" && which != "passenger" && which != "holdfast") return null;
-            int n = 0;
-            foreach (var oars in Object.FindObjectsByType<FishingBoatOars>(FindObjectsSortMode.None))
-            {
-                var root = oars.transform;
-                Transform? seat = which == "rower" ? oars.GetComponent<Ship>()?.m_shipControlls?.m_attachPoint
-                                : root.Find(which == "passenger" ? "vdw_passenger_seat" : "vdw_bow_holdfast");
-                if (seat == null) continue;
-                seat.position += root.TransformDirection(move);
-                seat.rotation = Quaternion.AngleAxis(turn, root.up) * seat.rotation;
-                n++;
-            }
-            SeatNudges.TryGetValue(which, out var total);
-            total += new Vector4(move.x, move.y, move.z, turn);
-            SeatNudges[which] = total;
-            string msg = $"{which} on {n} boat(s): moved in all {total.x:0.00} right, {total.y:0.00} up, {total.z:0.00} toward the bow, turned {total.w:0} degrees.";
-            Plugin.Log.LogInfo("Fishing Boat seat: " + msg);
-            return msg;
         }
 
         /// <summary>No sail to raise: Forward stops at rowing speed.</summary>
@@ -500,22 +470,6 @@ namespace ValheimDeepWaters
         /// physics steps: on a moving boat they lagged and caught up every step (the rower shook, and their arms with the
         /// oars). Each frame, everyone seated here is put exactly on their seat as it's drawn, before their arms are posed.
         /// </summary>
-        private Transform? _loggedSeat;
-
-        /// <summary>Which way someone who sits down faces, in the boat's own terms, and where the stern seat and the bow are.</summary>
-        private void LogSeat(Player p, Transform seat)
-        {
-            _loggedSeat = seat;
-            var root = transform;
-            Vector3 face = root.InverseTransformDirection(p.transform.forward);
-            var stern = root.Find("vdw_passenger_seat");
-            var hold = root.Find("vdw_bow_holdfast");
-            string Fmt(Vector3 v) => $"({v.x:0.00}, {v.y:0.00}, {v.z:0.00})";
-            Plugin.Log.LogInfo($"Fishing Boat: {p.GetPlayerName()} sat at '{seat.name}' (under '{seat.parent?.name}') at {Fmt(root.InverseTransformPoint(seat.position))}, " +
-                $"facing {Fmt(face)} in the boat's frame; passenger seat at {(stern != null ? Fmt(stern.localPosition) : "?")}, " +
-                $"holdfast at {(hold != null ? Fmt(hold.localPosition) : "?")}; controls turned {_ship?.m_shipControlls?.transform.localEulerAngles.y:0} degrees.");
-        }
-
         private void SnapSeated()
         {
             foreach (var p in Player.GetAllPlayers())
@@ -523,7 +477,6 @@ namespace ValheimDeepWaters
                 if (p == null || !p.IsAttached()) continue;
                 if (!(AttachPointField?.GetValue(p) is Transform seat) || seat == null || !seat.IsChildOf(transform)) continue;
                 p.transform.SetPositionAndRotation(seat.position, seat.rotation);
-                if (_loggedSeat != seat) LogSeat(p, seat);
             }
         }
 
@@ -738,7 +691,7 @@ namespace ValheimDeepWaters
             if (!_trimLogged && Time.time - _trimSince > 20f)
             {
                 _trimLogged = true;
-                Plugin.Log.LogInfo($"Fishing Boat: trimmed to float at its waterline (water level offset {_ship.m_waterLevelOffset:0.000}, draft {draft:0.00} m).");
+                Plugin.Log.LogDebug($"Fishing Boat: trimmed to float at its waterline (water level offset {_ship.m_waterLevelOffset:0.000}, draft {draft:0.00} m).");
             }
         }
 

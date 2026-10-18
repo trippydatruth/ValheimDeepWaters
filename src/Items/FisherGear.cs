@@ -300,7 +300,7 @@ namespace ValheimDeepWaters
                     for (int r = 0; r < 3; r++) for (int k = 0; k < 3; k++) reflect[r, k] = (r == k ? 1f : 0f) - 2f * ax[r] * ax[k];
                     toBody = Matrix4x4.Translate(c) * reflect * Matrix4x4.Translate(-c) * toBody;
                     mirrored = !mirrored;
-                    Plugin.Log.LogInfo($"Fisherman's gear: '{p.Model}' was fitted to the body's other side - flipped so its left is the body's left.");
+                    Plugin.Log.LogDebug($"Fisherman's gear: '{p.Model}' was fitted to the body's other side - flipped so its left is the body's left.");
                 }
             }
             int rigid = Array.FindIndex(body.bones, b => b != null && b.name == p.Rigid);
@@ -356,7 +356,7 @@ namespace ValheimDeepWaters
                     mesh.bindposes = bp;
                     mesh.RecalculateBounds();
                     parts.Add((mesh, srcPart.mats ?? new Material[0]));
-                    Plugin.Log.LogInfo($"Fisherman's gear: '{src.name}' uses its painted weights ({srcPart.bones!.Length} bones in the file{(skirtUsed > 0 ? ", with the skirt bones" : "")}).");
+                    Plugin.Log.LogDebug($"Fisherman's gear: '{src.name}' uses its painted weights ({srcPart.bones!.Length} bones in the file{(skirtUsed > 0 ? ", with the skirt bones" : "")}).");
                     continue;
                 }
                 // weights from the body near each vertex - averaged over space, not over this mesh's own edges, so the coat and
@@ -436,7 +436,7 @@ namespace ValheimDeepWaters
                 mesh.RecalculateBounds();
                 parts.Add((mesh, srcPart.mats ?? new Material[0]));
             }
-            Plugin.Log.LogInfo($"Fisherman's gear: '{p.Model}' fitted to the body (mean error {err * 1e4f:0.00} cm{(mirrored ? ", mirrored" : "")}), " +
+            Plugin.Log.LogDebug($"Fisherman's gear: '{p.Model}' fitted to the body (mean error {err * 1e4f:0.00} cm{(mirrored ? ", mirrored" : "")}), " +
                                $"{parts.Count} part(s), {parts.Sum(x => x.Item1.vertexCount)} vertices skinned.");
             return parts;
         }

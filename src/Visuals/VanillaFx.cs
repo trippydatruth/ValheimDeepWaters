@@ -22,8 +22,6 @@ namespace ValheimDeepWaters
             public Color? Tint;             // recolour the light (and the particles' start colour)
             public float Rate = 1f;         // extra emission multiplier
             public float Size = 1f;         // extra particle size multiplier
-            public bool NoTrails;           // drop the trails
-            public float TrailLife;         // >0: per-particle trails this short (seconds share) - quick crackles that stay on a small fish
             public float Orbit;             // >0: particles circle the body along its length at this speed
             public bool AlongBody;          // emit from a thin box down the body's length (not the mesh surface), no throw, little jitter
             public Fx(string prefab, string path, bool light = false, Color? tint = null, float rate = 1f, float size = 1f) { Prefab = prefab; Path = path; Light = light; Tint = tint; Rate = rate; Size = size; }
@@ -138,14 +136,12 @@ namespace ValheimDeepWaters
                     var noise = ps.noise;
                     if (noise.enabled) noise.strengthMultiplier *= k;
                     var trails = ps.trails;
-                    if (fx.NoTrails) trails.enabled = false;
                     if (trails.enabled)
                     {
                         // a ribbon joins each particle to the next: on a blade they're born in a row (a jagged bolt), on
                         // our mesh at random spots, so the ribbon drew straight lines across the fish (a cage). Each
                         // particle trails on its own instead: short crackling sparks over the body.
                         if (trails.mode == ParticleSystemTrailMode.Ribbon) { trails.mode = ParticleSystemTrailMode.PerParticle; trails.lifetimeMultiplier = 0.35f; }
-                        if (fx.TrailLife > 0f) { trails.mode = ParticleSystemTrailMode.PerParticle; trails.lifetimeMultiplier = fx.TrailLife; }
                         trails.lifetimeMultiplier *= k; trails.widthOverTrailMultiplier *= Mathf.Max(k, 0.5f);
                     }
                     var pr = ps.GetComponent<ParticleSystemRenderer>();
@@ -205,7 +201,7 @@ namespace ValheimDeepWaters
                 }
                 made++;
             }
-            if (made > 0) Plugin.Log.LogInfo($"Effects: '{what}' carries {made} vanilla effect(s).");
+            if (made > 0) Plugin.Log.LogDebug($"Effects: '{what}' carries {made} vanilla effect(s).");
         }
     }
 }

@@ -63,7 +63,7 @@ namespace ValheimDeepWaters
             if (player == Player.m_localPlayer)
             {
                 float s = rod.lossyScale.x, along = Vector3.Dot(ReelLocal - GripLocal, AxisLocal) * s;
-                Plugin.Log.LogInfo($"Rod rig: {rod.name}, reel {(HasReel ? $"{along:0.00} m from the grip point, {Vector3.ProjectOnPlane(ReelLocal - GripLocal, AxisLocal).magnitude * s:0.00} m off the rod" : "none")}, scale {s:0.00}.");
+                Plugin.Log.LogDebug($"Rod rig: {rod.name}, reel {(HasReel ? $"{along:0.00} m from the grip point, {Vector3.ProjectOnPlane(ReelLocal - GripLocal, AxisLocal).magnitude * s:0.00} m off the rod" : "none")}, scale {s:0.00}.");
             }
             Placed = false;
         }

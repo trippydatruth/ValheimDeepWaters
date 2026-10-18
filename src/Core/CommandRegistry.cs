@@ -54,7 +54,7 @@ namespace ValheimDeepWaters
                     prefabName = "VDW_Fish_" + what;
                 else
                 {
-                    Console.instance.Print("Unknown fish/bait/rod.");
+                    Console.instance.Print("Unknown item. See vdw_debug listfish / listbait / listrods / listhooks / listbuffs.");
                     return;
                 }
 
@@ -76,11 +76,11 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters debug tools. Usage: vdw_debug [bite|boss|worms|horn|boatseat|pearlfit|runefit|runeskin|hold|lefthand|righthand|idlehand|idleshift|listrods|listhooks|listbuffs|listfish|listbait|resetlog|tokens]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
-                if (args.Length < 1) return;
+                if (args.Length < 1) { Console.instance.Print(Help); return; }
 
                 if (args[0].Equals("bite", StringComparison.OrdinalIgnoreCase))
                 {
@@ -102,100 +102,6 @@ namespace ValheimDeepWaters
                 else if (args[0].Equals("worms", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.instance.Print(BaitSources.DescribeNearby());
-                }
-                else if (args[0].Equals("boatseat", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn]
-                    float F(int i) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
-                    string? done = args.Length >= 2 ? FishingBoat.NudgeSeat(args[1], new UnityEngine.Vector3(F(2), F(3), F(4)), F(5)) : null;
-                    Console.instance.Print(done ?? "Usage: vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn degrees]   e.g. vdw_debug boatseat rower 0 0.05 -0.1");
-                }
-                else if (args[0].Equals("pearlfit", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug pearlfit <scale> <up> <forward> [height] [depth]
-                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    Console.instance.Print(args.Length < 2
-                        ? "Usage: vdw_debug pearlfit <scale> <up> <forward> [height] [depth]   (now: 1 0.29 0.01 1.1 1.1)"
-                        : RelicVisuals.PearlFit(F(1, 1f), F(2, 0.29f), F(3, 0.01f), F(4, 1.1f), F(5, 1.1f)));
-                }
-                else if (args[0].Equals("runefit", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug runefit <scale> <up> <forward> [width] [depth]
-                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    Console.instance.Print(args.Length < 2
-                        ? "Usage: vdw_debug runefit <scale> <up> <forward> [width] [depth]   (default: 1.2 0.09 0.06 1 1.15; up/forward from the base of the neck)"
-                        : RelicVisuals.RuneFit(F(1, 1.2f), F(2, 0.09f), F(3, 0.06f), F(4, 1f), F(5, 1.15f)));
-                }
-                else if (args[0].Equals("hold", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug hold <forward> <down> <right>
-                    var now = AnglerPose.Hold;
-                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    var set = AnglerPose.Hold = new UnityEngine.Vector3(F(1, now.x), F(2, now.y), F(3, now.z));
-                    string msg = $"Rod hold: reel {set.x:0.00} forward, {set.y:0.00} down, {set.z:0.00} right of the shoulders.";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
-                }
-                else if (args[0].Equals("lefthand", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug lefthand <along> [up] [right] [roll] [forward]: the left hand's grip up (+) or down (-) the rod from the
-                    // reel, nudged up, right and forward (metres), and rolled round the rod (degrees); values left out stay
-                    float G(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    AnglerPose.LeftAlong = G(1, AnglerPose.LeftAlong);
-                    AnglerPose.LeftUp = G(2, AnglerPose.LeftUp);
-                    AnglerPose.LeftRight = G(3, AnglerPose.LeftRight);
-                    AnglerPose.LeftRoll = G(4, AnglerPose.LeftRoll);
-                    AnglerPose.LeftForward = G(5, AnglerPose.LeftForward);
-                    string msg = $"Left hand: {AnglerPose.LeftAlong:0.00} m up the rod from the reel, {AnglerPose.LeftUp:0.00} up, {AnglerPose.LeftRight:0.00} right, {AnglerPose.LeftForward:0.00} forward, rolled {AnglerPose.LeftRoll:0} degrees.";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
-                }
-                else if (args[0].Equals("runeskin", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug runeskin <0-1>: how fully the worn necklace follows the body
-                    float v = args.Length > 1 && float.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : 0.5f;
-                    Console.instance.Print(RelicVisuals.RuneSkin(v));
-                }
-                else if (args[0].Equals("coatflow", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug coatflow <trail seconds> <wind metres> [max degrees]: how much the oilskin coat's skirt swings
-                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    FisherSkirt.Trail = F(1, FisherSkirt.Trail); FisherSkirt.Wind = F(2, FisherSkirt.Wind); FisherSkirt.MaxAngle = F(3, FisherSkirt.MaxAngle);
-                    string msg = $"Coat skirt: trails {FisherSkirt.Trail:0.00} s of movement, sways {FisherSkirt.Wind:0.00} m in a gale, up to {FisherSkirt.MaxAngle:0} degrees.";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
-                }
-                else if (args[0].Equals("idleshift", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug idleshift <right> <forward> [up]: moves the whole no-line-out hold (both hands and the rod), metres
-                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    var sh = AnglerPose.IdleShift;
-                    AnglerPose.IdleShift = new UnityEngine.Vector3(F(1, sh.x), F(3, sh.y), F(2, sh.z));
-                    string msg = $"Idle hold: moved {AnglerPose.IdleShift.x:0.00} right, {AnglerPose.IdleShift.z:0.00} forward, {AnglerPose.IdleShift.y:0.00} up of Valheim's.";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
-                }
-                else if (args[0].Equals("idlehand", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug idlehand <along>: how far up the rod from the reel the left hand holds it with no line out
-                    if (args.Length > 1 && float.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v)) AnglerPose.IdleLeftAlong = v;
-                    string msg = $"Idle left hand: {AnglerPose.IdleLeftAlong:0.00} m up the rod from the reel (less if the arm can't reach).";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
-                }
-                else if (args[0].Equals("righthand", StringComparison.OrdinalIgnoreCase))
-                {
-                    // vdw_debug righthand <along> [up] [right] [roll] [forward]: the right hand on the reel handle, nudged and rolled
-                    // (along only counts on a rod without a reel: negative is down the butt)
-                    float G(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
-                    AnglerPose.RightAlong = G(1, AnglerPose.RightAlong);
-                    AnglerPose.RightUp = G(2, AnglerPose.RightUp);
-                    AnglerPose.RightRight = G(3, AnglerPose.RightRight);
-                    AnglerPose.RightRoll = G(4, AnglerPose.RightRoll);
-                    AnglerPose.RightForward = G(5, AnglerPose.RightForward);
-                    string msg = $"Right hand: {AnglerPose.RightAlong:0.00} m along the rod, {AnglerPose.RightUp:0.00} up, {AnglerPose.RightRight:0.00} right, {AnglerPose.RightForward:0.00} forward, rolled {AnglerPose.RightRoll:0} degrees.";
-                    Plugin.Log.LogInfo(msg);
-                    Console.instance.Print(msg);
                 }
                 else if (args[0].Equals("horn", StringComparison.OrdinalIgnoreCase))
                 {
@@ -225,7 +131,7 @@ namespace ValheimDeepWaters
                     string path = System.IO.Path.Combine(Plugin.ConfigDirectory, "translation_template_English.json");
                     var lines = Loc.English.Select(kv => "  \"" + kv.Key + "\": \"" + kv.Value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n") + "\"");
                     System.IO.File.WriteAllText(path, "{\n" + string.Join(",\n", lines) + "\n}\n");
-                    Console.instance.Print($"Wrote {Loc.English.Count} tokens to {path}. Translate the values and save as BepInEx/plugins/ValheimDeepWaters/Translations/<Language>/vdw.json.");
+                    Console.instance.Print($"Wrote {Loc.English.Count} tokens to {path}. Translate the values and save as Translations/<Language>/vdw.json inside the mod's folder in BepInEx/plugins.");
                 }
                 else if (args[0].Equals("listbuffs", StringComparison.OrdinalIgnoreCase))
                 {

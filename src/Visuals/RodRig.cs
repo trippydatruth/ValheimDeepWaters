@@ -138,7 +138,7 @@ namespace ValheimDeepWaters
             if (RiggedRodCache.TryGetValue(baseName, out var cached)) return cached;
             var prefab = FindBundlePrefab(baseName, out var source);
             GameObject? result = prefab != null && prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) != null ? prefab : null;
-            if (result != null) Plugin.Log.LogInfo($"Custom models: '{baseName}' is a rigged rod (from '{source}') - it bends and its reel turns.");
+            if (result != null) Plugin.Log.LogDebug($"Custom models: '{baseName}' is a rigged rod (from '{source}') - it bends and its reel turns.");
             RiggedRodCache[baseName] = result;
             return result;
         }

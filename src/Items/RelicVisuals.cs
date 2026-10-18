@@ -51,7 +51,7 @@ namespace ValheimDeepWaters
             var albedo = CustomModels.LoadBundleAsset<Texture2D>(ScaleCape + "_Albedo");
             if (albedo == null)
             {
-                Plugin.Log.LogInfo($"Jörmungandr's Scale: no '{ScaleCape}_Albedo' texture in the bundles; it stays a linen cape.");
+                Plugin.Log.LogWarning($"Jörmungandr's Scale: no '{ScaleCape}_Albedo' texture in the bundles; it stays a linen cape.");
                 return;
             }
             var normal = CustomModels.LoadBundleAsset<Texture2D>(ScaleCape + "_Normal");
@@ -99,7 +99,7 @@ namespace ValheimDeepWaters
             }
             var shared = prefab.GetComponent<ItemDrop>()?.m_itemData.m_shared;
             if (shared != null) shared.m_variants = 0;   // no linen colour picker
-            Plugin.Log.LogInfo($"Jörmungandr's Scale: linen cape retextured ({made.Count} material(s)).");
+            Plugin.Log.LogDebug($"Jörmungandr's Scale: linen cape retextured ({made.Count} material(s)).");
         }
 
 
@@ -161,33 +161,6 @@ namespace ValheimDeepWaters
                     if (have != null) have.HideBelt(__instance);
                 }
             }
-        }
-
-        /// <summary>vdw_debug pearlfit: sets the pearl belt's scale, height, forward offset and stretch, and refits it on everyone.</summary>
-        internal static string PearlFit(float scale, float up, float forward, float tall, float deep) =>
-            Refit(Pearl, new Vector4(0f, up, forward, scale), new Vector3(1f, tall, deep));
-
-        /// <summary>vdw_debug runefit: the same for the rune necklace (width instead of height: it lies round the neck).</summary>
-        internal static string RuneFit(float scale, float up, float forward, float wide, float deep) =>
-            Refit(Rune, new Vector4(0f, up, forward, scale), new Vector3(wide, 1f, deep));
-
-        /// <summary>vdw_debug runeskin: how fully the necklace follows the body (0 rigid on the chest, 1 fully skinned).</summary>
-        internal static string RuneSkin(float strength)
-        {
-            Rune.Strength = Mathf.Clamp01(strength);
-            return Refit(Rune, Rune.Fit, Rune.Shape) + $" Skinning {Rune.Strength:0.00}.";
-        }
-
-        private static string Refit(Worn spec, Vector4 fit, Vector3 shape)
-        {
-            spec.Fit = fit;
-            spec.Shape = shape;
-            int n = 0;
-            foreach (var w in Object.FindObjectsByType<WornRelic>(FindObjectsSortMode.None))
-                if (w.Spec == spec) { w.Refit(); n++; }
-            string msg = $"{spec.Label}: scale {fit.w:0.00}, up {fit.y:0.00}, forward {fit.z:0.00}, stretch x{shape.x:0.00} y{shape.y:0.00} z{shape.z:0.00} (refitted on {n} wearer(s)).";
-            Plugin.Log.LogInfo(msg);
-            return msg;
         }
 
         private sealed class WornRelic : MonoBehaviour
@@ -257,14 +230,6 @@ namespace ValheimDeepWaters
                 if (i < 0 || bind == null || i >= bind.Length) return (bone.position, bone.rotation);
                 var m = body.transform.localToWorldMatrix * bind[i].inverse;
                 return (m.GetColumn(3), m.rotation);
-            }
-
-            /// <summary>Puts the model back with the current fit (vdw_debug pearlfit / runefit).</summary>
-            public void Refit()
-            {
-                if (_vis == null || Spec == null) return;
-                if (_model != null) Destroy(_model);
-                Attach(_vis, Spec);
             }
 
             public void Remove()

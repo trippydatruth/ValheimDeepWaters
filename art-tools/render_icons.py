@@ -16,6 +16,7 @@ LOOK_DOWN = {"buff_relic_pearl": 20, "buff_chum_basic": 38, "buff_chum_blood": 3
 GLOW.update({"bait_lure_crown": 1.2, "bait_lure_ice_spoon": 0.6, "bait_lure_frostcore_jig": 1.0, "rod_frostwood": 1.5, "hook_fimbul": 1.0, "buff_angler_north": 1.0,
              "fish_rimejaw_cod": 0.6, "fish_glacier_grayling": 1.0, "fish_frost_sculpin": 0.8, "fish_fimbul_salmon": 1.5}, **{f"bossmat_{b}": 1.2 for b in ("eikthyr_elver", "elder_bass", "bonemass_catfish", "moder_scale", "yagluthgill", "queen_eel", "fimbul_salmon")})
 GLOW["buff_rune_njord"] = 1.2
+GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,

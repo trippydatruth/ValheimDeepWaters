@@ -63,7 +63,7 @@ namespace ValheimDeepWaters
                 }
             }
             if (found != _near)
-                Plugin.Log.LogInfo(found != null
+                Plugin.Log.LogDebug(found != null
                     ? $"Boss weather: {found.FishId} near you - {EnvFor(found) ?? "no matching environment"}."
                     : "Boss weather: clearing.");
             _near = found;

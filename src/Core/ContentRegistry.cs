@@ -564,7 +564,7 @@ namespace ValheimDeepWaters
             var recipe = ObjectDB.instance?.m_recipes.FirstOrDefault(r => r != null && r.m_item != null && r.m_item.gameObject.name == "FishRaw");
             if (recipe == null)
             {
-                Plugin.Log.LogInfo("Raw fish recipe not found; Deep Waters fish can't be made into Raw fish.");
+                Plugin.Log.LogWarning("Raw fish recipe not found; Deep Waters fish can't be made into Raw fish.");
                 return;
             }
             var have = new HashSet<string>(recipe.m_resources.Where(r => r?.m_resItem != null).Select(r => r.m_resItem.gameObject.name));
@@ -579,7 +579,7 @@ namespace ValheimDeepWaters
             }
             if (add.Count == 0) return;
             recipe.m_resources = recipe.m_resources.Concat(add).ToArray();
-            Plugin.Log.LogInfo($"Raw fish: {add.Count} Deep Waters fish can be made into Raw fish at the preparation table.");
+            Plugin.Log.LogDebug($"Raw fish: {add.Count} Deep Waters fish can be made into Raw fish at the preparation table.");
         }
 
         private static void RemoveVanillaFishingRecipes()

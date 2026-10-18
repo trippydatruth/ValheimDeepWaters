@@ -16,9 +16,13 @@
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
 
+    <!-- Keep local folder paths out of the built DLL -->
+    <PathMap>$(MSBuildProjectDirectory)=ValheimDeepWaters</PathMap>
+    <Deterministic>true</Deterministic>
+
     <!-- Base Paths -->
     <ValheimDir Condition="'$(ValheimDir)' == ''">D:\SteamLibrary\steamapps\common\Valheim</ValheimDir>
-    <ThunderstoreProfile Condition="'$(ThunderstoreProfile)' == ''">C:\Users\tripp\AppData\Roaming\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Test\BepInEx</ThunderstoreProfile>
+    <ThunderstoreProfile Condition="'$(ThunderstoreProfile)' == ''">$(APPDATA)\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Test\BepInEx</ThunderstoreProfile>
     <BepInExDir Condition="'$(BepInExDir)' == ''">$(ThunderstoreProfile)\core</BepInExDir>
     <PluginsDir Condition="'$(PluginsDir)' == ''">$(ThunderstoreProfile)\plugins</PluginsDir>
   </PropertyGroup>

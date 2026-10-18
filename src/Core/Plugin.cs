@@ -15,7 +15,7 @@ namespace ValheimDeepWaters
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Guid = "trippy.valheimdeepwaters";
+        public const string Guid = "valheimdeepwaters";   // also the config file's name: BepInEx/config/valheimdeepwaters.cfg
         public const string Name = "Valheim: Deep Waters";
         public const string Version = "0.14.0";
 
@@ -31,7 +31,9 @@ namespace ValheimDeepWaters
             Directory.CreateDirectory(ConfigDirectory);
             CustomModels.EnsureFolder();
 
+            bool moved = MoveOldConfig();
             VdwConfig.Load(Config);
+            if (moved) DropRemovedSettings();
 
             // Items can only be cloned once vanilla prefabs are loaded.
             PrefabManager.OnVanillaPrefabsAvailable += RegisterContent;
@@ -49,6 +51,31 @@ namespace ValheimDeepWaters
             catch (Exception ex) { Log.LogError($"Failed to register console commands: {ex.Message}"); }
 
             Log.LogInfo($"{Name} {Version} loaded.");
+        }
+
+        /// <summary>Before 0.14 the config was trippy.valheimdeepwaters.cfg: carry its settings over once.</summary>
+        private bool MoveOldConfig()
+        {
+            try
+            {
+                string old = Path.Combine(BepInEx.Paths.ConfigPath, "trippy.valheimdeepwaters.cfg");
+                if (!File.Exists(old) || File.Exists(Config.ConfigFilePath)) return false;
+                File.Move(old, Config.ConfigFilePath);
+                Config.Reload();
+                Log.LogInfo("Settings moved from trippy.valheimdeepwaters.cfg to valheimdeepwaters.cfg.");
+                return true;
+            }
+            catch (Exception ex) { Log.LogWarning($"Could not move the old config file: {ex.Message}"); return false; }
+        }
+
+        /// <summary>Clears settings from older versions that no longer exist, so the moved file only lists current ones.</summary>
+        private void DropRemovedSettings()
+        {
+            if (AccessTools.Property(typeof(BepInEx.Configuration.ConfigFile), "OrphanedEntries")?.GetValue(Config) is System.Collections.IDictionary orphans && orphans.Count > 0)
+            {
+                orphans.Clear();
+                Config.Save();
+            }
         }
 
         private void LateUpdate()

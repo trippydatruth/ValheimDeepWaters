@@ -1,4 +1,3 @@
-MISS2
 # Valheim: Deep Waters
 
 A fishing overhaul for Valheim. Fish swim up to your bait, nibble and then bite, and you play the fight with
@@ -9,18 +8,18 @@ Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.16.
 
 ## Features
 
-- All 12 vanilla fish plus 24 new ones, including 9 legendaries, each with its own biomes, depth,
+- All 12 vanilla fish plus 28 new ones, including 10 legendaries, each with its own biomes, depth,
   favourite bait, time of day and weather
 - Fish you can see swim up to your bait, nibble the float, then bite. Strike too early and you spook them;
   make noise and they flee
 - A real fight: line tension, drag on the mouse wheel, sideways runs, leaps and snapped lines
-- Nine rods, one for each era, that wear out with use, and hooks in six sizes
+- Eleven rods, one for each era plus two special ones, that wear out with use, and hooks in six sizes
 - Bait from the world: worms, grubs, flies, leeches and baitfish
 - Tackle slots for your bait and hook under the inventory
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
-  with trailers, and six boss lures
+  with trailers, and seven boss lures
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
-- Fishing meads, gear, chum, totems and rare relics
+- Fishing meads, chum, totems, rare relics and a Fisherman's armour set
 - Size classes, a trophy mount, cooking, selling, a catch log with rewards, and Valheim's Fishing skill
 
 ## How to fish
@@ -247,6 +246,8 @@ strains the line less); Shift reels at full speed.
 | Bone Jig | Jig, takes a trailer | Lingcod, halibut, grouper (1–30 kg) | Forge 2 |
 | Silver Swimbait | Swimbait | Big pike, tuna, grouper, halibut (2–40 kg) | Forge 3 |
 | Linen Popper | Topwater | Pike, trollfish, mackerel (0.5–20 kg) | Workbench 4 |
+| Ice Spoon | Spoon | Salmon, grayling, char (0.5–20 kg) | Forge 4 |
+| Frostcore Jig | Jig, takes a trailer | Rimejaw cod, sculpin (1–60 kg) | Black forge 2 |
 
 A **trailer** (Curly Tail, Boar Rind, Feather Skirt) brings fish of its own and makes the lure's fish keener.
 Lures and trailers are only used up when a fish is hooked. The boss lures work the same way, but only their boss
@@ -283,6 +284,12 @@ Tiered items that unlock as you progress:
   legendaries, never in bait fish). The **Pearl of Njord**, **Jörmungandr's Scale** and the **Golden Hook** are
   only left behind by boss fish: each boss you land has a 1 in 4 chance of one, one you don't have yet first.
 
+## Fisherman's gear
+
+A light armour set made at the workbench (level 2): the **Sou'wester**, **Oilskin Coat** (worn as a cape), **Striped
+Fisher's Shirt** and **Oilskin Overalls** with rubber boots. Wearing all four keeps the rain off (you never get Wet)
+and makes reeling cheaper and the hookset window longer.
+
 ## Your catch
 
 - **Size class:** each fish is Small, Medium, Large or Trophy, with its weight and catcher in the tooltip.
@@ -295,7 +302,7 @@ Tiered items that unlock as you progress:
 
 ## Settings
 
-The config is `BepInEx/config/trippy.valheimdeepwaters.cfg`.
+The config is `BepInEx/config/valheimdeepwaters.cfg`.
 
 | Setting | Default | |
 |---|---|---|
@@ -311,7 +318,7 @@ The config is `BepInEx/config/trippy.valheimdeepwaters.cfg`.
 
 ## Console commands
 
-These need `devcommands`.
+For testing and server admins. These need `devcommands`.
 
 - `vdw_give <item> [amount]`: spawns an item, for example `rod_copper`, `hook_small`, `buff_angler_minor`,
   `worm` or a fish id.
@@ -320,16 +327,6 @@ These need `devcommands`.
 - `vdw_debug bite`: the next cast bites straight away.
 - `vdw_debug boss <fish id>`: the next cast summons that boss fish anywhere, with any bait (for testing).
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
-- `vdw_debug boatseat <rower|passenger|holdfast> <right> <up> <forward> [turn]`: moves a Fishing Boat seat (metres,
-  degrees) to fit it by eye; prints the running total.
-- `vdw_debug pearlfit <scale> <up> <forward> [height] [depth]`: fits the worn Pearl of Njord belt (defaults 1,
-  0.29, 0.01, 1.1, 1.1).
-- `vdw_debug runefit <scale> <up> <forward> [width] [depth]`: fits the worn Rune of Njord necklace (defaults 1.2,
-  0.09, 0.06, 1, 1.15; up and forward from the base of the neck).
-- `vdw_debug runeskin <0-1>`: how fully the worn necklace bends with the body (default 0.5; 0 rides rigidly on the chest).
-- `vdw_debug idlehand <along>`: how far up the rod from the reel the left hand holds it with no line out (default 0.5).
-- `vdw_debug idleshift <right> <forward> [up]`: moves the whole no-line-out hold, both hands and the rod (default 0.06,
-  0.06, 0).
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug tokens`: exports the text for translating.
 
@@ -365,7 +362,7 @@ Sizing: every model is used at **exactly its size in Unity** - 1 unit = 1 metre,
 in its prefab (the root included). Nothing is resized, so build each model at the size you want it in game:
 model in metres in Blender (Metric, Unit Scale 1), apply all transforms, export FBX with Apply Scalings "FBX
 All", -Z Forward, Y Up and Apply Transform, and import in Unity with Scale Factor 1 and Convert Units on. Face
-models forward along +Z. The log shows each model's final size (`final size (x, y, z)`, in metres).
+models forward along +Z. With debug logging on (see Troubleshooting), the log shows each model's final size in metres.
 
 Icons:
 - A `<name>_icon.png` in the folder becomes that item's icon.
@@ -406,7 +403,7 @@ the line snaps. The reel winds in while you reel and spins backward as line pays
 ### Translations
 
 Run `vdw_debug tokens`, translate the file it writes, and save it as
-`BepInEx/plugins/ValheimDeepWaters/Translations/<Language>/vdw.json`.
+`Translations/<Language>/vdw.json` inside the mod's folder in `BepInEx/plugins` (any folder named `Translations` there works).
 
 ## Multiplayer
 
@@ -416,13 +413,34 @@ Every player needs the mod, the same version as the server (the game checks when
 - **Shared:** caught fish, worm mounds, totems and trophy mounts are normal world objects that everyone sees.
 - **Per player:** the fight, the bobber, flies and rain worms only show for the player who has them.
 
-## Building from source
+## Troubleshooting
 
-```
-dotnet build -c Release
-```
+The mod writes a few lines to the BepInEx log when it starts, plus warnings if something is missing. For a
+detailed log (every model loaded, and more), add `Debug` to `LogLevels` under `[Logging.Disk]` in
+`BepInEx/config/BepInEx.cfg`.
 
-The project expects Valheim at `D:\SteamLibrary\steamapps\common\Valheim`; pass `-p:ValheimDir=...` if
-yours is elsewhere. `build.ps1` builds the mod and also copies it into your BepInEx plugins folder.
-`package.ps1` builds the Thunderstore package into `dist`: the DLL, the models and icons, the manifest and
-icon from `thunderstore`, and this README and the CHANGELOG.
+## Credits
+
+Several fish are built on models from Sketchfab, used under their licences:
+
+| Fish | Model | Author | Licence |
+|---|---|---|---|
+| Bonemaw | [Pacific Viperfish](https://sketchfab.com/3d-models/pacific-viperfish-21368fef466343b4b9d0ca11f2cff468) | redsonder1000 | CC BY |
+| Frost Char | [White-spotted Charr](https://sketchfab.com/3d-models/cc0-white-spotted-charr-605079fc074f451db012579f67457629) | ffish.asia / floraZia.com | CC0 |
+| Frost Sculpin | [Roughskin Sculpin](https://sketchfab.com/3d-models/cc0-roughskin-sculpin-t-fasciatus-dda1cde382f146eeb8f767e09d475ec5) | ffish.asia / floraZia.com | CC0 |
+| Greydwarf Goby | [Freshwater Goby No.1](https://sketchfab.com/3d-models/freshwater-goby-no1-5b637be8e9ca4bd0ac6e71657c9d75d5) | Thomas Flynn | CC BY |
+| Halibut | [Bastard Halibut](https://sketchfab.com/3d-models/cc0-bastard-halibut-p-olivaceus-abaafcb174bc44f1a0206e267925bc8f) | ffish.asia / floraZia.com | CC0 |
+| Jotunn Perch | [European Perch](https://sketchfab.com/3d-models/european-perch-ca1bef303691418f9788a5b1ca1870d5) | doublesob | CC BY-NC |
+| Mackerel | [Atlantic Mackerel](https://sketchfab.com/3d-models/atlantic-mackerel-e4a92741c16448e38a0be59845ab369b) | NewViStudios | CC BY |
+| Odin's Eye | [Opah fish](https://sketchfab.com/3d-models/opah-fish-d5bd15eb103e4e909fe91efe37c65f50) | Batton | CC BY |
+| Serpentfin | [Oarfish](https://sketchfab.com/3d-models/oarfish-7a60a4df5af940e58ff1f300609e7ee2) | TheoBaldeteBRID | CC BY |
+| Surtling Sardine | [Sardine](https://sketchfab.com/3d-models/sardine-d7a2d0bd2a524d35b01e0d898b026479) | Drake | CC BY |
+| Thor's Hammerhead | [Scalloped Hammerhead Juvenile](https://sketchfab.com/3d-models/scalloped-hammerhead-juvenile-low-poly-f5adc17c922b48feae76aaea98552dd4) | sharkingaround | CC BY |
+| Trout | [Rainbow Trout - Redband](https://sketchfab.com/3d-models/rainbow-trout-redband-442ab10476d0486e8eb689941bc4ad6e) | eb78 | CC BY |
+| Largemouth Bass | [Model 67A - Largemouth Bass](https://sketchfab.com/3d-models/model-67a-largemouth-bass-e60c457636b640629747c19feac4906c) | DigitalLife3D | CC BY-NC |
+| Bluegill | [Model 70A - Bluegill](https://sketchfab.com/3d-models/model-70a-bluegill-3f4665f558fc4bcab1b460e5f33666d3) | DigitalLife3D | CC BY-NC |
+| Sea Bass | [Perch Weever Sea Bass Fish](https://sketchfab.com/3d-models/perch-weever-sea-bass-fish-88a88ea2e8954f99ac153231e3a25d01) | boxgizmo | Sketchfab Standard |
+
+The models were rigged, retextured and restyled for Valheim. Licences:
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/),
+[CC0](https://creativecommons.org/publicdomain/zero/1.0/).

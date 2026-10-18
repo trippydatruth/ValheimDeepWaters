@@ -235,7 +235,7 @@ namespace ValheimDeepWaters
                     return null;
                 }
                 LoadedBundles[path] = bundle;
-                Plugin.Log.LogInfo($"Custom models: loaded {Path.GetFileName(path)} ({bundle.GetAllAssetNames().Length} assets).");
+                Plugin.Log.LogDebug($"Custom models: loaded {Path.GetFileName(path)} ({bundle.GetAllAssetNames().Length} assets).");
                 return bundle;
             }
             catch (Exception ex)
@@ -296,7 +296,7 @@ namespace ValheimDeepWaters
             mesh.vertices = verts;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
-            Plugin.Log.LogInfo($"Custom models: '{baseName}' scaled by {scale}{(rotation == Quaternion.identity ? "" : $", rotated {rotation.eulerAngles}")} - final size {mesh.bounds.size}.");
+            Plugin.Log.LogDebug($"Custom models: '{baseName}' scaled by {scale}{(rotation == Quaternion.identity ? "" : $", rotated {rotation.eulerAngles}")} - final size {mesh.bounds.size}.");
             return mesh;
         }
 

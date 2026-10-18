@@ -58,8 +58,15 @@ MATS = {
     "blubber": ((0.86, 0.78, 0.72), (0.7, 0.58, 0.52), 0.35, 0.0, 0.0, "noise"),
     "berry":   ((0.72, 0.06, 0.08), (0.45, 0.02, 0.04), 0.25, 0.0, 0.0, "noise"),
     "barka":   ((0.3, 0.23, 0.18), (0.78, 0.86, 0.95), 0.8, 0.0, 0.0, "streak"),
+    # the designed baits (roadmap #7)
+    "meat":    ((0.55, 0.12, 0.10), (0.86, 0.74, 0.68), 0.5, 0.0, 0.0, "streak"),                   # raw wolf meat, marbled with fat
+    "gland":   ((0.55, 0.85, 1.0), (0.88, 0.97, 1.0), 0.12, 0.0, 0.7, "frost", (0.5, 0.85, 1.0)),   # a freeze gland, cold glow
+    "entrail": ((0.62, 0.32, 0.42), (0.38, 0.14, 0.24), 0.22, 0.0, 0.0, "rings"),                   # wet guts
+    "bloodsac":((0.32, 0.02, 0.03), (0.58, 0.07, 0.08), 0.1, 0.0, 0.0, "noise"),                    # a bloodbag
+    "serpent": ((0.10, 0.36, 0.32), (0.55, 0.74, 0.55), 0.3, 0.3, 0.0, "scales_u"),                 # sea-serpent scale
+    "eitr":    ((0.55, 0.30, 1.0), (0.80, 0.62, 1.0), 0.2, 0.0, 1.0, "flat", (0.62, 0.42, 1.0)),    # eitr, glowing violet
 }
-G = 6
+G = 7    # 7 x 7 tiles (6 x 6 ran out with the designed baits' materials)
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
 def tuv(name, u, v):
     tx, ty = TILE[name]; m = 0.02
@@ -418,7 +425,45 @@ elif LURE == "northern_bait":
         d = Vector((math.sin(ph) * math.cos(th) * 0.9, math.cos(ph) * 1.25, math.sin(ph) * math.sin(th) * 0.7))
         blob(d * 0.0118, rnd.uniform(0.0022, 0.003), "berry", seg=8, rings=6)
 
-# clean up for Unity: weld points that sit on top of each other (the poles of the round parts), drop degenerate faces,
+elif LURE == "frost_bait":
+    # Frost Bait (Freeze Gland + Wolf Meat): a marbled chunk of raw wolf meat, a freeze gland pressed into its top glowing a
+    # cold blue, and a crust of ice shards growing out round it
+    blob((0, 0, 0), 0.013, "meat", seg=14, rings=10, scale=(1.0, 1.3, 0.78), bump=0.26, seed=13)
+    blob((0.002, -0.004, 0.0075), 0.0066, "gland", seg=12, rings=8, scale=(1.0, 1.15, 0.85), bump=0.08, seed=2)
+    rnd = np.random.default_rng(21)
+    for k in range(7):
+        th = 2 * math.pi * k / 7 + rnd.uniform(-0.3, 0.3); r0 = rnd.uniform(0.006, 0.01)
+        base = Vector((r0 * math.cos(th), r0 * math.sin(th) * 1.25 - 0.002, 0.006))
+        crystal(base, base + Vector((math.cos(th) * 0.004, math.sin(th) * 0.004, rnd.uniform(0.006, 0.011))), rnd.uniform(0.0012, 0.0019), "ice")
+elif LURE == "deep_bait":
+    # Abyssal Bait (Entrails + Ooze + Bloodbag): a glossy bloodbag wrapped in a coil of entrails, dripping glowing ooze
+    blob((0, 0.003, 0), 0.0105, "bloodsac", seg=14, rings=10, scale=(1.0, 1.25, 0.9), bump=0.12, seed=7)
+    path = []
+    for i in range(46):                                     # entrails: a loose helix round the sac, wobbling
+        t = i / 45; a = t * 2 * math.pi * 2.3
+        rr = 0.0118 + 0.0016 * noise.noise(Vector((t * 6, 1.3, 0)))
+        path.append((rr * math.cos(a), -0.014 + 0.033 * t, rr * math.sin(a) * 0.95 + 0.0015 * math.sin(t * 17)))
+    tube(path, [0.0033 + 0.0006 * math.sin(i * 0.9) for i in range(len(path))], "entrail", seg=8)
+    for (x, y, z, r) in [(0.004, -0.006, -0.012, 0.0024), (-0.006, 0.01, -0.011, 0.002), (0.008, 0.012, -0.009, 0.0016), (-0.002, 0.0, 0.012, 0.0019)]:
+        blob((x, y, z), r, "ooze", seg=8, rings=6, scale=(1, 1, 1.5 if z < 0 else 0.7))   # drips hang, the top glob sits
+elif LURE == "rune_bait":
+    # Runed Lure (Silver + Eitr + Serpent Scale): a cupped sea-serpent scale in a silver rim, an eitr rune glowing on its
+    # face, a drop of eitr set at the head, silver rings and a silver hook - a legendary lure
+    drop = [(0.015 * math.sin(math.pi * t) * (0.55 + 0.45 * t), -0.042 + 0.078 * t) for t in np.linspace(0, 1, 18)]
+    out = drop + [(-x, y) for x, y in reversed(drop[1:-1])]
+    plate(out, 0.0026, "serpent", cup=0.005, smooth=False)
+    def zs(x, y): return -0.005 * (1 - ((Vector((x, y)) - Vector((0, -0.003))).length / 0.042) ** 2) + 0.0018
+    rim = [Vector((x, y, zs(x, y) - 0.0006)) for x, y in out]
+    tube(rim + rim[:1], [0.0009] * (len(rim) + 1), "silver", seg=5, caps=False)
+    for stroke in ([(0, 0.022), (0, -0.018)], [(0, 0.006), (-0.007, -0.006)], [(0, 0.006), (0.007, -0.006)], [(0, -0.008), (-0.005, -0.016)], [(0, -0.008), (0.005, -0.016)]):
+        pts = [Vector((stroke[0][0] + (stroke[1][0] - stroke[0][0]) * s, stroke[0][1] + (stroke[1][1] - stroke[0][1]) * s, 0)) for s in np.linspace(0, 1, 6)]
+        tube([(q.x, q.y, zs(q.x, q.y) + 0.0004) for q in pts], [0.0009] * 6, "eitr", seg=6)   # the rune, raised a hair
+    blob((0, -0.036, 0.0016), 0.0032, "eitr", seg=10, rings=7, scale=(1, 1.2, 0.8))           # the eitr drop
+    ring((0, -0.045, 0), (0, 0, 1), 0.0032, 0.0008, "silver")
+    ring((0, 0.039, -0.001), (0, 0, 1), 0.003, 0.0008, "silver")
+    hook((0, 0.041, -0.002), 0.03, "silver", up=-1)
+
+# clean up for Unity: weld points  that sit on top of each other (the poles of the round parts), drop degenerate faces,
 # and hand over triangles - Unity otherwise splits the collapsed quads into zero-area triangles and rejects the normals
 bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-7)
 bmesh.ops.dissolve_degenerate(bm, dist=1e-8, edges=bm.edges)

@@ -48,7 +48,7 @@ namespace ValheimDeepWaters
                 _cast = Ensure(_cast, "sfx_fishingrod_swing");
                 _landSplash = Ensure(_landSplash, "fx_float_hitwater");
                 _nibble = Ensure(_nibble, "fx_float_nibble");
-                Plugin.Log.LogInfo($"Effects: cast {(_cast != null && _cast.HasEffects() ? "ok" : "missing")}, splash {(_landSplash != null && _landSplash.HasEffects() ? "ok" : "missing")}, nibble {(_nibble != null && _nibble.HasEffects() ? "ok" : "missing")}.");
+                Plugin.Log.LogDebug($"Effects: cast {(_cast != null && _cast.HasEffects() ? "ok" : "missing")}, splash {(_landSplash != null && _landSplash.HasEffects() ? "ok" : "missing")}, nibble {(_nibble != null && _nibble.HasEffects() ? "ok" : "missing")}.");
 
                 // Route our own audio through the game's SFX mixer so the volume slider applies.
                 _sfxGroup = FindMixerGroup(_nibble) ?? FindMixerGroup(_landSplash);
@@ -124,7 +124,7 @@ namespace ValheimDeepWaters
             var reel = LoadSound("fishing_reel");
             if (reel != null) _reelClip = reel;
             _dragClip = LoadSound("fishing_reel_drag");
-            Plugin.Log.LogInfo($"Reel sounds: winding {(reel != null ? "fishing_reel" : _reelClip != null ? "vanilla" : "none")}, drag {(_dragClip != null ? "fishing_reel_drag" : "none")}.");
+            Plugin.Log.LogDebug($"Reel sounds: winding {(reel != null ? "fishing_reel" : _reelClip != null ? "vanilla" : "none")}, drag {(_dragClip != null ? "fishing_reel_drag" : "none")}.");
         }
 
         private static AudioClip? LoadSound(string name)

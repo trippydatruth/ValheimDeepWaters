@@ -106,6 +106,10 @@ public static class VdwModelImporter
         new Entry("bait_lure_ice_spoon", "bait", Kind.Static, 0.6f) { Scale = LureScale },
         new Entry("bait_lure_frostcore_jig", "bait", Kind.Static, 1.2f) { Scale = LureScale },
         new Entry("bait_northern_bait", "bait", Kind.Static) { Scale = BaitScale },
+        // designed baits (roadmap #7): build_lures.py frost_bait / deep_bait / rune_bait
+        new Entry("bait_frost_bait", "bait", Kind.Static, 1f) { Scale = BaitScale },
+        new Entry("bait_deep_bait", "bait", Kind.Static, 1f) { Scale = BaitScale },
+        new Entry("bait_rune_bait", "bait", Kind.Static, 1.5f) { Scale = LureScale },
         new Entry("bait_trailer_curly_tail", "bait", Kind.Static) { Scale = LureScale },
         new Entry("bait_trailer_boar_rind", "bait", Kind.Static) { Scale = LureScale },
         new Entry("bait_trailer_feather_skirt", "bait", Kind.Static) { Scale = LureScale },
@@ -233,7 +237,7 @@ public static class VdwModelImporter
                 log.AppendLine($"sound {path} -> buffs");
             }
 
-        // Loose textures (e.g. the JÃ¶rmungandr's Scale cape maps put on a vanilla cape): every texture in
+        // Loose textures (e.g. the Jörmungandr's Scale cape maps put on a vanilla cape): every texture in
         // Assets/DeepWaters/Textures goes into the buffs bundle, found in game by its file name. *_Normal is a normal map,
         // *_MetallicSmoothness linear.
         if (AssetDatabase.IsValidFolder(Root + "/Textures"))
@@ -244,9 +248,10 @@ public static class VdwModelImporter
                 {
                     bool normal = path.Contains("_Normal"), linear = normal || path.Contains("_MetallicSmoothness");
                     var type = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-                    if (ti.textureType != type || ti.sRGBTexture == linear || ti.maxTextureSize != 512)
+                    var comp = normal || linear ? TextureImporterCompression.CompressedHQ : TextureImporterCompression.Compressed;
+                    if (ti.textureType != type || ti.sRGBTexture == linear || ti.maxTextureSize != 512 || ti.textureCompression != comp)
                     {
-                        ti.textureType = type; ti.sRGBTexture = !linear; ti.maxTextureSize = 512;
+                        ti.textureType = type; ti.sRGBTexture = !linear; ti.maxTextureSize = 512; ti.textureCompression = comp;
                         ti.SaveAndReimport();
                     }
                 }
@@ -302,12 +307,12 @@ public static class VdwModelImporter
                     File.Copy(Path.Combine(OutDir, b), dst, true);
                     log.AppendLine($"   installed {dst}");
                 }
-                if (Directory.Exists(backup)) log.AppendLine($"   previous bundles backed up to {backup}");
-            }
+                if (Directory.Exists(backup)) log.AppendLine($"   previous bundles backed up to {backup}");            }
             else log.AppendLine($"!! Models folder not found, bundles not installed: {ModelsDir}");
         }
         catch (Exception ex) { log.AppendLine($"!! bundle build failed: {ex}"); }
 
+        log.AppendLine($"all-black glow maps left out: {SkippedBlack}");
         File.WriteAllText("vdw_import_report.txt", log.ToString());
         Debug.Log("Deep Waters import finished:\n" + log);
     }
@@ -330,6 +335,23 @@ public static class VdwModelImporter
                    (prefix == null || n.StartsWith(prefix + "_Unity_", StringComparison.OrdinalIgnoreCase));
         });
 
+    // An emission map with nothing lit in it (every pixel near black) would only add size to the bundle.
+    static readonly Dictionary<string, bool> BlackMaps = new Dictionary<string, bool>();
+    static int SkippedBlack;
+    static bool IsBlack(string path)
+    {
+        if (path == null) return true;
+        if (BlackMaps.TryGetValue(path, out var known)) return known;
+        var t = new Texture2D(2, 2);
+        bool black = true;
+        if (t.LoadImage(File.ReadAllBytes(path)))
+            foreach (var px in t.GetPixels32())
+                if (px.r > 6 || px.g > 6 || px.b > 6) { black = false; break; }
+        UnityEngine.Object.DestroyImmediate(t);
+        if (black) SkippedBlack++;
+        return BlackMaps[path] = black;
+    }
+
     static bool HasSet(Entry e, string prefix) => FindTex(e, "_Albedo", prefix) != null;
 
     static void SetupImporters(Entry e, StringBuilder log)
@@ -342,12 +364,14 @@ public static class VdwModelImporter
             ti.textureType = TextureImporterType.Default;
             ti.sRGBTexture = true; ti.alphaIsTransparency = false;
             ti.maxTextureSize = e.TexSize; ti.mipmapEnabled = true;
-            ti.textureCompression = TextureImporterCompression.CompressedHQ;
+            ti.textureCompression = TextureImporterCompression.CompressedHQ;   // colour maps drop to standard below
             setup(ti);
             ti.SaveAndReimport();
             }
         }
-        Tex("_Albedo", ti => ti.alphaIsTransparency = e.Key == "bait_fly");
+        // colour maps at standard compression (DXT1, DXT5 with alpha): half the size of high quality, and the blurred
+        // Valheim-style textures hide the difference; normal and metal/smoothness maps stay high quality
+        Tex("_Albedo", ti => { ti.alphaIsTransparency = e.Key == "bait_fly"; ti.textureCompression = TextureImporterCompression.Compressed; });
         Tex("_MetallicSmoothness", ti => ti.sRGBTexture = false);
         Tex("_Normal", ti => ti.textureType = TextureImporterType.NormalMap);
         Tex("_Emission", ti => { });
@@ -413,7 +437,7 @@ public static class VdwModelImporter
             m.SetFloat("_GlossMapScale", 1f); m.SetFloat("_SmoothnessTextureChannel", 0f);
         }
         if (nrm != null) { m.SetTexture("_BumpMap", nrm); m.SetFloat("_BumpScale", 1f); m.EnableKeyword("_NORMALMAP"); }
-        if (em != null && e.Glow > 0f)
+        if (em != null && e.Glow > 0f && !IsBlack(FindTex(e, "_Emission", prefix)))
         {
             m.SetTexture("_EmissionMap", em);
             m.SetColor("_EmissionColor", Color.white * e.Glow);

@@ -42,7 +42,7 @@ namespace ValheimDeepWaters
                 if (parts.Count == 0) return null;
                 Cache[cacheKey] = parts;
                 if (Logged.Add(key.Split('|')[0] + source))
-                    Plugin.Log.LogInfo($"Worn relic: {key.Split('|')[0]} skinned to the body ({parts.Sum(p => p.mesh.vertexCount)} vertices, weights {source}).");
+                    Plugin.Log.LogDebug($"Worn relic: {key.Split('|')[0]} skinned to the body ({parts.Sum(p => p.mesh.vertexCount)} vertices, weights {source}).");
             }
 
             // Where Valheim puts its own skinned equipment: beside the body, on the body's bones.
