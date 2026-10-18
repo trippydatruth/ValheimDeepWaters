@@ -399,6 +399,7 @@ namespace ValheimDeepWaters
                     // A model just for this rod (rod_<id>) if there is one, else the shared rod model.
                     if (!CustomModels.ApplyToPrefab(item.ItemPrefab, "rod_" + rod.Id))
                         CustomModels.ApplyToPrefab(item.ItemPrefab, "rod");
+                    VanillaFx.AttachToRod(item.ItemPrefab, rod.Id);            // the top rods only
 
                     ItemManager.Instance.AddItem(item);
                     RodByItemName[name] = rod;
@@ -655,6 +656,7 @@ namespace ValheimDeepWaters
                     if (CustomModels.ApplyToPrefab(item.ItemPrefab, "fish_" + fish.Id))
                         GroundPose.FitCollider(item.ItemPrefab);
                     GroundPose.PrepareFishPrefab(item.ItemPrefab);
+                    VanillaFx.AttachToFish(item.ItemPrefab, fish.Id);          // legendary and boss fish only
                     Cooking.PriceRawFish(fish, item.ItemPrefab);
 
                     try { Cooking.RegisterCookedFish(fish, item.ItemPrefab); }

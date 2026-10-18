@@ -77,3 +77,25 @@ The enable sounds are `sfx_weapons_{blood,lightning,nature}_enable` and the impa
   nothing needs to sync except the state that turns it on.
 - **Copyright:** reuse the game's own prefabs at runtime only. Don't export the meshes, textures or particle settings
   into our files or bundles.
+
+## In use (src/Visuals/VanillaFx.cs, 2026-10-17)
+
+Legendary and boss fish and the top rods only. Shown on the landed/dropped fish, on the fish fighting on the line,
+and on the rod in hand. Particles emit from our own model's surface; at most one light per effect.
+
+| Fish / rod | Effect |
+|---|---|
+| Eikthyr Elver | Dundr's lightning and storm clouds, sky-blue light |
+| Elder Bass | Nature spores (Nidhogg), green light |
+| Bonemass Catfish | Draugr Fang's teal motes and light |
+| Moder Scale Fish | Frostner's frost cloud and snowflakes |
+| Yagluth Gill | Dyrnwyn's flames and orange light |
+| Queen Eel | Dead Raiser's purple flames and sparks, purple light |
+| Fimbul Salmon | Staff of Frost snowflakes and Frostner's cloud, ice-blue light |
+| Odin's Eye | Mistwalker's blue mist motes and light |
+| Thor's Hammerhead | Lightning gem arcs and clouds, light |
+| Fenringfin | Blood gem swirls and drips |
+| Yggdrasil Rod | nature spores |
+| Ashwood Rod | Staff of Embers embers |
+| Frostwood Rod | Frostner's snowflakes |
+| Leviathan Rod | Mistwalker's mist motes |

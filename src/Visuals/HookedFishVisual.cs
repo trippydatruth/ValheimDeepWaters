@@ -83,6 +83,8 @@ namespace ValheimDeepWaters
             var bounds = renderers[0].bounds;
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
 
+            // a legendary or boss fish fights wreathed in its vanilla effect (VanillaFx)
+            if (customModelKey != null && customModelKey.StartsWith("fish_")) VanillaFx.AttachToFish(go, customModelKey.Substring(5));
             var visual = go.AddComponent<HookedFishVisual>();
             visual._topOffset = bounds.max.y;
             visual._anim = anim;
