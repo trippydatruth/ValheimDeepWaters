@@ -50,8 +50,8 @@ namespace ValheimDeepWaters
                 RegisterBaits();
                 RegisterFish();
                 BossFish.Register();
-                // Fisherman's gear: on hold until its fit is right (FisherGear.cs is kept; the models aren't in the build)
-                // try { FisherGear.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear failed: {ex}"); }
+                // Fisherman's gear: the remade set (new_gear_rig.blend, painted weights)
+                try { FisherGear.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear failed: {ex}"); }
                 RemoveVanillaFishingGear();
                 BaitSources.Register();
                 try { FishSize.RegisterTrophyMount(); } catch (Exception ex) { Plugin.Log.LogError($"Trophy mount failed: {ex.Message}"); }

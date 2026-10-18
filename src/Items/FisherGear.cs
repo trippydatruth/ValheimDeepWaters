@@ -130,6 +130,14 @@ namespace ValheimDeepWaters
                 }
                 ground.transform.localScale = Vector3.one * s;
                 ground.transform.localPosition = -bounds.center * s;               // centred on the item
+                // the helmet's collider lived in the "attach" removed above: without one a dropped hat fell through the
+                // ground and couldn't be picked up. Any piece left with no solid collider gets a box round its model.
+                if (!prefab.GetComponentsInChildren<Collider>(true).Any(c => !c.isTrigger && c.gameObject.activeSelf))
+                {
+                    var box = prefab.AddComponent<BoxCollider>();
+                    box.center = Vector3.zero;
+                    box.size = Vector3.Max(bounds.size * s, Vector3.one * 0.1f);
+                }
             }
 
             var go = new GameObject("attach_skin");

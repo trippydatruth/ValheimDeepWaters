@@ -8,6 +8,13 @@
   opah), Thor's Hammerhead, Serpentfin (an oarfish) and Surtling Sardine. Five more on Tripo models: Rimejaw Cod (frost-rimed),
   Glacier Grayling (glowing fin dots), Lingcod, Mistfin (pale, misty, faint glowing flecks) and the Fenringfin (a wolffish,
   swimming like an eel). Fish with open mouths keep them shut in the idle swim and snap them open on the line.
+- **Four new fish**: the **Bluegill** (Meadows lakes, every angler's first fish), **Largemouth Bass** (Meadows and Black
+  Forest lakes; hits topwater, crankbaits and soft plastics), **Sea Bass** (any sea) and **Channel Catfish** (Black Forest
+  and Swamp, at night, loves rain; jigs and Texas rigs hopped along the bottom). Each on its own model. The bass and bluegill keep
+  their models' own swim cycles and have working jaws.
+- **Fisherman's gear is back**, remade: sou'wester, oilskin coat over a striped shirt, and bib overalls with rubber boots,
+  skinned to the player's own weights so they move with the body. The coat's skirt swings and trails in the wind, both
+  sides of every piece are drawn, and a dropped sou'wester no longer falls through the ground.
 ### Removed
 - **Dvergr Dace**: taken out. It leaves an existing fish.json once, and baits that targeted it lose it (trout takes its
   place where a bait didn't already have it).

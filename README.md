@@ -101,17 +101,20 @@ they can't be crafted.
 
 ## Deep Waters fish
 
-27 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
+28 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
 bite in any sea; fresh-water fish only in their biomes.
 
 **Fresh water**
 
 | Fish | Water | Biomes | Max |
 |---|---|---|---|
+| Bluegill | Lake | Meadows | 0.6 kg |
 | Greydwarf Goby | Lake | Black Forest | 1.5 kg |
 | Trout | River | Meadows, Black Forest, Mountain | 4 kg |
+| Largemouth Bass | Lake | Meadows, Black Forest | 5 kg |
 | Frost Char | Lake | Mountain, Deep North | 6 kg |
 | Mistfin | Lake | Swamp, Mistlands | 12 kg |
+| Channel Catfish | Lake, river | Black Forest, Swamp | 20 kg |
 | Glacier Grayling | River | Deep North | 3 kg |
 | Frost Sculpin | Lake | Deep North | 4 kg |
 
@@ -121,6 +124,7 @@ bite in any sea; fresh-water fish only in their biomes.
 |---|---|
 | Surtling Sardine | 2 kg |
 | Mackerel | 3 kg |
+| Sea Bass | 9 kg |
 | Serpentfin | 28 kg |
 | Rimejaw Cod (Deep North coasts and deep lakes) | 18 kg |
 

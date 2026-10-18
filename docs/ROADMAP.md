@@ -21,6 +21,7 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
 12. **Queen Eel.** Make the model larger and the fight feel like a sea serpent fight. *Done: 7.5 m sea serpent with circle, charge, rear and tail-slap moves.*
     *Done: shown at 7.5 m, with a sea-serpent fight (circling, charges, rearing up, tail slaps).*
 13. **Anything that makes the mod feel more fleshed out.**
-14. **Fisherman's gear (on hold).** Sou'wester, oilskin coat over a striped shirt, overalls and rubber boots as an armour set. Modelled, textured and rigged to Valheim's skeleton, but taken out of the build until the clipping at the chest and armpits is fixed (see Mesh\Fishermen gear\README.txt).
+14. **Fisherman's gear.** *Done 2026-10-17: the remade set (Mesh\Fishermen gear\Blender Files\new_gear_rig.blend) is back in the build, weighted from the player body, with the coat skirt swinging.*
 15. **Models for the stand-in fish.** Each needs its own model of its kind of fish - no borrowing another species' model (the bass, sea bass and catfish models are kept for those fish, to be added later). *Done: twelve on 2026-10-12 from Sketchfab models (Mesh\Sourced, tools\prep_sourced_fish.py), and Rimejaw Cod, Glacier Grayling, Lingcod, Fenringfin and Mistfin on 2026-10-17 from Tripo models. The Dvergr Dace was dropped instead.*
-16. **Bass, sea bass and catfish.** Add them as fish, on their own models (Mesh\Bass, Mesh\perch, Mesh\catfish).
+16. **Bass, bluegill, sea bass and catfish.** Add them as fish, on their own models (Mesh\Bass, Mesh\bluegill, Mesh\perch, Mesh\catfish).
+    *In progress (2026-10-17): all four are in the fish data. Largemouth Bass and Bluegill done on their downloads' own rigs and swim cycles, with jaws; Sea Bass and Channel Catfish rigged, waiting on weight painting.*

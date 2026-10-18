@@ -99,12 +99,12 @@ namespace ValheimDeepWaters
         /// <summary>The fish each retrieve draws, by fish id.</summary>
         internal static readonly Dictionary<RetrieveStyle, string[]> Targets = new()
         {
-            [RetrieveStyle.SlowRoll] = new[] { "perch", "trout", "frostchar", "frost_sculpin", "grouper", "halibut", "anglerfish", "fenringfin", "bonemaw" },
-            [RetrieveStyle.Steady] = new[] { "trout", "salmon", "glacier_grayling", "herring", "perch", "tetra", "serpentfin" },
+            [RetrieveStyle.SlowRoll] = new[] { "perch", "trout", "frostchar", "frost_sculpin", "grouper", "halibut", "anglerfish", "fenringfin", "bonemaw", "catfish" },
+            [RetrieveStyle.Steady] = new[] { "trout", "salmon", "glacier_grayling", "herring", "perch", "tetra", "serpentfin", "bluegill", "sea_bass" },
             [RetrieveStyle.Burn] = new[] { "pike", "mackerel", "tuna", "salmon", "odinfin", "surtling_sardine", "magmafish" },
-            [RetrieveStyle.StopAndGo] = new[] { "pike", "trollfish", "mistfin", "greydwarf_goby", "lingcod", "jotunnperch" },
-            [RetrieveStyle.Twitch] = new[] { "trout", "tetra", "glacier_grayling", "mackerel", "trollfish", "frostchar" },
-            [RetrieveStyle.Hop] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "pufferfish", "greydwarf_goby", "bonemaw", "jotunnperch" },
+            [RetrieveStyle.StopAndGo] = new[] { "pike", "trollfish", "mistfin", "greydwarf_goby", "lingcod", "jotunnperch", "bass" },
+            [RetrieveStyle.Twitch] = new[] { "trout", "tetra", "glacier_grayling", "mackerel", "trollfish", "frostchar", "bass", "bluegill", "sea_bass" },
+            [RetrieveStyle.Hop] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "pufferfish", "greydwarf_goby", "bonemaw", "jotunnperch", "catfish" },
         };
 
         private const float NaturalBoost = 1.35f, WrongKind = 0.65f, FishLikes = 1.6f;

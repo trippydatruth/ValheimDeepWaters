@@ -32,14 +32,14 @@ namespace ValheimDeepWaters
         internal static readonly Dictionary<LureKind, string[]> KindTargets = new()
         {
             [LureKind.Spoon] = new[] { "pike", "trout", "salmon", "frostchar", "glacier_grayling", "rimejaw_cod", "herring", "mackerel", "tuna", "serpentfin", "surtling_sardine" },
-            [LureKind.Spinner] = new[] { "perch", "trout", "pike", "tetra", "frostchar", "glacier_grayling", "salmon", "greydwarf_goby" },
-            [LureKind.Crankbait] = new[] { "pike", "perch", "trollfish", "mistfin", "grouper", "magmafish" },
-            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish" },
-            [LureKind.SoftPlastic] = new[] { "perch", "trout", "frost_sculpin", "greydwarf_goby", "trollfish", "tetra", "mistfin", "pufferfish" },
-            [LureKind.TexasRig] = new[] { "trollfish", "pike", "mistfin", "perch", "anglerfish", "greydwarf_goby" },
-            [LureKind.Swimbait] = new[] { "pike", "tuna", "grouper", "lingcod", "halibut", "salmon", "serpentfin", "anglerfish", "fenringfin" },
-            [LureKind.Topwater] = new[] { "pike", "trollfish", "mackerel", "tuna", "magmafish", "odinfin" },
-            [LureKind.Fly] = new[] { "trout", "salmon", "frostchar", "glacier_grayling", "tetra", "perch" },
+            [LureKind.Spinner] = new[] { "perch", "trout", "pike", "tetra", "frostchar", "glacier_grayling", "salmon", "greydwarf_goby", "bluegill", "bass", "sea_bass" },
+            [LureKind.Crankbait] = new[] { "pike", "perch", "trollfish", "mistfin", "grouper", "magmafish", "bass" },
+            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish", "catfish", "sea_bass" },
+            [LureKind.SoftPlastic] = new[] { "perch", "trout", "frost_sculpin", "greydwarf_goby", "trollfish", "tetra", "mistfin", "pufferfish", "bass", "bluegill", "catfish" },
+            [LureKind.TexasRig] = new[] { "trollfish", "pike", "mistfin", "perch", "anglerfish", "greydwarf_goby", "bass", "catfish" },
+            [LureKind.Swimbait] = new[] { "pike", "tuna", "grouper", "lingcod", "halibut", "salmon", "serpentfin", "anglerfish", "fenringfin", "sea_bass" },
+            [LureKind.Topwater] = new[] { "pike", "trollfish", "mackerel", "tuna", "magmafish", "odinfin", "bass" },
+            [LureKind.Fly] = new[] { "trout", "salmon", "frostchar", "glacier_grayling", "tetra", "perch", "bluegill" },
         };
 
         private const float DrawnWeight = 3f;          // a fish the lure draws is this much likelier to be the one that comes
