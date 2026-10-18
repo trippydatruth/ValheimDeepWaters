@@ -85,7 +85,7 @@ and on the rod in hand. Particles emit from our own model's surface; at most one
 
 | Fish / rod | Effect |
 |---|---|
-| Eikthyr Elver | Dundr's lightning and storm clouds, sky-blue light |
+| Eikthyr Elver | lightning gem sword's crackles along the body, Dundr's storm puffs (tinted pale blue), sky-blue light |
 | Elder Bass | Nature spores (Nidhogg), green light |
 | Bonemass Catfish | Draugr Fang's teal motes and light |
 | Moder Scale Fish | Frostner's frost cloud and snowflakes |

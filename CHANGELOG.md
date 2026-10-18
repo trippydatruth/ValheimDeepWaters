@@ -16,8 +16,8 @@
   skinned to the player's own weights so they move with the body. The coat's skirt swings and trails in the wind, both
   sides of every piece are drawn, and a dropped sou'wester no longer falls through the ground. Dropped, the coat and overalls show
   the vanilla leather pieces in oilskin; all three have rendered icons. The Sea Bass and Channel Catfish have their own models.
-- **Legendary and boss fish carry vanilla weapon effects**, landed, dropped and fighting on the line: Dundr-style storm
-  crackles on the Eikthyr Elver, spores on the Elder Bass, Draugr Fang glow on the Bonemass Catfish, Frostner frost on the
+- **Legendary and boss fish carry vanilla weapon effects**, landed, dropped and fighting on the line: storm crackles
+  (the lightning gem sword's) along the Eikthyr Elver, spores on the Elder Bass, Draugr Fang glow on the Bonemass Catfish, Frostner frost on the
   Moder Scale Fish and Fimbul Salmon, Dyrnwyn flames on the Yagluth Gill, purple embers on the Queen Eel, Mistwalker mist on
   Odin's Eye, lightning on Thor's Hammerhead and blood swirls circling the Fenringfin. The Yggdrasil, Ashwood, Frostwood
   and Leviathan rods glow too. The effects come from the game's own items at runtime.
