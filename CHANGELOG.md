@@ -14,7 +14,8 @@
   their models' own swim cycles and have working jaws.
 - **Fisherman's gear is back**, remade: sou'wester, oilskin coat over a striped shirt, and bib overalls with rubber boots,
   skinned to the player's own weights so they move with the body. The coat's skirt swings and trails in the wind, both
-  sides of every piece are drawn, and a dropped sou'wester no longer falls through the ground.
+  sides of every piece are drawn, and a dropped sou'wester no longer falls through the ground. Dropped, the coat and overalls show
+  the vanilla leather pieces in oilskin; all three have rendered icons. The Sea Bass and Channel Catfish have their own models.
 ### Removed
 - **Dvergr Dace**: taken out. It leaves an existing fish.json once, and baits that targeted it lose it (trout takes its
   place where a bait didn't already have it).

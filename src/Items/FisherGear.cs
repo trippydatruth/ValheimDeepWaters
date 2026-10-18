@@ -105,7 +105,12 @@ namespace ValheimDeepWaters
             var skin = prefab.transform.Find("attach_skin");
             foreach (Transform child in prefab.transform.Cast<Transform>().ToList())
                 if (child.name == "attach" || child.name == "attach_skin") UnityEngine.Object.DestroyImmediate(child.gameObject);
-            // On the ground: our model (without its copy of the body) in place of the vanilla piece's - the helmet's ground
+            // On the ground, the coat and overalls keep the vanilla leather armour's dropped model, retextured with the
+            // oilskin (the main colour map swapped, vanilla's normal map kept for its folds); a model built round the body
+            // looked odd lying on the ground.
+            if (p.Rigid == "Head" || !Retexture(prefab, parts, p))
+            {
+            // The hat: our model (without its copy of the body) in place of the vanilla piece's - the helmet's ground
             // look lived in the "attach" just removed, which left a dropped hat invisible
             foreach (var r in prefab.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
             if (ModelScale.TryGetValue(p.Model, out float toBodyScale))
@@ -139,6 +144,7 @@ namespace ValheimDeepWaters
                     box.size = Vector3.Max(bounds.size * s, Vector3.one * 0.1f);
                 }
             }
+            }
 
             var go = new GameObject("attach_skin");
             go.SetActive(false);
@@ -156,6 +162,33 @@ namespace ValheimDeepWaters
                 smr.updateWhenOffscreen = true;
                 if (mesh.bindposes.Length > body.bones.Length) child.AddComponent<FisherSkirt>().HipsName = p.Rigid;
             }
+        }
+
+        /// <summary>
+        /// The vanilla piece's own dropped model (what's left after the worn "attach_skin" went), with the gear's main
+        /// colour map (the coat's / the overalls') on a copy of each of its materials. False if there's nothing to retexture.
+        /// </summary>
+        private static bool Retexture(GameObject prefab, List<(Mesh mesh, Material[] mats)> parts, Piece p)
+        {
+            string want = p.Model == "fisher_chest" ? "coat" : "overall";
+            var all = parts.SelectMany(x => x.mats).Where(m => m != null).ToList();
+            var src = all.FirstOrDefault(m => m.name.IndexOf(want, StringComparison.OrdinalIgnoreCase) >= 0) ?? all.FirstOrDefault();
+            var tex = src != null && src.HasProperty("_MainTex") ? src.GetTexture("_MainTex") : null;
+            var rends = prefab.GetComponentsInChildren<Renderer>(true).Where(r => r is MeshRenderer || r is SkinnedMeshRenderer).ToList();
+            if (tex == null || rends.Count == 0) return false;
+            foreach (var r in rends)
+            {
+                r.enabled = true;
+                r.sharedMaterials = r.sharedMaterials.Select(m =>
+                {
+                    if (m == null) return m;
+                    var c = new Material(m) { name = m.name + "_vdw_" + want };
+                    if (c.HasProperty("_MainTex")) c.SetTexture("_MainTex", tex);
+                    if (c.HasProperty("_Color")) c.SetColor("_Color", Color.white);
+                    return c;
+                }).ToArray();
+            }
+            return true;
         }
 
         private static readonly Dictionary<string, List<(Mesh, Material[])>> Built = new();
