@@ -70,6 +70,61 @@ strength, reel speed, power, hook bonus, stamina use and durability.
 Rods wear while a fish is on the line, faster with heavy fish and high tension. A broken rod loses the fish
 and must be repaired where it was crafted.
 
+### Upgrading rods
+
+Every rod upgrades to level 4 at its crafting station, like vanilla gear. Each level adds cast distance, line,
+line strength, reel speed, power, hook bonus and durability, and eases reeling stamina; a fully upgraded rod sits
+about halfway to the next one. Upgrades cost fish materials (see below), the line of the rod's era (leather
+scraps, deer hide, linen, jute, morgen sinew, moose sinew) and some of each biome's oddments: greydwarf eyes,
+obsidian, tar, deathsquito needles, sap, charred bone, celestial feathers. The last level also needs a
+**Trophy Fin**. The tooltip shows the rod's stats at its level.
+
+## Fish materials
+
+Clean a catch at the **Fish Cleaning Table** for its material. Bigger fish give more: a Trophy-size fish gives four
+times what a Small one does. The table (hammer, near a workbench: 10 wood, 4 flint, 4 resin) cleans the common fish;
+its three add-ons, built beside it, let it handle the rarer ones:
+
+| Level | Add-on | Cleans for | Prepares | Cost |
+|---|---|---|---|---|
+| 1 | Fish Cleaning Table | Fish Scales, Fish Oil | | 10 wood, 4 flint, 4 resin |
+| 2 | Filleting Knife Rack | Spiny Fins, Fish Roe | Fish Fillets (from any fish) | 4 fine wood, 2 bronze, 10 Fish Scales |
+| 3 | Brining Barrel | Abyssal Ink, Legendary Scales | Brined Roe (3 roe, 1 oil) | 6 fine wood, 2 iron, 10 Fish Oil |
+| 4 | Drying Line | Cinder Scales, Rime Scales | Dried Fish (3 fillets) | 6 fine wood, 3 red jute, 10 Abyssal Ink |
+
+Cleaning fish raises your Fishing skill.
+
+The materials go into rod upgrades, every lure (the boss lures take three of their biome's material), the crafted
+baits, the meads, chum, the Rune of Njord and the totems.
+
+### Fish dishes
+
+Made from the cleaning table's prepared ingredients at Valheim's own food stations:
+
+| Dish | Where | Ingredients | Health / Stamina / Eitr |
+|---|---|---|---|
+| Grilled Fish Fillet | Cooking station | A Fish Fillet | 25 / 22 |
+| Fisherman's Stew | Cauldron 1 | Fish Fillets, Fish Oil, 2 carrots | 35 / 40 |
+| Spiny Fin Soup | Cauldron 2 | Fish Fillets, 2 Spiny Fins, 2 onions | 50 / 45 |
+| Roe Flatbread | Cauldron 3 | Bread, 2 Brined Roe, 2 cloudberries | 40 / 75 |
+| Ink-Black Noodles | Cauldron 4 | Fish Fillets, Abyssal Ink, 2 jotun puffs | 45 / 30 / 75 |
+| Ember-Grilled Fillet | Cauldron 5 | 2 Fish Fillets, Cinder Scales, 2 vineberries | 85 / 50 |
+| Rime-Cured Salmon | Food preparation table | 2 Fish Fillets, Rime Scales, 2 lingonberries | 80 / 70 / 30 |
+| Fisherman's Rations | Food preparation table | 2 Dried Fish, 2 cloudberries, honey | 35 / 35, lasts an hour |
+
+| Material | From |
+|---|---|
+| Fish Scales | Perch, Bluegill, Trout, Largemouth Bass, Greydwarf Goby, Pike |
+| Fish Oil | Trollfish, Channel Catfish, Mackerel, Sea Bass, Giant Herring, Surtling Sardine |
+| Spiny Fins | Tetra, Frost Char, Coral Cod, Pufferfish, Serpentfin |
+| Fish Roe | Tuna, Grouper, Halibut, Lingcod |
+| Abyssal Ink | Anglerfish, Mistfin, Bonemaw, Jotunn Perch |
+| Cinder Scales | Magmafish |
+| Rime Scales | Northern Salmon, Rimejaw Cod, Glacier Grayling, Frost Sculpin |
+| Legendary Scale | Any legendary or boss fish |
+
+Landing a **Trophy-size** fish of any kind also gives a **Trophy Fin**.
+
 ## Hooks
 
 You need a hook to cast, and each size suits a range of fish weights.
@@ -440,6 +495,13 @@ Several fish are built on models from Sketchfab, used under their licences:
 | Largemouth Bass | [Model 67A - Largemouth Bass](https://sketchfab.com/3d-models/model-67a-largemouth-bass-e60c457636b640629747c19feac4906c) | DigitalLife3D | CC BY-NC |
 | Bluegill | [Model 70A - Bluegill](https://sketchfab.com/3d-models/model-70a-bluegill-3f4665f558fc4bcab1b460e5f33666d3) | DigitalLife3D | CC BY-NC |
 | Sea Bass | [Perch Weever Sea Bass Fish](https://sketchfab.com/3d-models/perch-weever-sea-bass-fish-88a88ea2e8954f99ac153231e3a25d01) | boxgizmo | Sketchfab Standard |
+
+Other models used:
+
+| Item | Model | Author | Licence |
+|---|---|---|---|
+| Filleting Knife Rack (blades) | [Kitchen Knife Set - Asset Pack](https://sketchfab.com/3d-models/kitchen-knife-set-asset-pack-c55d34d4f1974b16a8a8cb6cd4ee49f3) | Falxxx | CC BY |
+| Dried Fish | [Hanged Dried Fish](https://www.cgtrader.com/free-3d-models/exterior/other/hanged-dried-fish) | CGTrader | Royalty Free |
 
 The models were rigged, retextured and restyled for Valheim. Licences:
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/),

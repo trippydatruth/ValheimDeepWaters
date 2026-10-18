@@ -50,6 +50,8 @@ namespace ValheimDeepWaters
                 RegisterBaits();
                 RegisterFish();
                 BossFish.Register();
+                try { FishMaterials.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish materials failed: {ex}"); }
+                try { FishDishes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish dishes failed: {ex}"); }
                 // Fisherman's gear: the remade set (new_gear_rig.blend, painted weights)
                 try { FisherGear.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear failed: {ex}"); }
                 RemoveVanillaFishingGear();
@@ -120,6 +122,45 @@ namespace ValheimDeepWaters
             ("Baits", "lure_wyrm", "TrophyDragonQueen:1,FreezeGland:2"),
             ("Baits", "lure_ember", "TrophyGoblinKing:1,SurtlingCore:1"),
             ("Baits", "lure_chitin", "TrophySeekerQueen:1,Carapace:2"),
+            // fish materials in lure, bait, mead, chum and totem recipes (0.15.0)
+            ("Baits", "lure_feather_fly", "Feathers:2,Resin:1"),
+            ("Baits", "lure_flint_spinner", "Flint:1,Feathers:1,Wood:1"),
+            ("Baits", "lure_leather_grub", "LeatherScraps:2,Resin:1"),
+            ("Baits", "lure_bronze_spoon", "Bronze:1,LeatherScraps:1"),
+            ("Baits", "lure_finewood_crank", "FineWood:1,Resin:1,BronzeNails:2"),
+            ("Baits", "lure_guck_crawler", "Guck:1,Resin:2,IronNails:1"),
+            ("Baits", "lure_bone_jig", "Iron:1,BoneFragments:2,Feathers:1"),
+            ("Baits", "lure_silver_swimbait", "Silver:1,LeatherScraps:2,FreezeGland:1"),
+            ("Baits", "lure_linen_popper", "FineWood:1,Feathers:2,LinenThread:1"),
+            ("Baits", "lure_ice_spoon", "Ice:1,Silver:1"),
+            ("Baits", "lure_frostcore_jig", "FrostCore:1,Iron:1,BarkaBranch:1"),
+            ("Baits", "lure_antler", "HardAntler:1,LeatherScraps:2,Flint:1"),
+            ("Baits", "lure_root", "TrophyTheElder:1,AncientSeed:1,Resin:3"),
+            ("Baits", "lure_ooze", "TrophyBonemass:1,Ooze:3,WitheredBone:2"),
+            ("Baits", "lure_wyrm", "DragonTear:2,Silver:1,FreezeGland:1"),
+            ("Baits", "lure_ember", "YagluthDrop:1,BlackMetal:1,SurtlingCore:1"),
+            ("Baits", "lure_chitin", "QueenDrop:1,Carapace:2,Eitr:1"),
+            ("Baits", "lure_crown", "CrownJewel:1,FrostCore:2,Silver:1"),
+            ("Baits", "deep_bait", "Entrails:1,Ooze:1,Bloodbag:1"),
+            ("Baits", "frost_bait", "FreezeGland:1,WolfMeat:1"),
+            ("Baits", "rune_bait", "Silver:1,Eitr:1,SerpentScale:1"),
+            ("Baits", "northern_bait", "SealBlubber:1,Lingonberry:2"),
+            ("Buffs", "angler_minor", "Honey:2,Raspberry:4"),
+            ("Buffs", "angler_medium", "Honey:2,Bloodbag:2,Blueberries:4"),
+            ("Buffs", "angler_major", "Honey:2,Sap:2,RoyalJelly:1"),
+            ("Buffs", "angler_north", "Honey:2,Lingonberry:6,Ice:1"),
+            ("Buffs", "steady_minor", "Honey:2,Thistle:2,Dandelion:2"),
+            ("Buffs", "steady_medium", "Honey:2,Onion:2,Crystal:1"),
+            ("Buffs", "steady_major", "Honey:2,Cloudberry:4,Eitr:1"),
+            ("Buffs", "grip_medium", "Honey:2,WolfFang:2,Onion:2"),
+            ("Buffs", "grip_major", "Honey:2,Barley:4,LoxMeat:1"),
+            ("Buffs", "chum_basic", "NeckTail:2,RawMeat:1"),
+            ("Buffs", "chum_blood", "Bloodbag:2,Entrails:2"),
+            ("Buffs", "chum_abyssal", "Bloodbag:2,Sap:2,Ooze:2"),
+            ("Buffs", "chum_blubber", "SealBlubber:2,Lingonberry:4"),
+            ("Buffs", "rune_njord", "Silver:4,Crystal:2,SerpentScale:2"),
+            ("Buffs", "totem_fisher", "FineWood:10,ElderBark:4,Guck:2"),
+            ("Buffs", "totem_njord", "YggdrasilWood:10,Silver:4,Eitr:4"),
         };
 
         /// <summary>
@@ -134,6 +175,16 @@ namespace ValheimDeepWaters
             ("Rods", "blackmetal", "LineCapacity", 85), ("Rods", "yggdrasil", "LineCapacity", 100),
             ("Rods", "ashwood", "LineCapacity", 120), ("Rods", "frostwood", "LineCapacity", 135),
             ("Rods", "haldor", "LineCapacity", 140), ("Rods", "leviathan", "LineCapacity", 160),
+        };
+
+        /// <summary>
+        /// Fields added to existing entries after an update: a default entry's field is copied into the player's entry
+        /// of the same id if it doesn't have one (once, so a field deleted on purpose stays deleted). (file, field)
+        /// </summary>
+        private static readonly (string kind, string field)[] AddedFields =
+        {
+            ("Fish", "Material"),      // fish materials from cleaning (0.15.0)
+            ("Rods", "Upgrade"),       // rod upgrade levels (0.15.0)
         };
 
         private static string RecipeKey(JToken? recipe) =>
@@ -223,6 +274,21 @@ namespace ValheimDeepWaters
                     if (d?[field] == null) continue;
                     entry[field] = d[field]!.DeepClone();
                     changed = true;
+                }
+
+                var filled = offered[kind + "_fields"] as JArray ?? new JArray();
+                offered[kind + "_fields"] = filled;
+                var filledKeys = new HashSet<string>(filled.Values<string>().Where(s => s != null)!);
+                foreach (var (k, field) in AddedFields)
+                {
+                    if (k != kind) continue;
+                    foreach (var d in defaults.OfType<JObject>())
+                    {
+                        string? id = (string?)d["Id"];
+                        if (id == null || d[field] == null || !filledKeys.Add(id + "." + field)) continue;
+                        filled.Add(id + "." + field);
+                        if (byId.TryGetValue(id, out var entry) && entry[field] == null) { entry[field] = d[field]!.DeepClone(); changed = true; }
+                    }
                 }
 
                 foreach (var (k, id, oldName) in RenamedDefaults)
@@ -369,12 +435,16 @@ namespace ValheimDeepWaters
                 {
                     // A rod that isn't craftable (e.g. sold by Haldor) keeps its recipe switched off: it never shows
                     // for crafting, but Valheim repairs items at their recipe's station, so it can still be repaired.
+                    // Upgrade levels: the base recipe's items only count for crafting, the Upgrade list's per level.
+                    // A rod you can't craft but can upgrade (Haldor's) keeps an upgrade-only recipe.
+                    bool upgradable = rod.Upgrade.Count > 0;
                     var config = new ItemConfig
                     {
-                        Enabled = rod.Craftable,
+                        Enabled = rod.Craftable || upgradable,
                         CraftingStation = rod.CraftingStation,
                         MinStationLevel = Math.Max(1, rod.StationLevel),
-                        Requirements = rod.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
+                        Requirements = rod.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount))
+                            .Concat(rod.Upgrade.Select(r => new RequirementConfig(r.Item, 0, r.Amount))).ToArray()
                     };
 
                     var item = new CustomItem(RodPrefabName(rod), "FishingRod", config);
@@ -383,14 +453,16 @@ namespace ValheimDeepWaters
                     shared.m_itemType = ItemDrop.ItemData.ItemType.OneHandedWeapon;
                     shared.m_name = name;
                     string source = rod.TraderPrice > 0 && !rod.Craftable ? $"\n\nSold only by Haldor ({rod.TraderPrice} coins)." : "";
-                    shared.m_description = Loc.Token("vdw_rod_" + rod.Id + "_desc", $"{rod.Description}\n\n{RodStats(rod)}{source}");
+                    // the stats go in the tooltip (RodUpgrades), for the rod's own upgrade level
+                    shared.m_description = Loc.Token("vdw_rod_" + rod.Id + "_desc", $"{rod.Description}{source}");
+                    shared.m_maxQuality = upgradable ? RodUpgrades.MaxLevel : 1;
                     RodItems[rod.Id] = item.ItemDrop;
                     shared.m_weight = 2f;
 
                     // Vanilla durability: shows the bar, and the rod is repaired at its recipe's station.
                     shared.m_useDurability = rod.Durability > 0f;
                     shared.m_maxDurability = rod.Durability;
-                    shared.m_durabilityPerLevel = 0f;
+                    shared.m_durabilityPerLevel = upgradable ? rod.Durability * RodUpgrades.DurabilityPerLevel : 0f;
                     shared.m_useDurabilityDrain = 0f;
                     shared.m_canBeReparied = true;
                     shared.m_destroyBroken = false;
@@ -401,6 +473,7 @@ namespace ValheimDeepWaters
                         CustomModels.ApplyToPrefab(item.ItemPrefab, "rod");
                     VanillaFx.AttachToRod(item.ItemPrefab, rod.Id);            // the top rods only
 
+                    if (!rod.Craftable && item.Recipe?.Recipe != null) item.Recipe.Recipe.m_noCraftOnlyUpgrade = true;
                     ItemManager.Instance.AddItem(item);
                     RodByItemName[name] = rod;
                 }
@@ -436,10 +509,6 @@ namespace ValheimDeepWaters
             }
         }
 
-        private static string RodStats(RodDefinition r) =>
-            $"Cast: {r.CastDistance:0} m\nLine: {r.LineCapacity:0} m\nLine strength: {r.BreakTension:0}\n" +
-            $"Reel speed: {r.ReelSpeed:0.0} m/s\nPower: {r.Power:0.##}\nHook bonus: +{r.HookBonus * 100f:0}%\n" +
-            $"Reel stamina: {r.StaminaUse * 100f:0}%";
 
         /// <summary>
         /// Finds a vanilla prefab to clone. Tries the requested name, a "_cave" variant (vanilla names the

@@ -16,6 +16,9 @@ LOOK_DOWN = {"buff_relic_pearl": 20, "buff_chum_basic": 38, "buff_chum_blood": 3
 GLOW.update({"bait_lure_crown": 1.2, "bait_lure_ice_spoon": 0.6, "bait_lure_frostcore_jig": 1.0, "rod_frostwood": 1.5, "hook_fimbul": 1.0, "buff_angler_north": 1.0,
              "fish_rimejaw_cod": 0.6, "fish_glacier_grayling": 1.0, "fish_frost_sculpin": 0.8, "fish_fimbul_salmon": 1.5}, **{f"bossmat_{b}": 1.2 for b in ("eikthyr_elver", "elder_bass", "bonemass_catfish", "moder_scale", "yagluthgill", "queen_eel", "fimbul_salmon")})
 GLOW["buff_rune_njord"] = 1.2
+GLOW.update({"mat_ink": 1.0, "mat_cinder": 1.5, "mat_rime": 1.0, "mat_legend": 1.2})   # fish materials
+GLOW.update({"food_ink_noodles": 0.3, "food_ember_fillet": 1.0, "food_rime_salmon": 0.3})   # cleaning table, dishes
+UPRIGHT |= {"piece_cleaning_table", "piece_cleaning_ext1", "piece_cleaning_ext2", "piece_cleaning_ext3"}; LOOK_DOWN.update({"piece_cleaning_table": 32})
 GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
@@ -26,6 +29,8 @@ DEFAULT = ((0, -1, 0), (0, 0, 1))
 # ROLL = how far it turns toward the viewer (default 28 degrees); MARGIN = frame around it (default 1.12)
 LIGHT = {"hook_tiny": (1.6, 3.0, 2.2), "hook_large": (1.3, 2.2, 1.6), "hook_heavy": (1.5, 2.6, 2.0), "hook_giant": (1.8, 3.4, 2.6)}
 WARM = {"pickable_worm"}
+FOOD_VIEW = 38                                 # degrees the dishes tip toward the camera
+FOOD_TURN = {"prep_dried": 0}
 ROLL = {"fish_queen_eel": 62, "fishing_boat": -40, "bait_lure_antler": -35, "bait_lure_wyrm": -35}
 MARGIN = {"rod": 1.0, "fish_queen_eel": 1.0}
 # mirrored across the bottom-left/top-right diagonal after rendering: same diagonal, reel and line on the other side
@@ -71,6 +76,21 @@ def material(name, m, glow=0.0, fade=False):
         t = img(m["Emission"]); L(t.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = glow * 2.0
     return mat
 
+PLANKS = r"C:\Users\tripp\Desktop\Valheim_DeepWaters\FishingRod\ExportedProject\Assets\3rd party\ADG_Textures\Plank Textures\Planks5\textures\Planks5c_worn.png"
+def planks_material(dark):
+    """Stand-in for Valheim's worn_shipplank (the rip's low-res copy), tiled per metre like the mod does (0.4, 0.7)."""
+    mat = bpy.data.materials.new("planks_dark" if dark else "planks"); mat.use_nodes = True; mat.use_backface_culling = True
+    nt = mat.node_tree; b = nt.nodes["Principled BSDF"]; L = nt.links.new
+    t = nt.nodes.new("ShaderNodeTexImage"); t.image = bpy.data.images.load(PLANKS)
+    mp = nt.nodes.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.4, 0.7, 1.0)
+    tc = nt.nodes.new("ShaderNodeTexCoord"); L(tc.outputs["UV"], mp.inputs["Vector"]); L(mp.outputs["Vector"], t.inputs["Vector"])
+    if dark:
+        mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs["Factor"].default_value = 1.0
+        mx.inputs[7].default_value = (0.55, 0.5, 0.45, 1.0); L(t.outputs["Color"], mx.inputs[6]); L(mx.outputs[2], b.inputs["Base Color"])
+    else: L(t.outputs["Color"], b.inputs["Base Color"])
+    b.inputs["Roughness"].default_value = 0.85
+    return mat
+
 for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]:
     key, _, mode = entry.partition(":")
     coiled = mode == "coil" or (key in COIL and mode != "straight")
@@ -98,6 +118,8 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     meshes = [o for o in bpy.data.objects if o.type == 'MESH']
     glow = GLOW.get(key, 2.0 if key.startswith("fish_") else 0.0)
     for o in meshes:
+        if o.name.startswith(("vdw_wood", "vdw_darkwood")):     # the mod dresses these in Valheim's tiling ship planks
+            o.data.materials.clear(); o.data.materials.append(planks_material(o.name.startswith("vdw_darkwood"))); continue
         own = maps(folder, o.name.split(".")[0])
         m = own or maps(folder)
         o.data.materials.clear()
@@ -124,6 +146,8 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     fr = FRAME.get(look, DEFAULT)
     if key in UPRIGHT:
         R = Matrix.Rotation(math.radians(LOOK_DOWN.get(key, 0)), 4, 'X') @ Matrix.Rotation(math.radians(-28), 4, 'Z')
+    elif key.startswith(("food_", "prep_")):   # dishes and prepared food: level, long side across, seen from the front and above
+        R = Matrix.Rotation(math.radians(FOOD_VIEW), 4, 'X') @ Matrix.Rotation(math.radians(FOOD_TURN.get(key, 0)), 4, 'Z')
     elif coiled:       # lying in a coil: seen from above at an angle
         R = Matrix.Rotation(math.radians(COIL_VIEW), 4, 'X') @ Matrix.Rotation(math.radians(20), 4, 'Z')
     elif fr is None:   # the worm mound: seen from the front and above, not on a diagonal

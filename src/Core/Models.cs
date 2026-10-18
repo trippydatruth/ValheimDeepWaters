@@ -41,6 +41,8 @@ namespace ValheimDeepWaters
         /// <summary>Freshwater biomes it lives in (Meadows, BlackForest, Swamp, Mountain, Plains, Mistlands, AshLands, DeepNorth). Empty = any.</summary>
         public List<string> Biomes = new List<string>();
         public int CatchAmount = 1;
+        /// <summary>The material cleaning this fish gives at the workbench (FishMaterials ids: scales, oil, fins, roe, ink, cinder, rime, legend). Empty = none.</summary>
+        public string Material = "";
         public List<string> PreferredBaits = new List<string>();
         public List<string> ForbiddenBaits = new List<string>();
     }
@@ -135,6 +137,13 @@ namespace ValheimDeepWaters
         public bool Craftable = true;
         public int TraderPrice = 0;              // > 0: Haldor sells it for this many coins
         public string TraderRequiredKey = "";    // optional global key (e.g. "defeated_bonemass") before he offers it
+        /// <summary>
+        /// What each upgrade level costs (levels 2-4 take 1x, 2x and 4x these amounts; "VDW_Mat_trophy" is only needed
+        /// for level 4). Empty = the rod can't be upgraded.
+        /// </summary>
+        public List<RequirementDefinition> Upgrade = new List<RequirementDefinition>();
+
+        public RodDefinition Copy() => (RodDefinition)MemberwiseClone();
     }
 
     internal enum FishingPhase { Waiting, Bite, Fighting }

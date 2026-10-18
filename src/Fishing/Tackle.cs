@@ -177,13 +177,44 @@ namespace ValheimDeepWaters
         [HarmonyPatch(typeof(Player), nameof(Player.CreateTombStone))]
         private static class TombstonePatch
         {
-            // Tackle goes into the tombstone with everything else: move it into the inventory first.
+            // Tackle goes into the tombstone with everything else: move it into the inventory first (that also makes
+            // sure there is a tombstone when the tackle is all you carried).
             private static void Prefix(Player __instance)
             {
                 if (_owner != __instance || _inv == null) return;
                 foreach (var item in _inv.GetAllItems().ToList())
                     __instance.GetInventory().MoveItemToThis(_inv, item);
             }
+        }
+
+        /// <summary>
+        /// Tackle that didn't fit in a full inventory goes into the grave on a row of its own (it stayed in the tackle
+        /// slots, so it survived death).
+        /// </summary>
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
+        private static class GravePatch
+        {
+            private static void Postfix(Inventory __instance, Inventory original)
+            {
+                var player = Player.m_localPlayer;
+                if (player == null || _owner != player || _inv == null || original != player.GetInventory()) return;
+                var left = _inv.GetAllItems().ToList();
+                if (left.Count == 0) return;
+                if (HeightField == null || ItemsField == null || !(ItemsField.GetValue(__instance) is List<ItemDrop.ItemData> items)) return;
+                int row = (int)HeightField.GetValue(__instance);
+                HeightField.SetValue(__instance, row + 1);
+                for (int i = 0; i < left.Count; i++)
+                {
+                    _inv.RemoveItem(left[i]);
+                    left[i].m_gridPos = new Vector2i(i, row);
+                    items.Add(left[i]);
+                }
+                ChangedMethod?.Invoke(__instance, new object[] { false, false });
+            }
+
+            private static readonly FieldInfo? HeightField = AccessTools.Field(typeof(Inventory), "m_height");
+            private static readonly FieldInfo? ItemsField = AccessTools.Field(typeof(Inventory), "m_inventory");
+            private static readonly MethodInfo? ChangedMethod = AccessTools.Method(typeof(Inventory), "Changed");
         }
     }
 

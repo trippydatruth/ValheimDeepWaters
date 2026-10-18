@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -51,6 +51,7 @@ namespace ValheimDeepWaters
                 Vector3 dropPos = Drops.CatchPos(player);
                 Drops.Give(player, drop, data, 1, dropPos);
                 text += Drops.Aboard(player) ? "\nLanded!" : "\nLanded! Pick it up.";
+                if (data.m_quality >= FishSize.MaxClass) text += FishMaterials.GiveTrophyFin(player, Drops.CatchPos(player, 0.4f));
 
                 // Legendaries: a trophy the first time; bosses also leave a material and the news goes out.
                 if (s.Fish.Legendary) text += BossFish.OnLanded(player, s.Fish, dropPos);

@@ -327,16 +327,24 @@ namespace ValheimDeepWaters
         /// The hull wears Valheim's own ship planks (the Longship's / Karve's tiling "worn_shipplank" material, with the
         /// game's full textures), the oarlocks dark iron. Without it the bundle's stand-in planks stay.
         /// </summary>
-        private static void DressInShipPlanks(Transform boat)
+        /// <summary>Valheim's tiling ship-plank material (Longship / Karve), or null.</summary>
+        internal static Material? FindShipPlanks()
         {
-            Material? planks = null;
             foreach (var ship in new[] { "VikingShip", "Karve" })
             {
                 var go = PrefabManager.Instance.GetPrefab(ship);
-                planks = go?.GetComponentsInChildren<Renderer>(true).SelectMany(r => r.sharedMaterials)
+                var planks = go?.GetComponentsInChildren<Renderer>(true).SelectMany(r => r.sharedMaterials)
                     .FirstOrDefault(m => m != null && m.name.StartsWith("worn_shipplank"));
-                if (planks != null) break;
+                if (planks != null) return planks;
             }
+            return null;
+        }
+
+        internal static Vector2 PlankTilingPerMetre => PlankTiling;
+
+        private static void DressInShipPlanks(Transform boat)
+        {
+            Material? planks = FindShipPlanks();
             if (planks == null)
             {
                 Plugin.Log.LogWarning("Fishing Boat: Valheim's ship planks weren't found; the hull keeps its own planks.");

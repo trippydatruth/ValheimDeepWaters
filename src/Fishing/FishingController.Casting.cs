@@ -20,6 +20,7 @@ namespace ValheimDeepWaters
             var rodItem = player.GetCurrentWeapon();
             var rod = ContentRegistry.GetRod(rodItem);
             if (rod == null) return;
+            rod = RodUpgrades.Scaled(rod, rodItem.m_quality);   // its upgrade level's stats, for the whole cast and fight
             if (rodItem.m_shared.m_useDurability && rodItem.m_durability <= 0f)
             {
                 Msg("Your rod is broken. Repair it where you crafted it.");

@@ -26,3 +26,35 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
 15. **Models for the stand-in fish.** Each needs its own model of its kind of fish - no borrowing another species' model (the bass, sea bass and catfish models are kept for those fish, to be added later). *Done: twelve on 2026-10-12 from Sketchfab models (Mesh\Sourced, tools\prep_sourced_fish.py), and Rimejaw Cod, Glacier Grayling, Lingcod, Fenringfin and Mistfin on 2026-10-17 from Tripo models. The Dvergr Dace was dropped instead.*
 16. **Bass, bluegill, sea bass and catfish.** Add them as fish, on their own models (Mesh\Bass, Mesh\bluegill, Mesh\perch, Mesh\catfish).
     *Done 2026-10-17: all four on their own models - the bass and bluegill on their downloads' own rigs and swim cycles with jaws, the sea bass and channel catfish on the Deep Waters rig with the user's weights.*
+## Progression and replayability plan (2026-10-18)
+
+Goal: a grind that lasts to the end of the game and uses every biome's items. In the order to build it:
+
+17. **Fish materials and rod upgrades.** *Done 2026-10-18 (0.15.0): eight materials from cleaning and the Trophy Fin,
+    with models and icons; every rod upgrades to level 4; the Fish Cleaning Table with three add-ons; the materials in
+    every lure, the baits, meads, chum and totems; Fish Fillets, Brined Roe and Dried Fish from the table's add-ons, and eight fish dishes at the cooking station, cauldron and food preparation table. Still to do: new items for the unused vanilla
+    materials (razor hooks, fine hooks, ember spoon and the rest - with #3).* Cleaning a catch gives its biome's material (scales, fins, roe, oil,
+    bones; rarer ones from legendaries and boss fish). They go into rods, lures, meads and food. Every rod upgrades
+    to level 4 with fish materials plus late-biome materials (level 4 needs a Trophy-size catch's material), and
+    each level strengthens the line, made from leather scraps → deer hide → linen → jute → morgen sinew → moose sinew.
+    Unused vanilla items get uses: greydwarf eyes (lure eyes), obsidian (razor hooks), deathsquito needles (fine
+    hooks), tar (waterproof line), soft tissue and royal jelly (Mistlands bait), bilebags (chum), charred bone (jigs),
+    celestial feathers (flies), molten core (ember spoon).
+18. **Bog Witch.** Her stock in recipes: Pungent Pebbles (stinkbait), Fresh Seaweed (ocean chum), Seafarer's Herbs
+    (sea-fish feast), Candle Wick (lantern float for night fishing), Powdered Dragon Eggshell (top Steady-Hand
+    Tonic), Toadstool (top Troll-Grip Mead), Love Potion (spawning musk: legendaries likelier for a while). One fish
+    feast per biome with her Serving Tray and herb blends. She sells the mod's witchy brews and a boss-summoning
+    ingredient. She buys roe, fish oil, leeches, eels and swamp / Mistlands fish.
+19. **Per-trader selling.** Haldor buys ordinary and cooked fish and treasure; Hildir buys Trophy-size fish, golden
+    variants and spare relics at a premium; the Bog Witch as above. A way to pick what to sell (vanilla sells the
+    first valuable).
+20. **Hildir.** Fishing bounties (e.g. "a pike over 8 kg in the rain") for coins and unique items. Three lost
+    tackle boxes in Sunken Crypts, Frost Caves and Infested Mines, each adding lures and dyed Fisherman's gear to her
+    shop. Her stock in recipes: Sparkler (glowing night popper), Straw Hat / Fur Cap (summer and ice-fishing angler
+    hats), Basic Fireworks (a flare marking a boss fish for friends).
+21. **Angler ranks.** Ranks from species caught, Trophy-size catches and weight landed; the top recipes need a rank.
+22. **Species mastery.** 10 / 25 / 50 of a species for a small perk or a gold trophy plaque; record weights in the
+    catch log.
+23. **Rare variants.** Golden / albino version of each species (about 1 in 300), valuable and collectable.
+24. **Endgame.** Boss lures cost more each time; the Leviathan needs 2-3 of each boss material; a final rod and the
+    "Njord's Regalia" relic set need all seven boss fish several times and every relic.

@@ -77,6 +77,16 @@ public static class VdwModelImporter
         new Entry("bossmat_yagluthgill", "bossmats", Kind.Static, 1.5f),
         new Entry("bossmat_queen_eel", "bossmats", Kind.Static, 1.5f),
         new Entry("bossmat_fimbul_salmon", "bossmats", Kind.Static, 1.5f),
+        // Fish materials: what cleaning a catch gives (build_fishmats.py).
+        new Entry("mat_scales", "fishmats", Kind.Static),
+        new Entry("mat_oil", "fishmats", Kind.Static) { Scale = 1.1f },
+        new Entry("mat_fins", "fishmats", Kind.Static),
+        new Entry("mat_roe", "fishmats", Kind.Static) { Scale = 1.4f },
+        new Entry("mat_ink", "fishmats", Kind.Static, 1f) { Scale = 1.3f },
+        new Entry("mat_cinder", "fishmats", Kind.Static, 1.5f),
+        new Entry("mat_rime", "fishmats", Kind.Static, 1f),
+        new Entry("mat_legend", "fishmats", Kind.Static, 1.2f),
+        new Entry("mat_trophy", "fishmats", Kind.Static),
         new Entry("hook_fimbul", "hooks", Kind.Static, 1.2f),   // rime metal, frost glow (build_hooks.py fimbul)
         new Entry("bait_worm", "bait", Kind.Animated) { Scale = BaitScale },
         new Entry("bait_grub", "bait", Kind.Animated) { Scale = BaitScale },
@@ -120,6 +130,23 @@ public static class VdwModelImporter
         new Entry("buff_totem_fisher", "pieces", Kind.Static, 1.5f),
         new Entry("buff_totem_njord", "pieces", Kind.Static, 1.5f),   // the same totem, recoloured (recolor_totem.py)
         new Entry("fishing_boat", "pieces", Kind.Static),             // hull + oar.L / oar.R pivoting at their oarlocks (build_boat.py)
+        // Fish Cleaning Table and its add-ons (build_cleaning_table.py)
+        new Entry("piece_cleaning_table", "pieces", Kind.Static),
+        new Entry("piece_cleaning_ext1", "pieces", Kind.Static),
+        new Entry("piece_cleaning_ext2", "pieces", Kind.Static),
+        new Entry("piece_cleaning_ext3", "pieces", Kind.Static),
+        // fish dishes and the table's prepared ingredients (build_cleaning_table.py)
+        new Entry("food_fishermans_stew", "fishmats", Kind.Static),
+        new Entry("food_fin_soup", "fishmats", Kind.Static),
+        new Entry("food_roe_flatbread", "fishmats", Kind.Static),
+        new Entry("food_ink_noodles", "fishmats", Kind.Static, 0.3f),
+        new Entry("food_ember_fillet", "fishmats", Kind.Static, 1f),
+        new Entry("food_rime_salmon", "fishmats", Kind.Static, 0.3f),
+        new Entry("food_grilled_fillet", "fishmats", Kind.Static),
+        new Entry("food_travel_rations", "fishmats", Kind.Static),
+        new Entry("prep_fillet", "fishmats", Kind.Static),
+        new Entry("prep_roe", "fishmats", Kind.Static),
+        new Entry("prep_dried", "fishmats", Kind.Static),
         // Chum: one bucket of minnows, a different liquid per tier (bucket_ / fish_ / liquid_ maps per mesh).
         new Entry("buff_relic_horn", "buffs", Kind.Static),
         new Entry("buff_relic_pearl", "buffs", Kind.Static, 1.5f),

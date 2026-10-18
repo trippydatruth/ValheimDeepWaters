@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.15.0
+### Added
+- **Fish Cleaning Table**: a crafting station of its own, with three add-ons (Filleting Knife Rack, Brining Barrel,
+  Drying Line) that raise its level for the rarer fish and let it prepare Fish Fillets, Brined Roe and Dried Fish.
+  Cleaning fish raises your Fishing skill.
+- **Fish dishes**: eight dishes made from the prepared ingredients at Valheim's own food stations - a grilled fillet
+  on the cooking station, stews, soups and plates in the cauldron, and cured salmon and travel rations at the food
+  preparation table.
+- Fish materials go into every lure, the crafted baits, the meads, chum, the Rune of Njord and the totems. Data files
+  still on the old recipes get the new ones.
+- **Fish materials**: clean a catch at the Fish Cleaning Table for its biome's material - Fish Scales, Fish Oil, Spiny Fins,
+  Fish Roe, Abyssal Ink, Cinder Scales, Rime Scales, or a Legendary Scale from a legendary fish. Bigger fish give
+  more. Landing a Trophy-size fish also gives a Trophy Fin. Each has its own model and icon.
+- **Rod upgrades**: every rod upgrades to level 4 with fish materials, its era's line material and some of each
+  biome's unused oddments. Each level improves every stat; the last level needs a Trophy Fin. Upgrades never ask for a
+  higher station level than the station can reach.
+- Rod tooltips show the stats for the rod's level.
+- A warning in the log names any recipe item the game doesn't have (a typo in a data file).
+
+### Fixed
+- Lures and hooks in the tackle slots survived death when the inventory was full; they now go into the tombstone.
+
 ## 0.14.0
 ### Added
 - **All 12 vanilla fish can be caught** with Deep Waters rods. Landing one gives the real vanilla item, so vanilla
