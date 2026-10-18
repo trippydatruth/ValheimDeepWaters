@@ -21,6 +21,15 @@
   Moder Scale Fish and Fimbul Salmon, Dyrnwyn flames on the Yagluth Gill, purple embers on the Queen Eel, Mistwalker mist on
   Odin's Eye, lightning on Thor's Hammerhead and blood swirls circling the Fenringfin. The Yggdrasil, Ashwood, Frostwood
   and Leviathan rods glow too. The effects come from the game's own items at runtime.
+- **Fish are as big as they weigh**: a common fish shows from 0.8x (lightest of its kind) to 1.3x (heaviest) while it
+  swims to the bait, on the line and dropped. Legendary and boss fish keep their size.
+- **Fisherman's gear split**: the Oilskin Coat is now a cape, worn over a new **Striped Fisher's Shirt** (tunic); the set
+  takes all four pieces.
+- Lures and trailers are bigger and easy to see dropped or on the line; chum buckets hold lumps and chunks instead of
+  whole fish; reel cranks are all on the right; the Fishing Boat's passenger seat is easier to pick; the Eikthyr Elver's
+  lightning is bigger.
+- **Valheim look**: bait, rod, buff, hook and boss-material textures toned toward Valheim's (darker, softer) with the
+  pixel-and-blur finish, all textures at 512, and icons now show items from above.
 ### Removed
 - **Dvergr Dace**: taken out. It leaves an existing fish.json once, and baits that targeted it lose it (trout takes its
   place where a bait didn't already have it).

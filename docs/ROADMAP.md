@@ -18,6 +18,7 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
 10. **Weather in boss fights.** Weather effects during some fights, synced across players if needed. *Done: each boss brings its boss's weather and music, shared with players nearby.*
     *Done: each boss brings its namesake boss's weather and music to everyone within 150 m.*
 11. **Valheim style.** Restyle models and textures to fit Valheim's look better.
+    *Done 2026-10-18: tone pass + pixel-and-blur on baits, rods, buffs, hooks, boss materials and the brightest fish; 512 textures; audit brightness 0.39 vs vanilla 0.35.*
 12. **Queen Eel.** Make the model larger and the fight feel like a sea serpent fight. *Done: 7.5 m sea serpent with circle, charge, rear and tail-slap moves.*
     *Done: shown at 7.5 m, with a sea-serpent fight (circling, charges, rearing up, tail slaps).*
 13. **Anything that makes the mod feel more fleshed out.**

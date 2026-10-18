@@ -194,7 +194,9 @@ namespace ValheimDeepWaters
             seat.transform.localPosition = new Vector3(0, SternSeatTop - PassengerDrop, sternZ);   // the pose sits above its point
             seat.transform.localRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);   // faces the rower
             var seatBox = seat.AddComponent<BoxCollider>();
-            seatBox.center = new Vector3(0, 0.1f, 0); seatBox.size = new Vector3(Beam * 0.5f, 0.3f, 0.36f);
+            // a generous box over the whole stern seat and the space above it (like the rowing seat's), so looking anywhere at it
+            // shows the prompt - non-solid, so it can be looked at and used but not bumped into
+            seatBox.center = new Vector3(0, PassengerDrop + 0.35f, 0); seatBox.size = new Vector3(Beam * 0.85f, 0.95f, 0.8f);
             var chair = seat.AddComponent<Chair>();
             chair.m_name = Loc.Token("vdw_boat_passenger", "Passenger seat");
             chair.m_attachPoint = seat.transform;

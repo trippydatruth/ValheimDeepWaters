@@ -19,6 +19,34 @@ namespace ValheimDeepWaters
 
         public static string NameOf(int quality) => Names[Mathf.Clamp(quality, 1, MaxClass)];
 
+        // The model is shown bigger the heavier the fish: the species' lightest at MinModel, its heaviest at MaxModel.
+        // Legendary and boss fish keep their fixed size (BossFish.ScaleFor).
+        private const float MinModel = 0.8f, MaxModel = 1.3f;
+        public static float ModelScale(FishDefinition? fish, float kg)
+        {
+            if (fish == null || fish.Legendary) return 1f;
+            float range = fish.MaxWeightKg - fish.MinWeightKg;
+            float rank = range > 0.001f ? Mathf.Clamp01((kg - fish.MinWeightKg) / range) : 0.5f;
+            return Mathf.Lerp(MinModel, MaxModel, rank);
+        }
+
+        /// <summary>A dropped fish item shows at its own weight's size (from the weight stored on it when landed).</summary>
+        [HarmonyPatch(typeof(ItemDrop), "Start")]
+        private static class DroppedFishScale
+        {
+            private static void Postfix(ItemDrop __instance)
+            {
+                var item = __instance.m_itemData;
+                if (item?.m_customData == null || !item.m_customData.TryGetValue("vdw_weight_kg", out var raw)) return;
+                if (!float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float kg)) return;
+                string name = __instance.gameObject.name.Replace("(Clone)", "").Trim();
+                if (!name.StartsWith("VDW_Fish_")) return;
+                ContentRegistry.Fish.TryGetValue(name.Substring("VDW_Fish_".Length), out var fish);
+                float s = ModelScale(fish, kg);
+                if (Mathf.Abs(s - 1f) > 0.01f) __instance.transform.localScale = Vector3.one * s;
+            }
+        }
+
         /// <summary>
         /// A wall plaque for showing off a catch: a copy of Valheim's wall item stand that only takes fish (and
         /// shows bigger size classes bigger, as item stands scale by quality).

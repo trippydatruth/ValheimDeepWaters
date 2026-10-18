@@ -17,7 +17,7 @@ namespace ValheimDeepWaters
     /// body mesh whatever the importer did, so every vertex can take its bone weights from the body under it - the gear
     /// is skinned to the player's own skeleton like Valheim's armour. A vertex colour (red) says how much a vertex moves
     /// rigidly with one bone instead: all of the hat with the head, the coat's skirt more and more with the hips.
-    /// All three worn: rain can't soak you (no Wet), and a small fishing bonus.
+    /// All four worn: rain can't soak you (no Wet), and a small fishing bonus.
     /// </summary>
     internal static class FisherGear
     {
@@ -33,9 +33,13 @@ namespace ValheimDeepWaters
             new Piece { Prefab = "VDW_FisherHat", Clone = "HelmetLeather", Model = "fisher_hat", Rigid = "Head",
                 Name = "Sou'wester", Desc = "An oiled hat with a long brim at the back, so the rain runs off down your coat and not your neck.",
                 Armor = 3f, Weight = 1f, Recipe = new[] { ("LeatherScraps", 4), ("Resin", 6) } },
-            new Piece { Prefab = "VDW_FisherCoat", Clone = "ArmorLeatherChest", Model = "fisher_chest", Rigid = "Hips",
-                Name = "Oilskin Coat", Desc = "A long waxed coat, worn open over a striped wool shirt. It sheds rain and sea spray alike.",
-                Armor = 5f, Weight = 6f, Recipe = new[] { ("DeerHide", 4), ("LeatherScraps", 6), ("Resin", 10) } },
+            // the coat is a cape (shoulder slot), worn over the striped shirt, which is the tunic (chest slot)
+            new Piece { Prefab = "VDW_FisherCoat", Clone = "CapeDeerHide", Model = "fisher_coat", Rigid = "Hips",
+                Name = "Oilskin Coat", Desc = "A long waxed coat, worn open. It sheds rain and sea spray alike.",
+                Armor = 3f, Weight = 4f, Recipe = new[] { ("DeerHide", 4), ("LeatherScraps", 4), ("Resin", 8) } },
+            new Piece { Prefab = "VDW_FisherShirt", Clone = "ArmorLeatherChest", Model = "fisher_chest", Rigid = "Hips",
+                Name = "Striped Fisher's Shirt", Desc = "A thick striped wool shirt. Warm when wet.",
+                Armor = 2f, Weight = 2f, Recipe = new[] { ("LeatherScraps", 3), ("DeerHide", 1) } },
             new Piece { Prefab = "VDW_FisherOveralls", Clone = "ArmorLeatherLegs", Model = "fisher_legs", Rigid = "Hips",
                 Name = "Oilskin Overalls", Desc = "Waxed bib overalls tucked into tall rubber boots. Wade in up to your knees and stay dry.",
                 Armor = 4f, Weight = 5f, Recipe = new[] { ("DeerHide", 3), ("LeatherScraps", 6), ("Resin", 8) } },
@@ -170,7 +174,7 @@ namespace ValheimDeepWaters
         /// </summary>
         private static bool Retexture(GameObject prefab, List<(Mesh mesh, Material[] mats)> parts, Piece p)
         {
-            string want = p.Model == "fisher_chest" ? "coat" : "overall";
+            string want = p.Model == "fisher_coat" ? "coat" : p.Model == "fisher_chest" ? "shirt" : "overall";
             var all = parts.SelectMany(x => x.mats).Where(m => m != null).ToList();
             var src = all.FirstOrDefault(m => m.name.IndexOf(want, StringComparison.OrdinalIgnoreCase) >= 0) ?? all.FirstOrDefault();
             var tex = src != null && src.HasProperty("_MainTex") ? src.GetTexture("_MainTex") : null;

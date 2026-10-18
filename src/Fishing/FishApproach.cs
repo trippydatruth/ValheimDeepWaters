@@ -91,7 +91,7 @@ namespace ValheimDeepWaters
                     : Time.time + firstDecideDelay + UnityEngine.Random.Range(3f, 8f) * i;
 
                 if (ContentRegistry.FishItems.TryGetValue(fish.Id, out var prefab))
-                    sui.Visual = HookedFishVisual.Create(prefab, ContentRegistry.ModelKeyFor(fish), BossFish.ScaleFor(fish.Id));
+                    sui.Visual = HookedFishVisual.Create(prefab, ContentRegistry.ModelKeyFor(fish), BossFish.ScaleFor(fish.Id) * FishSize.ModelScale(fish, sui.WeightKg));
                 if (sui.Visual != null)
                 {
                     sui.Visual.StayUnder = 0.15f;

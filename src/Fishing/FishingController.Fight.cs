@@ -327,7 +327,7 @@ namespace ValheimDeepWaters
 
                 if (ContentRegistry.FishItems.TryGetValue(s.Fish.Id, out var fishPrefab))
                 {
-                    s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish), BossFish.ScaleFor(s.Fish.Id));
+                    s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish), BossFish.ScaleFor(s.Fish.Id) * FishSize.ModelScale(s.Fish, s.FishWeight));
                     if (s.HookedFish != null) s.HookedFish.StayUnder = 0.05f;
                 }
 

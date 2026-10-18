@@ -35,7 +35,7 @@ namespace ValheimDeepWaters
         /// <summary>By fish id: the boss fish take their boss's element, the three legendaries their name's.</summary>
         private static readonly Dictionary<string, Fx[]> FishFx = new()
         {
-            ["eikthyr_elver"] = new[] { new Fx("SwordNiedhoggLightning", "attach/default/glow/Lightning", true, BrightBolt, 2.2f, 0.45f) { AlongBody = true }, new Fx("StaffLightning", "attach/Loaded/Clouds", false, StormPuff) },
+            ["eikthyr_elver"] = new[] { new Fx("SwordNiedhoggLightning", "attach/default/glow/Lightning", true, BrightBolt, 2.4f, 0.62f) { AlongBody = true }, new Fx("StaffLightning", "attach/Loaded/Clouds", false, StormPuff) },
             ["elder_bass"] = new[] { new Fx("SwordNiedhoggNature", "attach/default/glow/Spores", true, null, 1.6f, 1.8f), new Fx("SwordNiedhoggNature", "attach/default/glow/Spores_World", false, null, 1.6f, 1.8f) },
             ["bonemass_catfish"] = new[] { new Fx("BowDraugrFang", "attach/DraugrFangBow/Particle System", false, null, 1.1f, 0.9f), new Fx("BowDraugrFang", "attach/Point light", true) },
             ["moder_scale"] = new[] { new Fx("MaceSilver", "attach/effects/soft cloud", false, FrostCloud, 0.5f, 0.7f), new Fx("MaceSilver", "attach/effects/vfx_BloodHit 1") },
