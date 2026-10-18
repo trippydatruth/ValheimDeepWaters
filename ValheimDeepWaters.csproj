@@ -24,6 +24,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Unity editor scripts and art tools live in the repo too, but belong to the Unity project, not the mod -->
+    <Compile Remove="unity-editor\**" />
+    <Compile Remove="art-tools\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Valheim Game Assemblies -->
     <Reference Include="assembly_valheim">
       <HintPath>$(ValheimDir)\valheim_Data\Managed\assembly_valheim.dll</HintPath>

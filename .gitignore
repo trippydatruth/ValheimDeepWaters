@@ -10,3 +10,7 @@ archive/
 .vscode/
 *.user
 Thumbs.db
+
+# Python caches from the Blender tools
+__pycache__/
+*.pyc
