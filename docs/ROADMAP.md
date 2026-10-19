@@ -40,7 +40,7 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
     Unused vanilla items get uses: greydwarf eyes (lure eyes), obsidian (razor hooks), deathsquito needles (fine
     hooks), tar (waterproof line), soft tissue and royal jelly (Mistlands bait), bilebags (chum), charred bone (jigs),
     celestial feathers (flies), molten core (ember spoon).
-18. **Bog Witch.** Her stock in recipes: Pungent Pebbles (stinkbait), Fresh Seaweed (ocean chum), Seafarer's Herbs
+18. **Bog Witch.** *Done 2026-10-18: Stinkbait, Seaweed Chum, Lantern Float, Spawning Musk, eggshell and toadstool in the top meads, seven fish feasts with their own models (eaten down in three stages), her stock of brews and boss lures. Buying from you moves to #19.* Her stock in recipes: Pungent Pebbles (stinkbait), Fresh Seaweed (ocean chum), Seafarer's Herbs
     (sea-fish feast), Candle Wick (lantern float for night fishing), Powdered Dragon Eggshell (top Steady-Hand
     Tonic), Toadstool (top Troll-Grip Mead), Love Potion (spawning musk: legendaries likelier for a while). One fish
     feast per biome with her Serving Tray and herb blends. She sells the mod's witchy brews and a boss-summoning
@@ -58,3 +58,15 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
 23. **Rare variants.** Golden / albino version of each species (about 1 in 300), valuable and collectable.
 24. **Endgame.** Boss lures cost more each time; the Leviathan needs 2-3 of each boss material; a final rod and the
     "Njord's Regalia" relic set need all seven boss fish several times and every relic.
+25. **Floats.** A float is a buff item (Buffs.json `FloatModel`, optional `FloatLight`): use it and the line wears that
+    float model for its Duration - no slot, one float at a time. *The Lantern Float is the first (2026-10-18).* Planned,
+    one or two per era, each with its own model and a small effect suited to it:
+    - **Quill Float** (Meadows: feathers, resin) - light and twitchy, fewer missed nibbles (Nibbles).
+    - **Cork-and-Antler Float** (Black Forest: hard antler, fine wood) - sits steady in current (river fish keener).
+    - **Bone Float** (Swamp: withered bone, guck) - rides low and dark, fish less wary (Stealth).
+    - **Frost Float** (Mountain: freeze gland, crystal) - doesn't ice over, cold-water fish keener.
+    - **Linen Bob** (Plains: linen, barley straw) - bright and big, longer hook window (HookWindow).
+    - **Eitr Float** (Mistlands: eitr, sap) - glows faintly like the lantern float, for deep water (FloatLight).
+    - **Ember Float** (Ashlands: charred bone, sulfur) - won't burn in hot water, Ashlands fish keener.
+    - **Rime Float** (Deep North: frostcore, moose sinew) - a heavy float for heavy fish (Tension).
+    Effects that need a condition (river, cold water, deep water) get their own stat, like the lantern float's NightBite.

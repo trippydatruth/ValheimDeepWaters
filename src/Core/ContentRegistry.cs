@@ -52,6 +52,7 @@ namespace ValheimDeepWaters
                 BossFish.Register();
                 try { FishMaterials.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish materials failed: {ex}"); }
                 try { FishDishes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish dishes failed: {ex}"); }
+                try { BogWitch.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Bog Witch content failed: {ex}"); }
                 // Fisherman's gear: the remade set (new_gear_rig.blend, painted weights)
                 try { FisherGear.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear failed: {ex}"); }
                 RemoveVanillaFishingGear();
@@ -122,6 +123,9 @@ namespace ValheimDeepWaters
             ("Baits", "lure_wyrm", "TrophyDragonQueen:1,FreezeGland:2"),
             ("Baits", "lure_ember", "TrophyGoblinKing:1,SurtlingCore:1"),
             ("Baits", "lure_chitin", "TrophySeekerQueen:1,Carapace:2"),
+            // the Bog Witch's stock in the top meads (0.15.0)
+            ("Buffs", "steady_major", "Honey:2,Cloudberry:4,Eitr:1,VDW_Mat_ink:1"),
+            ("Buffs", "grip_major", "Honey:2,Barley:4,LoxMeat:1,VDW_Mat_roe:2"),
             // fish materials in lure, bait, mead, chum and totem recipes (0.15.0)
             ("Baits", "lure_feather_fly", "Feathers:2,Resin:1"),
             ("Baits", "lure_flint_spinner", "Flint:1,Feathers:1,Wood:1"),
@@ -185,6 +189,8 @@ namespace ValheimDeepWaters
         {
             ("Fish", "Material"),      // fish materials from cleaning (0.15.0)
             ("Rods", "Upgrade"),       // rod upgrade levels (0.15.0)
+            ("Buffs", "FloatModel"),   // floats your line wears (0.15.0)
+            ("Buffs", "FloatLight"),
         };
 
         private static string RecipeKey(JToken? recipe) =>

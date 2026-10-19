@@ -339,6 +339,42 @@ Tiered items that unlock as you progress:
   legendaries, never in bait fish). The **Pearl of Njord**, **Jörmungandr's Scale** and the **Golden Hook** are
   only left behind by boss fish: each boss you land has a 1 in 4 chance of one, one you don't have yet first.
 
+## The Bog Witch
+
+Her wares go into fishing:
+
+| Her ware | Goes into |
+|---|---|
+| Pungent Pebbles | **Stinkbait** (cauldron): catfish, trollfish, pike, mistfin and bass love it |
+| Fresh Seaweed | **Seaweed Chum** (cauldron 2): more, keener fish for 6 minutes |
+| Candle Wick | **Lantern Float** (workbench 2): use it and your line wears a candle-lit float for 20 minutes; fish bite 50% sooner at night |
+| Love Potion | **Spawning Musk** (cauldron 3): legendary fish 50% more likely for 10 minutes |
+| Powdered Dragon Eggshell | Major Steady-Hand Tonic |
+| Toadstool | Major Troll-Grip Mead |
+| Her herb blends | The fish feasts |
+
+**Fish feasts** are made in the cauldron and set down with her **Serving Tray**, like vanilla feasts, for
+everyone to eat from:
+
+| Feast | Cauldron | Herbs | Health / Stamina / Eitr |
+|---|---|---|---|
+| Lakeside Fish Fry | 2 | Woodland Herb Blend | 40 / 40 |
+| Fin and Onion Hotpot | 3 | Mountain Peak Pepper Powder | 55 / 50 |
+| Sea-Fish Spread | 3 | Seafarer's Herbs | 50 / 60 |
+| Roe and Barley Platter | 4 | Grasslands Herbalist Harvest | 60 / 70 |
+| Abyssal Ink Banquet | 5 | Herbs of the Hidden Hills | 60 / 45 / 70 |
+| Ember Fish Platter | 5 | Fiery Spice Powder | 85 / 60 |
+| Rime Fish Smorgasbord | 5 | the Deep North spice | 90 / 75 / 35 |
+
+She also sells Stinkbait, Lantern Floats and (after Bonemass) Spawning Musk, and each **boss lure** once you've
+beaten that boss, so a failed summoning doesn't mean hunting a new trophy.
+
+### Floats
+
+Some items are floats: use one like a mead and your line wears that float instead of the usual one until it runs
+out. There's no slot to fill, and only one float at a time. The Lantern Float is the first; its candle lights up
+after dark.
+
 ## Fisherman's gear
 
 A light armour set made at the workbench (level 2): the **Sou'wester**, **Oilskin Coat** (worn as a cape), **Striped

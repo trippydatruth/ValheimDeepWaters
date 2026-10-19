@@ -19,6 +19,12 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Floats**: an item can be a float - use it and your line wears that float for a while, no slot needed. The Lantern Float is the first: a candle-lit float that glows after dark, and fish bite sooner at night.
+- **The Bog Witch**: her wares go into fishing - Stinkbait, Seaweed Chum, the Lantern Float,
+  Spawning Musk (legendaries likelier) and the top Steady-Hand and Troll-Grip meads. Seven fish feasts made with her
+  herb blends, each with its own model that's eaten down as it's shared, set down with her Serving Tray. She sells the brews, and each boss lure once you've beaten
+  its boss.
+
 ### Fixed
 - Lures and hooks in the tackle slots survived death when the inventory was full; they now go into the tombstone.
 
@@ -72,6 +78,12 @@
 - Much quieter log at startup.
 - The config file is now `valheimdeepwaters.cfg`. An existing `trippy.valheimdeepwaters.cfg` is moved over the first
   time the game starts, keeping your settings and dropping the ones that no longer exist.
+
+- **Floats**: an item can be a float - use it and your line wears that float for a while, no slot needed. The Lantern Float is the first: a candle-lit float that glows after dark, and fish bite sooner at night.
+- **The Bog Witch**: her wares go into fishing - Stinkbait, Seaweed Chum, the Lantern Float,
+  Spawning Musk (legendaries likelier) and the top Steady-Hand and Troll-Grip meads. Seven fish feasts made with her
+  herb blends, each with its own model that's eaten down as it's shared, set down with her Serving Tray. She sells the brews, and each boss lure once you've beaten
+  its boss.
 
 ### Fixed
 - Landing a fish could fail and leave it stuck on the line at your feet.

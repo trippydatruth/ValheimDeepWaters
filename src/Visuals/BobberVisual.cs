@@ -76,7 +76,10 @@ namespace ValheimDeepWaters
             var shader = Shader.Find("Sprites/Default");
 
             GameObject ballGo;
-            if (CustomModels.TryGetCustom("bobber", out var bobberMesh, out var bobberMat))
+            // a float buff (the Lantern Float...) puts its own float on the line while it lasts
+            var floatDef = FishingBuffs.ActiveFloat(Player.m_localPlayer);
+            string model = floatDef != null && CustomModels.TryGetCustom(floatDef.FloatModel, out _, out _) ? floatDef.FloatModel : "bobber";
+            if (CustomModels.TryGetCustom(model, out var bobberMesh, out var bobberMat))
             {
                 // Size is already baked into the custom mesh.
                 ballGo = new GameObject("bobber_custom");
@@ -93,6 +96,18 @@ namespace ValheimDeepWaters
             }
             ballGo.transform.SetParent(go.transform, false);
             bobber._ball = ballGo.transform;
+            if (floatDef != null && floatDef.FloatLight && !hidden)
+            {
+                // a warm light in the float's lantern, lit after dark (Refresh)
+                var lightGo = new GameObject("float_light");
+                lightGo.transform.SetParent(ballGo.transform, false);
+                var mb = ballGo.GetComponent<MeshFilter>().sharedMesh.bounds;
+                lightGo.transform.localPosition = new Vector3(mb.center.x, mb.max.y - mb.size.y * 0.2f, mb.center.z);
+                var light = lightGo.AddComponent<Light>();
+                light.type = LightType.Point; light.range = 6f; light.intensity = 1.4f; light.color = new Color(1f, 0.72f, 0.38f);
+                light.shadows = LightShadows.None;
+                bobber._light = light;
+            }
 
             // The line ties onto the top of the bobber, and it floats partly submerged. Both come from the
             // mesh bounds, so any model works regardless of where its origin sits. (go is at the world origin
@@ -187,7 +202,15 @@ namespace ValheimDeepWaters
             }
 
             UpdateLine(tip, _ball.TransformPoint(_lineAttachLocal), travelling);
+            if (_light != null)
+            {
+                bool lit = EnvMan.instance != null && EnvMan.IsNight();
+                _light.enabled = lit;
+                if (lit) _light.intensity = 1.4f + Mathf.Sin(now * 9f) * 0.12f + Mathf.Sin(now * 23f) * 0.06f;   // a candle's flicker
+            }
         }
+
+        private Light? _light;
 
         /// <summary>
         /// Draws the line the way vanilla's fishing line hangs: a curve from the rod tip to the float that sags by Slack

@@ -9,6 +9,8 @@
 #   food_fishermans_stew, food_fin_soup, food_roe_flatbread, food_ink_noodles, food_ember_fillet, food_rime_salmon,
 #   food_grilled_fillet, food_travel_rations   (dishes, after the photos in Mesh/cleaning table/Reference)
 #   prep_fillet, prep_roe, prep_dried          (the table's prepared ingredients)
+#   bait_stinkbait, buff_lantern_float          (the Bog Witch's brews; float_lantern = the lantern float at bobber size, on the line)
+#   piece_feast_<forest|mountain|ocean|plains|mistlands|ashlands|deepnorth>  the fish feasts: board/pot + food_full/half/low stages
 # env: VDW_PIECE (one of the above), VDW_OUT (folder), VDW_NAME (defaults to VDW_PIECE)
 import bpy, bmesh, math, os
 import numpy as np
@@ -73,6 +75,13 @@ MATS = {
     "linen":    ((0.86, 0.82, 0.70), (0.70, 0.64, 0.50), 0.9, 0.0, 0.0, "noise"),
     "bark":     ((0.36, 0.25, 0.16), (0.16, 0.11, 0.07), 0.9, 0.0, 0.0, "streak"),      # rough branch bark (the drying rack)
     "driedfish":((0.80, 0.54, 0.22), (0.34, 0.20, 0.09), 0.35, 0.2, 0.0, "scales_u"),   # golden-brown dried fish, dark back
+    # the Bog Witch's brews
+    "stink":    ((0.26, 0.24, 0.12), (0.12, 0.10, 0.05), 0.3, 0.0, 0.0, "noise"),       # rolled stinkbait, wet and dark
+    "pebble":   ((0.62, 0.55, 0.32), (0.40, 0.36, 0.20), 0.7, 0.0, 0.0, "noise"),       # pungent pebbles
+    "floatred": ((0.72, 0.10, 0.07), (0.50, 0.06, 0.04), 0.3, 0.0, 0.0, "noise"),
+    "floatwhite": ((0.92, 0.90, 0.84), (0.80, 0.78, 0.72), 0.35, 0.0, 0.0, "noise"),
+    "candle":   ((1.0, 0.82, 0.40), (1.0, 0.62, 0.20), 0.4, 0.0, 1.0, "flat", (1.0, 0.7, 0.3)),
+    "glass":    ((0.78, 0.86, 0.80), (0.62, 0.72, 0.66), 0.05, 0.0, 0.0, "noise"),
 }
 G = 8    # 8 x 8 tiles
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
@@ -489,6 +498,164 @@ elif PIECE == "food_travel_rations":
     for k, (x, y) in enumerate(((0.07, 0.06), (0.08, 0.035), (0.06, 0.08))): blob((x, y, 0.018), 0.01, "cloudberry", seg=8, rings=6, bump=0.25, seed=k)
     lathe([(0.0, 0.008), (0.022, 0.008), (0.026, 0.05), (0.016, 0.06), (0.0, 0.06)], "darkwood", 12, (-0.08, -0.07, 0))   # a little honey pot
     ring((-0.08, -0.07, 0.035), (0, 0, 1), 0.026, 0.003, "rope", seg=12)
+elif PIECE.startswith("piece_feast_"):
+    # The fish feasts (roadmap #18): a serving board or pot that stays, and the food on it in three stages the mod
+    # switches between as the feast is eaten - "food_full", "food_half", "food_low" (separate meshes, same atlas).
+    import bmesh as _bmesh
+    def make_stage(name, items):
+        global bm, uvl
+        keep_bm, keep_uvl = bm, uvl
+        bm = _bmesh.new(); uvl = bm.loops.layers.uv.new("UVMap")
+        for fn in items:                                                                       # each piece of food 1.45x about its own foot: heaped, readable platters
+            n0 = len(bm.verts); fn(); bm.verts.ensure_lookup_table()
+            vs = bm.verts[n0:]
+            if not vs: continue
+            cx = sum(v.co.x for v in vs) / len(vs); cy = sum(v.co.y for v in vs) / len(vs); cz = min(v.co.z for v in vs)
+            for v in vs: v.co = Vector((cx + (v.co.x - cx) * 1.45, cy + (v.co.y - cy) * 1.45, cz + (v.co.z - cz) * 1.45))
+        _bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-7)
+        _bmesh.ops.dissolve_degenerate(bm, dist=1e-8, edges=bm.edges)
+        _bmesh.ops.triangulate(bm, faces=bm.faces, quad_method='BEAUTY')
+        m2 = bpy.data.meshes.new(name); bm.to_mesh(m2); bm.free()
+        o2 = bpy.data.objects.new(name, m2); bpy.context.scene.collection.objects.link(o2)
+        print(f"  {name}: {len(m2.polygons)} faces, {len(items)} part(s)")
+        bm, uvl = keep_bm, keep_uvl
+    def stages(items):
+        n = len(items)
+        make_stage("food_full", items)
+        make_stage("food_half", items[: max(1, round(n * 0.55))])
+        make_stage("food_low", items[: max(1, round(n * 0.22))])
+    rnd = np.random.default_rng(31)
+    def board(w=1.0, d=0.6, mat="wood", h=0.09):
+        box((0, 0, h - 0.025), (w, d, 0.05), mat)                                                             # the serving board
+        for sx in (-1, 1):
+            box((sx * (w / 2 - 0.08), 0, (h - 0.05) / 2), (0.08, d - 0.08, h - 0.05), "darkwood")              # its feet
+        return h
+    def lying_fish(x, y, z, L, mat, rot):
+        def f(): fish((x, y, z), L, mat=mat, rot=rot, flat=0.55)
+        return f
+    FEAST = PIECE[len("piece_feast_"):]
+    if FEAST == "forest":                 # Lakeside Fish Fry: fried lake fish on a board, forest mushrooms, a bowl of oil
+        top = board()
+        n0 = mark(); bowl((0, 0, 0), 0.09, 0.05, "darkwood"); surface(0.04, 0.078, "oil", 18); shift(n0, (0.36, 0.17, top))
+        items = []
+        for k in range(8):
+            x = -0.36 + 0.1 * k; y = -0.08 + 0.12 * (k % 2)
+            items.append(lying_fish(x, y, top + 0.02, 0.24, "driedfish", 80 + rnd.uniform(-15, 15)))
+        for k in range(6):
+            x, y = rnd.uniform(-0.4, 0.3), rnd.uniform(-0.24, 0.24)
+            items.append((lambda x=x, y=y, k=k: (pole((x, y, top), (x, y, top + 0.03), 0.009, "cream"), blob((x, y, top + 0.035), 0.022, "berry" if k % 2 else "dried", seg=10, rings=5, scale=(1, 1, 0.5)))))
+        rnd.shuffle(items); stages(items)
+    elif FEAST == "mountain":             # Fin and Onion Hotpot: a big iron pot of fin broth on a board, onions round it
+        top = board(0.9, 0.6)
+        lathe([(0.14, top), (0.24, top + 0.04), (0.26, top + 0.2), (0.245, top + 0.2), (0.235, top + 0.06), (0.0, top + 0.05)], "iron", 22)
+        ring((0, 0, top + 0.2), (0, 0, 1), 0.255, 0.012, "iron")
+        for s in (-1, 1): ring((s * 0.26, 0, top + 0.17), (1, 0, 0), 0.04, 0.008, "iron")
+        surface(top + 0.17, 0.24, "broth", 22); items = []                                                  # the broth stays with the pot
+        for k in range(4):
+            def fin(k=k):
+                n0 = mark(); plate([(0.06 * t, 0.06 * math.sin(math.pi * t) * (1 - 0.3 * t)) for t in np.linspace(0, 1, 9)] + [(0.0, 0.0)], 0.004, "fins")
+                turn(n0, (0, 0, 0), 'X', 70); turn(n0, (0, 0, 0), 'Z', 90 * k); shift(n0, (0.08 * math.cos(1.57 * k), 0.08 * math.sin(1.57 * k), top + 0.16))
+            items.append(fin)
+        for k in range(6):
+            a = 0.6 + k * 0.85; x, y = 0.36 * math.cos(a), 0.22 * math.sin(a)
+            items.append(lambda x=x, y=y: blob((x, y, top + 0.035), 0.035, "onion", seg=10, rings=7, scale=(1, 1, 0.9)))
+        for k in range(3): items.append(lambda k=k: chunk((-0.05 + 0.06 * k, 0.03 * k, top + 0.17), (0.05, 0.03, 0.02), "whitefish", rot=40 * k, seed=k))
+        stages(items)
+    elif FEAST == "ocean":                # Sea-Fish Spread: whole sea fish on a bed of fresh seaweed, a bowl of roe
+        top = board()
+        for k in range(14):                                                                                    # the seaweed bed
+            x, y = rnd.uniform(-0.42, 0.42), rnd.uniform(-0.22, 0.22)
+            n0 = mark(); plate([(0.07 * math.cos(a), 0.02 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 10, endpoint=False)], 0.004, "scallion", smooth=False)
+            turn(n0, (0, 0, 0), 'Z', rnd.uniform(0, 180)); shift(n0, (x, y, top + 0.003))
+        n0 = mark(); bowl((0, 0, 0), 0.08, 0.05, "darkwood"); shift(n0, (0.36, 0.18, top))
+        items = [lambda: [blob((0.36 + rnd.uniform(-0.05, 0.05), 0.18 + rnd.uniform(-0.05, 0.05), top + 0.045), 0.009, "roe", seg=6, rings=4) for _ in range(30)]]
+        for k in range(5):
+            items.append(lying_fish(-0.32 + 0.15 * k, -0.04 + 0.08 * (k % 2), top + 0.03, 0.32, "fishskin", 75 + rnd.uniform(-10, 10)))
+        stages(items)
+    elif FEAST == "plains":               # Roe and Barley Platter: loaves, bread heaped with roe, fillets
+        top = board()
+        items = []
+        for k in range(3):
+            x = -0.3 + 0.3 * k
+            items.append(lambda x=x: blob((x, -0.14, top + 0.05), 0.1, "bread", seg=12, rings=7, scale=(1.3, 0.8, 0.55)))
+        for k in range(4):
+            x = -0.33 + 0.22 * k
+            def roe_bread(x=x):
+                lathe([(0.0, top), (0.07, top), (0.075, top + 0.02), (0.0, top + 0.022)], "bread", 14, (x, 0.12, 0))
+                for _ in range(22):
+                    r, a = 0.055 * math.sqrt(rnd.random()), rnd.uniform(0, 2 * math.pi)
+                    blob((x + r * math.cos(a), 0.12 + r * math.sin(a), top + 0.03 + 0.012 * (1 - r / 0.055)), 0.007, "roe", seg=6, rings=4)
+            items.append(roe_bread)
+        for k in range(3): items.append(lambda k=k: fillet((0.3, -0.12 + 0.06 * k, top + 0.02), 0.16, 0.06, 0.02, "salmon", rot=10 * k))
+        rnd.shuffle(items); stages(items)
+    elif FEAST == "mistlands":            # Abyssal Ink Banquet: bowls of black noodles, ink-dark fish, jotun puffs
+        top = board(mat="darkwood")
+        bowls = [(-0.28, 0.1), (0.0, 0.12), (0.28, 0.1)]
+        for (bx, by) in bowls:
+            n0 = mark(); bowl((0, 0, 0), 0.1, 0.06, "darkwood"); surface(0.045, 0.088, "inkbroth", 18); shift(n0, (bx, by, top))
+        items = []
+        for (bx, by) in bowls:
+            def noodles(bx=bx, by=by):
+                for k in range(6):
+                    a0 = rnd.uniform(0, 2 * math.pi); pts = []
+                    for t in np.linspace(0, 1, 10):
+                        a = a0 + t * 2.5; r = 0.06 * (1 - 0.4 * t)
+                        pts.append((bx + r * math.cos(a), by + r * math.sin(a), top + 0.047 + 0.012 * t * (1 - t)))
+                    tube(pts, [0.004] * 10, "ink", seg=5)
+            items.append(noodles)
+        for k in range(3): items.append(lying_fish(-0.25 + 0.25 * k, -0.15, top + 0.025, 0.26, "ink", 85))
+        for k in range(5): items.append(lambda k=k: blob((-0.4 + 0.2 * k, -0.24 + 0.02 * (k % 2), top + 0.025), 0.025, "puff", seg=8, rings=6, bump=0.3, seed=k))
+        stages(items)
+    elif FEAST == "ashlands":             # Ember Fish Platter: grilled salmon on a slate slab, glowing cinder scales, vineberries
+        top = board(mat="darkwood"); box((0, 0, top + 0.012), (0.9, 0.5, 0.024), "slate"); top += 0.024
+        items = []
+        for k in range(6): items.append(lambda k=k: fillet((-0.32 + 0.13 * k, -0.05 + 0.1 * (k % 2), top + 0.02), 0.15, 0.07, 0.03, "grilledsalmon", rot=-10 + 4 * k))
+        for k in range(6):
+            def scale_(k=k):
+                n0 = mark(); plate([(0.02 * math.cos(a), 0.02 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 10, endpoint=False)], 0.003, "cinder")
+                turn(n0, (0, 0, 0), 'X', 15); shift(n0, (-0.35 + 0.14 * k, 0.18, top + 0.008))
+            items.append(scale_)
+        for k in range(8): items.append(lambda k=k: blob((-0.38 + 0.1 * k, -0.2, top + 0.012), 0.013, "vineberry", seg=8, rings=5))
+        rnd.shuffle(items); stages(items)
+    elif FEAST == "deepnorth":            # Rime Fish Smorgasbord: cured salmon slices, dried fish, lingonberries, rime
+        top = board()
+        items = []
+        for r_ in range(2):
+            def slices(r_=r_):
+                for k in range(6):
+                    n0 = mark(); out = [(0.05 * math.cos(a), 0.024 * math.sin(a) * (1 - 0.25 * math.cos(a))) for a in np.linspace(0, 2 * math.pi, 14, endpoint=False)]
+                    plate(out, 0.004, "curedsalmon", cup=0.004, smooth=False)
+                    turn(n0, (0, 0, 0), 'Y', 24); shift(n0, (-0.38 + 0.028 * k, -0.12 + 0.14 * r_, top + 0.012 + 0.004 * k))
+            items.append(slices)
+        for k in range(4):
+            def dfish(k=k):
+                n0 = mark(); roundfish(0.26, "driedfish", fat=0.6); turn(n0, (0, 0, 0), 'Y', 90); turn(n0, (0, 0, 0), 'X', 90)
+                shift(n0, (0.28, -0.15 + 0.08 * k, top + 0.015))
+            items.append(dfish)
+        for k in range(10): items.append(lambda k=k: blob((rnd.uniform(-0.1, 0.12), rnd.uniform(-0.2, 0.2), top + 0.012), 0.012, "berry", seg=8, rings=5))
+        for k in range(5): items.append(lambda k=k: crystal((-0.05 + 0.04 * k, 0.2, top), (-0.05 + 0.04 * k, 0.21, top + 0.05 + 0.02 * (k % 2)), 0.012, "ice"))
+        rnd.shuffle(items); stages(items)
+elif PIECE == "bait_stinkbait":
+    # Stinkbait: a few dark rolled balls of guts and fish oil with pungent pebbles pressed in (about 5 cm; baits show at x2)
+    rnd = np.random.default_rng(14)
+    for k, (x, y, r) in enumerate(((0.0, 0.0, 0.012), (0.017, 0.008, 0.009), (-0.014, 0.01, 0.0085), (0.006, -0.015, 0.008))):
+        blob((x, y, r * 0.8), r, "stink", seg=10, rings=7, scale=(1, 1, 0.8), bump=0.3, seed=k)
+        for j in range(4):
+            a = rnd.uniform(0, 2 * math.pi); b = rnd.uniform(0.3, 1.2)
+            blob((x + r * math.cos(a) * math.sin(b), y + r * math.sin(a) * math.sin(b), r * 0.8 + r * 0.75 * math.cos(b)), r * 0.28, "pebble", seg=6, rings=4, bump=0.3, seed=k * 10 + j)
+elif PIECE in ("buff_lantern_float", "float_lantern"):
+    # Lantern Float: a red and white float with a little iron cage on top holding a burning candle wick
+    lathe([(0.0, 0.0), (0.012, 0.01), (0.024, 0.035), (0.026, 0.05)], "floatwhite", 16)
+    lathe([(0.026, 0.05), (0.024, 0.065), (0.012, 0.09), (0.0, 0.1)], "floatred", 16)
+    pole((0, 0, -0.03), (0, 0, 0.002), 0.003, "darkwood")                                                     # the stem below
+    for k in range(4):                                                                                         # cage bars
+        a = k * math.pi / 2 + 0.4
+        tube([(0.009 * math.cos(a), 0.009 * math.sin(a), 0.095), (0.012 * math.cos(a), 0.012 * math.sin(a), 0.125), (0.0, 0.0, 0.14)], [0.0012] * 3, "iron", seg=4)
+    ring((0, 0, 0.097), (0, 0, 1), 0.01, 0.0015, "iron", seg=10)
+    lathe([(0.0, 0.098), (0.005, 0.098), (0.005, 0.112), (0.0, 0.112)], "cream", 8)                            # the candle stub
+    blob((0, 0, 0.118), 0.004, "candle", seg=8, rings=5, scale=(1, 1, 1.7))                                   # its flame
+    ring((0, 0, 0.142), (1, 0, 0), 0.005, 0.0012, "iron", seg=8)                                               # line loop
+    if PIECE == "float_lantern": scale_since(0, (0, 0, 0), (2.6, 2.6, 2.6))                                  # the float on the line, at the bobber's size (45 cm)
 elif PIECE == "prep_fillet":
     fillet((0, -0.025, 0.012), 0.2, 0.07, 0.022, "salmon", rot=4)
     fillet((0.01, 0.035, 0.012), 0.18, 0.065, 0.02, "whitefish", rot=-6)
@@ -523,7 +690,8 @@ if PIECE.startswith("piece_"):
         u, v = f.loops[0][layer].uv
         return REV.get((min(G - 1, int(u * G)), min(G - 1, int(v * G))))
     src = bmesh.new(); src.from_mesh(me); suv = src.loops.layers.uv.active
-    for gname, mats in (("vdw_wood", ("wood", "staves")), ("vdw_darkwood", ("darkwood",))):
+    WOOD_SPLIT = (("vdw_wood", ("wood", "staves")),) if PIECE.startswith("piece_feast_") else (("vdw_wood", ("wood", "staves")), ("vdw_darkwood", ("darkwood",)))   # feasts keep their dark wood in the main mesh
+    for gname, mats in WOOD_SPLIT:
         b2 = src.copy(); uv2 = b2.loops.layers.uv.active
         bmesh.ops.delete(b2, geom=[f for f in b2.faces if mat_of(f, uv2) not in mats], context='FACES')
         if not b2.faces: b2.free(); continue
@@ -536,7 +704,8 @@ if PIECE.startswith("piece_"):
         m2 = bpy.data.meshes.new(gname); b2.to_mesh(m2); b2.free()
         o2 = bpy.data.objects.new(gname, m2); bpy.context.scene.collection.objects.link(o2)
         print(f"  {gname}: {len(m2.polygons)} faces")
-    bmesh.ops.delete(src, geom=[f for f in src.faces if mat_of(f, suv) in ("wood", "staves", "darkwood")], context='FACES')
+    gone = {m for _, ms in WOOD_SPLIT for m in ms}
+    bmesh.ops.delete(src, geom=[f for f in src.faces if mat_of(f, suv) in gone], context='FACES')
     src.to_mesh(me); src.free()
 co = np.array([v.co[:] for v in me.vertices]); print(f"PIECE {PIECE}: {len(co)} verts, {np.ptp(co, 0).round(3)} m")
 

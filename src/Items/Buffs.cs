@@ -22,7 +22,8 @@ namespace ValheimDeepWaters
     /// <summary>
     /// One fishing buff item from Buffs.json. Kind decides what it is: a Mead (drink for a timed buff),
     /// Wearable (buff while equipped; Slot = Helmet, Shoulder or Utility), Chum (drink-style item that baits
-    /// the water where you're fishing for a while) or Totem (a piece you build that buffs anyone fishing nearby).
+    /// the water where you're fishing for a while), Totem (a piece you build that buffs anyone fishing nearby) or
+    /// Float (used like a mead: your line wears its float, FloatModel, for Duration - no slot to fill).
     /// </summary>
     public sealed class BuffDefinition
     {
@@ -35,6 +36,10 @@ namespace ValheimDeepWaters
         public float Radius = 20f;        // metres, for Chum and Totem
         public float Armor = 0f;          // for Wearable
         public Dictionary<string, float> Effects = new Dictionary<string, float>();
+        /// <summary>A float: the bobber model your casts use while this is active (only one float at a time).</summary>
+        public string FloatModel = "";
+        /// <summary>A float with a light in it, lit after dark.</summary>
+        public bool FloatLight = false;
 
         public string VanillaFallbackPrefab = "";
         public bool Craftable = true;
@@ -62,9 +67,10 @@ namespace ValheimDeepWaters
         public const string FishWeight = "FishWeight";         // +x: catches run heavier
         public const string Legendary = "Legendary";           // +x: legendary fish more likely
         public const string Stealth = "Stealth";               // > 0: fish don't flee from your noise
+        public const string NightBite = "NightBite";           // +x: fish bite sooner, at night only (the lantern float)
 
         public static readonly string[] All =
-            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth };
+            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite };
 
         public static string Describe(string stat, float v)
         {
@@ -85,6 +91,7 @@ namespace ValheimDeepWaters
                 FishWeight => $"Catches {pct} heavier",
                 Legendary => $"Legendary fish +{pct} more likely",
                 Stealth => "Fish don't flee from your noise",
+                NightBite => $"At night, fish bite {pct} sooner",
                 _ => $"{stat} {v}"
             };
         }
@@ -138,11 +145,22 @@ namespace ValheimDeepWaters
             }
             // Chum buckets set down by anyone, near where the line is in the water.
             if (at != null) total += ChumBuckets.Total(stat, at.Value);
+            // the lantern float's bite bonus only counts after dark
+            if (stat == BuffStat.BiteSpeed && EnvMan.instance != null && EnvMan.IsNight()) total += Total(player, BuffStat.NightBite, at);
             return total;
         }
 
         /// <summary>A reduction stat (Tension, RodWear...) as a multiplier, never below 10%.</summary>
         public static float Reduction(Player? player, string stat) => Mathf.Clamp(1f - Total(player, stat), 0.1f, 1f);
+
+        /// <summary>The float the player's line wears right now (an active buff with a FloatModel), or null for the usual bobber.</summary>
+        public static BuffDefinition? ActiveFloat(Player? player)
+        {
+            if (player == null) return null;
+            foreach (var se in player.GetSEMan().GetStatusEffects())
+                if (ByStatus.TryGetValue(se.m_name, out var def) && !string.IsNullOrWhiteSpace(def.FloatModel)) return def;
+            return null;
+        }
 
         public static void Load(List<BuffDefinition> buffs)
         {
@@ -178,7 +196,8 @@ namespace ValheimDeepWaters
         internal static string EffectText(BuffDefinition b)
         {
             var lines = b.Effects.Where(e => BuffStat.All.Contains(e.Key)).Select(e => BuffStat.Describe(e.Key, e.Value)).ToList();
-            if (Is(b, "Mead")) lines.Add($"Lasts {b.Duration / 60f:0.#} min");
+            if (!string.IsNullOrWhiteSpace(b.FloatModel)) lines.Add($"Your line wears this float for {b.Duration / 60f:0.#} min{(b.FloatLight ? ", lit after dark" : "")}");
+            else if (Is(b, "Mead")) lines.Add($"Lasts {b.Duration / 60f:0.#} min");
             if (Is(b, "Chum")) lines.Add($"For {b.Duration / 60f:0.#} min, within {b.Radius:0} m of where you set it down");
             if (Is(b, "Totem")) lines.Add($"Anyone fishing within {b.Radius:0} m");
             return string.Join("\n", lines);
@@ -193,7 +212,7 @@ namespace ValheimDeepWaters
             se.m_icon = icon;
             se.m_ttl = ttl;
             // Tiers of the same family share a category, so (like vanilla meads) only one runs at a time.
-            se.m_category = "vdw_" + b.Id.Split('_')[0];
+            se.m_category = string.IsNullOrWhiteSpace(b.FloatModel) ? "vdw_" + b.Id.Split('_')[0] : "vdw_float";   // one float on the line at a time
             ItemManager.Instance.AddStatusEffect(new CustomStatusEffect(se, fixReference: false));
             ByStatus[se.m_name] = b;
             Effects[b.Id] = se;
@@ -211,7 +230,7 @@ namespace ValheimDeepWaters
         /// <summary>A safe vanilla item of the same kind (and, for wearables, the same slot) to clone instead.</summary>
         private static string DefaultBase(BuffDefinition b)
         {
-            if (Is(b, "Mead") || Is(b, "Chum")) return "MeadHealthMinor";
+            if (Is(b, "Mead") || Is(b, "Chum") || Is(b, "Float")) return "MeadHealthMinor";
             string wanted = b.VanillaFallbackPrefab ?? "";
             if (wanted.StartsWith("Cape", StringComparison.OrdinalIgnoreCase)) return "CapeDeerHide";
             if (wanted.StartsWith("Belt", StringComparison.OrdinalIgnoreCase)) return "BeltStrength";

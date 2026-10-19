@@ -57,6 +57,7 @@ public static class VdwModelImporter
         new Entry("rod_leviathan", "rod", Kind.Rigged, 1.5f),
         new Entry("rod_frostwood", "rod", Kind.Rigged, 1.5f),   // the Deep North (build_rod_model.py frostwood)
         new Entry("bobber", "rod", Kind.Static, 1.5f),
+        new Entry("float_lantern", "rod", Kind.Static, 1.5f),   // the Lantern Float on the line (a float buff; build_cleaning_table.py float_lantern)
         new Entry("hook_tiny", "hooks", Kind.Static, 0f),
         new Entry("hook_small", "hooks", Kind.Static, 0f),
         new Entry("hook_medium", "hooks", Kind.Static, 0f),
@@ -154,7 +155,20 @@ public static class VdwModelImporter
         new Entry("buff_chum_basic", "buffs", Kind.Static),
         new Entry("buff_chum_blood", "buffs", Kind.Static),
         new Entry("buff_chum_abyssal", "buffs", Kind.Static, 1.5f),
-        new Entry("buff_chum_blubber", "buffs", Kind.Static),   // whale blubber in oil (build_chum.py chum_blubber)
+        new Entry("buff_chum_blubber", "buffs", Kind.Static),
+        // the Bog Witch's brews (roadmap #18): build_cleaning_table.py stinkbait / lantern float, recoloured mead and chum
+        new Entry("buff_chum_seaweed", "buffs", Kind.Static),
+        new Entry("buff_spawning_musk", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_lantern_float", "buffs", Kind.Static, 1.5f),
+        new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
+        // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
+        new Entry("piece_feast_forest", "pieces", Kind.Static),
+        new Entry("piece_feast_mountain", "pieces", Kind.Static),
+        new Entry("piece_feast_ocean", "pieces", Kind.Static),
+        new Entry("piece_feast_plains", "pieces", Kind.Static),
+        new Entry("piece_feast_mistlands", "pieces", Kind.Static, 1f),
+        new Entry("piece_feast_ashlands", "pieces", Kind.Static, 1f),
+        new Entry("piece_feast_deepnorth", "pieces", Kind.Static),   // whale blubber in oil (build_chum.py chum_blubber)
         // Meads and tonics: one bottle, re-coloured per family, the major ones glowing.
         new Entry("buff_angler_minor", "buffs", Kind.Static),
         new Entry("buff_angler_medium", "buffs", Kind.Static),
