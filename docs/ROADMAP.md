@@ -45,10 +45,10 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
     Tonic), Toadstool (top Troll-Grip Mead), Love Potion (spawning musk: legendaries likelier for a while). One fish
     feast per biome with her Serving Tray and herb blends. She sells the mod's witchy brews and a boss-summoning
     ingredient. She buys roe, fish oil, leeches, eels and swamp / Mistlands fish.
-19. **Per-trader selling.** Haldor buys ordinary and cooked fish and treasure; Hildir buys Trophy-size fish, golden
+19. **Per-trader selling.** *Done 2026-10-18: each trader's buy list and prices (TraderSales.cs), and a button beside Sell to pick what to sell. Golden variants join Hildir's list with #23.* Haldor buys ordinary and cooked fish and treasure; Hildir buys Trophy-size fish, golden
     variants and spare relics at a premium; the Bog Witch as above. A way to pick what to sell (vanilla sells the
     first valuable).
-20. **Hildir.** Fishing bounties (e.g. "a pike over 8 kg in the rain") for coins and unique items. Three lost
+20. **Hildir.** *Done 2026-10-18: daily bounties (coins, bait, relics at 5/15/30) and the three tackle boxes (Bog-, Frost- and Mist-Dyed gear and tackle), in the trade panel. Her Sparkler / hats / fireworks recipes are still to do.* Fishing bounties (e.g. "a pike over 8 kg in the rain") for coins and unique items. Three lost
     tackle boxes in Sunken Crypts, Frost Caves and Infested Mines, each adding lures and dyed Fisherman's gear to her
     shop. Her stock in recipes: Sparkler (glowing night popper), Straw Hat / Fur Cap (summer and ice-fishing angler
     hats), Basic Fireworks (a flare marking a boss fish for friends).

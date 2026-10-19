@@ -44,6 +44,12 @@ namespace ValheimDeepWaters
                 data.m_customData = new Dictionary<string, string>(data.m_customData ?? new Dictionary<string, string>());
                 data.m_customData["vdw_weight_kg"] = s.FishWeight.ToString("0.00", CultureInfo.InvariantCulture);
                 data.m_customData["vdw_caught_by"] = player.GetPlayerName();
+                // for Hildir's bounties: the weather and time it was caught in
+                if (EnvMan.instance != null)
+                {
+                    data.m_customData["vdw_caught_rain"] = EnvMan.IsWet() ? "1" : "0";
+                    data.m_customData["vdw_caught_night"] = EnvMan.IsNight() ? "1" : "0";
+                }
                 // Size class as the item's quality: shown on the icon, sizes don't stack together (so a
                 // trophy keeps its weight), and item stands show bigger classes bigger.
                 data.m_quality = FishSize.ClassFor(rank);

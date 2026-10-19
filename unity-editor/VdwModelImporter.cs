@@ -161,6 +161,10 @@ public static class VdwModelImporter
         new Entry("buff_spawning_musk", "buffs", Kind.Static, 1.5f),
         new Entry("buff_lantern_float", "buffs", Kind.Static, 1.5f),
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
+        // Hildir's lost tackle boxes (roadmap #20, build_cleaning_table.py)
+        new Entry("tacklebox_swamp", "buffs", Kind.Static),
+        new Entry("tacklebox_mountain", "buffs", Kind.Static),
+        new Entry("tacklebox_mistlands", "buffs", Kind.Static, 1f),
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
         new Entry("piece_feast_forest", "pieces", Kind.Static),
         new Entry("piece_feast_mountain", "pieces", Kind.Static),

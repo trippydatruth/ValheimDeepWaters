@@ -375,6 +375,21 @@ Some items are floats: use one like a mead and your line wears that float instea
 out. There's no slot to fill, and only one float at a time. The Lantern Float is the first; its candle lights up
 after dark.
 
+## Hildir
+
+**Fishing bounties.** Hildir posts one bounty a day for a species you've caught: at least so heavy, sometimes caught in
+the rain, at night or Trophy-size. Hand the fish in from the trade panel for coins and bait. Your 5th, 15th and 30th
+bounties earn the Horn of Ægir, the Golden Hook and the Pearl of Njord.
+
+**Lost tackle boxes.** Three of Hildir's tackle boxes turn up in dungeon chests. Give one back (use it on her, or from
+the trade panel) and her shop gains more:
+
+| Box | Found in | Hildir starts selling |
+|---|---|---|
+| Mossy Tackle Box | Sunken Crypts | Bog-Dyed Fisherman's gear, Guck Crawlers, Leather Grubs |
+| Frosted Tackle Box | Frost Caves | Frost-Dyed Fisherman's gear, Silver Swimbaits, Frost Bait |
+| Dvergr-Mended Tackle Box | Mistlands dvergr ruins | Mist-Dyed Fisherman's gear, Bone Jigs, Abyssal Bait |
+
 ## Fisherman's gear
 
 A light armour set made at the workbench (level 2): the **Sou'wester**, **Oilskin Coat** (worn as a cape), **Striped
@@ -385,7 +400,16 @@ and makes reeling cheaper and the hookset window longer.
 
 - **Size class:** each fish is Small, Medium, Large or Trophy, with its weight and catcher in the tooltip.
 - **Trophy Mount** (hammer: fine wood, resin): hang a fish on the wall.
-- **Cook and sell:** cook fish on a cooking station or sell them to Haldor.
+- **Cook and sell:** cook fish on a cooking station, and sell your catch to the traders. Each buys their own kind:
+
+  | Trader | Buys |
+  |---|---|
+  | Haldor | Raw and cooked fish, at their value |
+  | Hildir | Trophy-size fish (2.5x) and legendary fish (1.5x) for her collection, and spare relics (400) |
+  | Bog Witch | Roe, fish oil, abyssal ink, brined roe, leeches, and swamp, Mistlands and eel-like fish (1.4x) |
+
+  Your catch sells from the **Sell your catch** panel beside the store window (it works alongside trader UI mods);
+  the arrows pick what to sell. The store's own sell button sells vanilla valuables, as in vanilla.
 - **Catch log** (`J`): records every species you catch. New species earn rewards at 5, 10, 15 and 20
   species and for catching them all.
 - **Fishing skill:** Valheim's Fishing skill rises as you reel and land fish. It makes reeling cheaper and

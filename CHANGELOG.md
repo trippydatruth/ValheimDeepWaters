@@ -19,6 +19,13 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Each trader buys their own catch**: Haldor ordinary and cooked fish, Hildir Trophy-size and legendary fish at a
+  premium and spare relics, the Bog Witch roe, oil, ink, leeches and swamp and Mistlands fish - from a "Sell your
+  catch" panel beside the store (pick from a list, or sell all) that works alongside trader UI mods.
+- **Hildir's bounties**: a fishing bounty a day for coins and bait, with relics at 5, 15 and 30 bounties. The panel shows
+  the fish, the conditions and the reward, and tells you whether the fish you carry counts.
+- **Hildir's lost tackle boxes**: three, in Sunken Crypts, Frost Caves and the Mistlands dvergr ruins. Each one returned
+  adds a dyed set of the Fisherman's gear and more tackle to her shop.
 - **Floats**: an item can be a float - use it and your line wears that float for a while, no slot needed. The Lantern Float is the first: a candle-lit float that glows after dark, and fish bite sooner at night.
 - **The Bog Witch**: her wares go into fishing - Stinkbait, Seaweed Chum, the Lantern Float,
   Spawning Musk (legendaries likelier) and the top Steady-Hand and Troll-Grip meads. Seven fish feasts made with her

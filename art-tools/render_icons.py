@@ -19,6 +19,7 @@ GLOW["buff_rune_njord"] = 1.2
 GLOW.update({"mat_ink": 1.0, "mat_cinder": 1.5, "mat_rime": 1.0, "mat_legend": 1.2})   # fish materials
 GLOW.update({"food_ink_noodles": 0.3, "food_ember_fillet": 1.0, "food_rime_salmon": 0.3})   # cleaning table, dishes
 UPRIGHT |= {"piece_cleaning_table", "piece_cleaning_ext1", "piece_cleaning_ext2", "piece_cleaning_ext3"}; LOOK_DOWN.update({"piece_cleaning_table": 32})
+GLOW.update({"tacklebox_mistlands": 1.0}); UPRIGHT |= {"tacklebox_swamp", "tacklebox_mountain", "tacklebox_mistlands"}; LOOK_DOWN.update({"tacklebox_swamp": 25, "tacklebox_mountain": 25, "tacklebox_mistlands": 25})   # Hildir's tackle boxes
 GLOW.update({"buff_spawning_musk": 1.0, "buff_lantern_float": 1.2, "float_lantern": 1.2}); UPRIGHT |= {"buff_spawning_musk", "buff_chum_seaweed", "buff_lantern_float", "float_lantern"} | {f"piece_feast_{f}" for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}; LOOK_DOWN.update({f"piece_feast_{f}": 42 for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}); LOOK_DOWN.update({"buff_chum_seaweed": 38, "buff_spawning_musk": 12})   # the Bog Witch brews
 GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})

@@ -82,6 +82,8 @@ MATS = {
     "floatwhite": ((0.92, 0.90, 0.84), (0.80, 0.78, 0.72), 0.35, 0.0, 0.0, "noise"),
     "candle":   ((1.0, 0.82, 0.40), (1.0, 0.62, 0.20), 0.4, 0.0, 1.0, "flat", (1.0, 0.7, 0.3)),
     "glass":    ((0.78, 0.86, 0.80), (0.62, 0.72, 0.66), 0.05, 0.0, 0.0, "noise"),
+    "gold":     ((0.88, 0.68, 0.30), (0.62, 0.44, 0.16), 0.3, 0.8, 0.0, "noise"),       # brass fittings
+    "eitr":     ((0.55, 0.30, 1.0), (0.80, 0.62, 1.0), 0.2, 0.0, 1.0, "flat", (0.62, 0.42, 1.0)),
 }
 G = 8    # 8 x 8 tiles
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
@@ -635,7 +637,32 @@ elif PIECE.startswith("piece_feast_"):
         for k in range(10): items.append(lambda k=k: blob((rnd.uniform(-0.1, 0.12), rnd.uniform(-0.2, 0.2), top + 0.012), 0.012, "berry", seg=8, rings=5))
         for k in range(5): items.append(lambda k=k: crystal((-0.05 + 0.04 * k, 0.2, top), (-0.05 + 0.04 * k, 0.21, top + 0.05 + 0.02 * (k % 2)), 0.012, "ice"))
         rnd.shuffle(items); stages(items)
-elif PIECE == "bait_stinkbait":
+elif PIECE.startswith("tacklebox_"):
+    # Hildir's lost tackle boxes (roadmap #20): a wooden box with brass corners, a handle and her mark, and its dungeon on it
+    KIND = PIECE[len("tacklebox_"):]
+    L, Wd, H = 0.44, 0.22, 0.18
+    box((0, 0, H * 0.4), (L, Wd, H * 0.8), "darkwood")                                                         # the body
+    box((0, 0, H * 0.86), (L + 0.01, Wd + 0.01, H * 0.16), "wood", tilt=(-4 if KIND == "swamp" else 0, 0))       # the lid, a little askew on the swamp one
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            box((sx * (L / 2 - 0.012), sy * (Wd / 2 - 0.012), H * 0.5), (0.03, 0.03, H * 1.0), "gold")           # brass corners
+    tube([(-0.07, 0, H * 0.95), (-0.06, 0, H * 1.12), (0.06, 0, H * 1.12), (0.07, 0, H * 0.95)], [0.008] * 4, "leather", seg=6)   # handle
+    box((0, -Wd / 2 - 0.004, H * 0.62), (0.05, 0.008, 0.05), "gold")                                           # the clasp
+    for k, (x, z) in enumerate(((-0.1, 0.06), (0.1, 0.06))): box((x, -Wd / 2 - 0.003, z), (0.12, 0.004, 0.012), "floatred")   # her painted mark
+    rnd = np.random.default_rng(23)
+    if KIND == "swamp":
+        for k in range(9):
+            blob((rnd.uniform(-L / 2, L / 2), rnd.uniform(-Wd / 2, Wd / 2), H * 0.95 + rnd.uniform(0, 0.01)), rnd.uniform(0.025, 0.045), "scallion", seg=8, rings=5, scale=(1, 1, 0.35), bump=0.4, seed=k)   # moss
+        for k in range(4): blob((rnd.uniform(-L / 2, L / 2), -Wd / 2 - 0.01, rnd.uniform(0.02, 0.12)), 0.012, "ooze" if "ooze" in TILE else "stink", seg=6, rings=4, scale=(1, 0.5, 1.6))
+    elif KIND == "mountain":
+        for k in range(8):
+            x, y = rnd.uniform(-L / 2, L / 2), rnd.uniform(-Wd / 2, Wd / 2)
+            crystal((x, y, H * 0.94), (x + rnd.uniform(-0.02, 0.02), y, H * 0.94 + rnd.uniform(0.03, 0.07)), 0.012, "ice")   # frost on the lid
+        for k in range(6): box((rnd.uniform(-L / 2, L / 2), -Wd / 2 - 0.004, rnd.uniform(0.02, 0.14)), (0.05, 0.006, 0.02), "ice")
+    else:
+        for z in (H * 0.25, H * 0.55):
+            box((0, 0, z), (L + 0.012, Wd + 0.012, 0.018), "iron")                                                # dvergr iron bands
+        for k in range(3): blob((-0.12 + 0.12 * k, -Wd / 2 - 0.01, H * 0.4), 0.01, "eitr", seg=8, rings=5)       # eitr rivets, glowingelif PIECE == "bait_stinkbait":
     # Stinkbait: a few dark rolled balls of guts and fish oil with pungent pebbles pressed in (about 5 cm; baits show at x2)
     rnd = np.random.default_rng(14)
     for k, (x, y, r) in enumerate(((0.0, 0.0, 0.012), (0.017, 0.008, 0.009), (-0.014, 0.01, 0.0085), (0.006, -0.015, 0.008))):
