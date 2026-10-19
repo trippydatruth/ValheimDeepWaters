@@ -17,6 +17,7 @@ namespace ValheimDeepWaters
         private static readonly Color Cream = new Color(1f, 0.93f, 0.80f);
         private static readonly Color Gold = new Color(1f, 0.76f, 0.35f);
         private static readonly Color Dim = new Color(0.74f, 0.68f, 0.58f);
+        private static readonly Color[] TierColors = { Color.clear, new Color(0.80f, 0.50f, 0.25f), new Color(0.78f, 0.80f, 0.84f), new Color(1f, 0.80f, 0.25f) };   // mastery: bronze, silver, gold
         private static readonly Color Amber = new Color(0.98f, 0.66f, 0.16f);
         private static readonly Color Ember = new Color(0.90f, 0.26f, 0.12f);
         private static readonly Color Moss = new Color(0.50f, 0.70f, 0.28f);
@@ -337,8 +338,15 @@ namespace ValheimDeepWaters
                 var row = new Rect(r.x + 20f + (int)(i / perCol) * colW, r.y + 62f + rankH + (i % (int)perCol) * rowH, colW - 12f, rowH);
                 if (entries.TryGetValue(f.Id, out var e))
                 {
-                    Label(row, f.Name, _text, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
-                    Label(row, $"{e.Count} caught  ·  best {e.BestKg:0.0} kg", _small, Dim, TextAnchor.MiddleRight);
+                    // the mastery pip (bronze / silver / gold; an empty frame before Bronze) and the count to the next tier
+                    int tier = Mastery.TierFor(f, e.Count);
+                    var t = Mastery.Thresholds(f);
+                    var pip = new Rect(row.x, row.y + rowH / 2f - 6f, 12f, 12f);
+                    Fill(pip, tier == Mastery.None ? new Color(0f, 0f, 0f, 0.4f) : TierColors[tier]);
+                    if (tier == Mastery.None) Fill(new Rect(pip.x + 2f, pip.y + 2f, 8f, 8f), Wood);
+                    Label(new Rect(row.x + 18f, row.y, row.width - 18f, row.height), f.Name, _text, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
+                    string progress = tier < t.Length - 1 ? $"{e.Count}/{t[tier + 1]}" : $"{e.Count} · {Mastery.TierNames[tier]}";
+                    Label(row, $"{progress}  ·  best {e.BestKg:0.0} kg", _small, Dim, TextAnchor.MiddleRight);
                 }
                 else
                 {
@@ -379,7 +387,7 @@ namespace ValheimDeepWaters
                 Label(unlock, $"Next rank unlocks:  {list}", _small, Cream, TextAnchor.MiddleLeft);
             }
             Label(new Rect(r.x, r.y + 88f, r.width, 20f),
-                $"Points: {AnglerRanks.SpeciesPoints} per new species ({AnglerRanks.LegendaryPoints} legendary)  ·  {AnglerRanks.CatchPoints} per catch  ·  {AnglerRanks.TrophyPoints} per Trophy-size  ·  1 per {AnglerRanks.KgPerPoint:0} kg landed",
+                $"Points: {AnglerRanks.SpeciesPoints} per new species ({AnglerRanks.LegendaryPoints} legendary)  ·  {AnglerRanks.CatchPoints} per catch  ·  {AnglerRanks.TrophyPoints} per Trophy-size  ·  1 per {AnglerRanks.KgPerPoint:0} kg  ·  mastery {Mastery.TierPoints[1]} / {Mastery.TierPoints[2]} / {Mastery.TierPoints[3]}",
                 _small, Dim, TextAnchor.MiddleLeft);
         }
 

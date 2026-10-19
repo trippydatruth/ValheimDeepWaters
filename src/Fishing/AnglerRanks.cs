@@ -61,6 +61,7 @@ namespace ValheimDeepWaters
                 bool legendary = ContentRegistry.Fish.TryGetValue(kv.Key, out var f) && f.Legendary;
                 pts += (legendary ? LegendaryPoints : SpeciesPoints) + kv.Value.Count * CatchPoints;
             }
+            pts += Mastery.RankPoints(CatchLog.Load(p));
             return pts + Trophies(p) * TrophyPoints + Mathf.FloorToInt(KgLanded(p) / KgPerPoint);
         }
 

@@ -431,7 +431,7 @@ namespace ValheimDeepWaters
         /// </summary>
         private static void UpdateRunPath(Player player, FishingSession s, float dt, bool exhausted)
         {
-            float strength = Mathf.Max(0.1f, s.Fish.FightStrength);
+            float strength = Mathf.Max(0.1f, s.Fish.FightStrength * Mastery.FightFactor(s.Fish));
 
             if (s.Running)
             {
@@ -479,7 +479,7 @@ namespace ValheimDeepWaters
         private static bool Fight(Player player, FishingSession s, bool blocked)
         {
             float dt = Time.deltaTime;
-            float strength = Mathf.Max(0.1f, s.Fish.FightStrength);
+            float strength = Mathf.Max(0.1f, s.Fish.FightStrength * Mastery.FightFactor(s.Fish));
 
             bool reeling = !blocked && ZInput.GetButton("Block");
 

@@ -13,7 +13,8 @@ namespace ValheimDeepWaters
     {
         private static Material? _wood, _darkWood;
 
-        public static void Dress(GameObject prefab)
+        /// <param name="woodOnly">Leave the painted (non-wood) meshes in their own materials (the plaque's gold, gilded by the mod).</param>
+        public static void Dress(GameObject prefab, bool woodOnly = false)
         {
             var model = prefab.transform.Find("vdw_model");
             var planks = FishingBoat.FindShipPlanks();
@@ -24,6 +25,7 @@ namespace ValheimDeepWaters
             foreach (var r in model.GetComponentsInChildren<Renderer>(true))
             {
                 var use = r.name == "vdw_wood" ? _wood : r.name == "vdw_darkwood" ? _darkWood : null;
+                if (use == null && woodOnly) continue;
                 r.sharedMaterials = use != null
                     ? Enumerable.Repeat(use, r.sharedMaterials.Length).ToArray()
                     : r.sharedMaterials.Select(m => Painted(planks, m)).ToArray();

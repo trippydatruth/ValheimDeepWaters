@@ -19,6 +19,9 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Species mastery**: 10 / 25 / 50 of a species (1 / 3 / 5 for legendary and boss fish) for Bronze, Silver and Gold - it
+  bites more readily, fights weaker, then runs bigger for you - with rank points for each tier and a Gold Trophy Plaque
+  (a wall piece with the species mounted on it, gold-plated) to build at Gold. The catch log shows each species' tier.
 - **Angler ranks**: ten ranks (Thrall of the Shallows to Chosen of Njord) from species, catches, Trophy-size fish and
   weight landed, shown in the catch log with a progress bar and the next rank's unlocks. The top rods, lures and Fish
   Cleaning Table recipes stay hidden until you reach their rank.

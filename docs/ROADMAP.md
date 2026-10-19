@@ -53,7 +53,7 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
     shop. Her stock in recipes: Sparkler (glowing night popper), Straw Hat / Fur Cap (summer and ice-fishing angler
     hats), Basic Fireworks (a flare marking a boss fish for friends).
 21. **Angler ranks.** *Done 2026-10-18: ten ranks (AnglerRanks.cs), the rank, progress bar and next unlocks in the catch log; rank-locked top rods, lures and table recipes are hidden until reached.* Ranks from species caught, Trophy-size catches and weight landed; the top recipes need a rank.
-22. **Species mastery.** 10 / 25 / 50 of a species for a small perk or a gold trophy plaque; record weights in the
+22. **Species mastery.** *Done 2026-10-18: Bronze / Silver / Gold at 10 / 25 / 50 (legendary and boss 1 / 3 / 5): bites more readily, fights weaker, runs bigger; rank points per tier; a Gold Trophy Plaque wall piece per species (Mastery.cs); tiers and counts in the catch log.* 10 / 25 / 50 of a species for a small perk or a gold trophy plaque; record weights in the
     catch log.
 23. **Rare variants.** Golden / albino version of each species (about 1 in 300), valuable and collectable.
 24. **Endgame.** Boss lures cost more each time; the Leviathan needs 2-3 of each boss material; a final rod and the

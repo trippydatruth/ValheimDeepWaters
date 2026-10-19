@@ -76,7 +76,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -120,6 +120,16 @@ namespace ValheimDeepWaters
                     int add = args.Length > 1 && int.TryParse(args[1], out var n) ? n : 100;
                     string msg = AnglerRanks.DebugAdd(p, add);
                     Console.instance.Print($"Rank points: {AnglerRanks.Points(p)} ({AnglerRanks.Ranks[AnglerRanks.RankIndex(p)].Name}).{msg.Replace("\n", " ")}");
+                }
+                else if (args[0].Equals("master", StringComparison.OrdinalIgnoreCase))
+                {
+                    var p = Player.m_localPlayer;
+                    if (p == null || args.Length < 2 || !ContentRegistry.Fish.TryGetValue(args[1], out var fish)) { Console.instance.Print("Usage: vdw_debug master <fish id> [count]  (listfish for ids)"); return; }
+                    int count = args.Length > 2 && int.TryParse(args[2], out var c) ? c : 50;
+                    int before = Mastery.Count(p, fish.Id);
+                    CatchLog.SetCount(p, fish.Id, count);
+                    string msg = Mastery.OnCatch(fish, before, count);
+                    Console.instance.Print($"{fish.Name}: {count} caught, mastery {(Mastery.Tier(p, fish) == 0 ? "none" : Mastery.TierNames[Mastery.Tier(p, fish)])}.{msg.Replace("\n", " ")}");
                 }
                 else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))
                 {

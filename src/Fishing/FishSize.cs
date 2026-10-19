@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 
 namespace ValheimDeepWaters
@@ -91,6 +92,33 @@ namespace ValheimDeepWaters
 
             CustomModels.ApplyToPrefab(piece.PiecePrefab, "trophy_mount");
             Jotunn.Managers.PieceManager.Instance.AddPiece(piece);
+        }
+
+        /// <summary>Boss trophies on the Trophy Mount are shown smaller - they're modelled at the boss's size and overhang
+        /// the plaque. Marked once, as the stand calls this again unchanged.</summary>
+        private const float MountScale = 0.6f;
+        private static readonly AccessTools.FieldRef<ItemStand, GameObject> VisualItem = AccessTools.FieldRefAccess<ItemStand, GameObject>("m_visualItem");
+        private static readonly AccessTools.FieldRef<ItemStand, ItemDrop> VisualDrop = AccessTools.FieldRefAccess<ItemStand, ItemDrop>("m_visualItemDrop");
+
+        private static bool IsBossTrophy(ItemDrop? drop)
+        {
+            if (drop == null) return false;
+            string name = Utils.GetPrefabName(drop.gameObject);
+            return BossFish.Trophies.Any(kv => BossFish.IsBoss(kv.Key) && kv.Value != null && kv.Value.name == name);
+        }
+        private sealed class MountScaled : MonoBehaviour { }
+
+        [HarmonyPatch(typeof(ItemStand), "SetVisualItem")]
+        private static class MountSize
+        {
+            private static void Postfix(ItemStand __instance)
+            {
+                var visual = VisualItem(__instance);
+                if (visual == null || visual.GetComponent<MountScaled>() != null || Utils.GetPrefabName(__instance.gameObject) != "VDW_TrophyMount") return;
+                if (!IsBossTrophy(VisualDrop(__instance))) return;
+                visual.transform.localScale *= MountScale;
+                visual.AddComponent<MountScaled>();
+            }
         }
 
         [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip),

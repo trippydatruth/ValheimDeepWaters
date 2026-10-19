@@ -60,6 +60,7 @@ namespace ValheimDeepWaters
                 RemoveVanillaFishingGear();
                 BaitSources.Register();
                 try { FishSize.RegisterTrophyMount(); } catch (Exception ex) { Plugin.Log.LogError($"Trophy mount failed: {ex.Message}"); }
+                try { Mastery.RegisterPlaques(); } catch (Exception ex) { Plugin.Log.LogError($"Gold plaques failed: {ex}"); }
                 try { FishingBoat.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fishing Boat failed: {ex}"); }
             }
             catch (Exception ex)

@@ -183,7 +183,10 @@ namespace ValheimDeepWaters
         /// Chance a fish that comes to the bait actually wants it - vanilla's per-bait chance (TestBate). A fish
         /// that fails this nibbles once and swims away instead of biting.
         /// </summary>
-        internal static float BaitInterest(FishDefinition fish, BaitDefinition? bait, BaitDefinition? trailer = null)
+        internal static float BaitInterest(FishDefinition fish, BaitDefinition? bait, BaitDefinition? trailer = null) =>
+            bait == null ? 0.5f : Mathf.Clamp(BaseInterest(fish, bait, trailer) + (BaseInterest(fish, bait, trailer) > 0f ? Mastery.InterestBonus(fish) : 0f), 0f, 0.95f);
+
+        private static float BaseInterest(FishDefinition fish, BaitDefinition? bait, BaitDefinition? trailer)
         {
             if (bait == null) return 0.5f;
             if (fish.ForbiddenBaits != null && fish.ForbiddenBaits.Contains(bait.Id)) return 0f;
@@ -198,15 +201,15 @@ namespace ValheimDeepWaters
         private static void SetBiterFish(FishingSession s, FishDefinition fish, float weightKg)
         {
             s.Fish = fish;
-            s.FishStaminaMax = fish.Stamina;
-            s.FishStamina = fish.Stamina;
+            s.FishStaminaMax = fish.Stamina * Mastery.FightFactor(fish);
+            s.FishStamina = s.FishStaminaMax;
             s.FishWeight = weightKg;
         }
 
         /// <summary>Most fish come in near the bottom of their species' range; big ones are rarer.</summary>
         /// <param name="heavier">FishWeight buff: shifts the roll toward the top of the range.</param>
         internal static float RollWeight(FishDefinition fish, float heavier = 0f) =>
-            Mathf.Lerp(fish.MinWeightKg, fish.MaxWeightKg, Mathf.Pow(UnityEngine.Random.value, 2f / (1f + Mathf.Max(0f, heavier))));
+            Mathf.Lerp(fish.MinWeightKg, fish.MaxWeightKg, Mathf.Pow(UnityEngine.Random.value, 2f / (1f + Mathf.Max(0f, heavier + Mastery.HeavierBonus(fish)))));
 
 
         // ------------------------------------------------------------------
@@ -268,7 +271,7 @@ namespace ValheimDeepWaters
             for (int i = 0; i < pool.Count; i++)
             {
                 var f = pool[i];
-                float w = Mathf.Max(0f, f.BiteWeight);
+                float w = Mathf.Max(0f, f.BiteWeight) * Mastery.BiteFactor(f);   // species you've mastered come more readily
                 if (near != null && near.Contains(f.Id)) w *= NearbySpeciesBoost;
                 if (f.Legendary) w *= legendaryBoost;
 

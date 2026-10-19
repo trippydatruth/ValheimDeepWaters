@@ -146,5 +146,14 @@ namespace ValheimDeepWaters
 
             Save(player, data);
         }
+
+        /// <summary>vdw_debug master: sets a species' catch count (logging it if it isn't yet).</summary>
+        public static void SetCount(Player player, string fishId, int count)
+        {
+            var data = Load(player);
+            if (!data.TryGetValue(fishId, out var entry)) data[fishId] = entry = new CatchEntry { Count = 0, BestKg = 0f };
+            entry.Count = Mathf.Max(0, count);
+            Save(player, data);
+        }
     }
 }

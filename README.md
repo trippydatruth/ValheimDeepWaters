@@ -412,8 +412,19 @@ and makes reeling cheaper and the hookset window longer.
   click a row to pick what to sell, or Sell all. The store's own sell button sells vanilla valuables, as in vanilla.
 - **Catch log** (`J`): records every species you catch. New species earn rewards at 5, 10, 15 and 20
   species and for catching them all.
+- **Species mastery:** catch enough of one species and it gets easier for you. Each tier also gives angler rank
+  points (10 / 20 / 40), and the catch log shows a bronze, silver or gold mark and the count to the next tier.
+
+  | Tier | Catches (legendary / boss) | For that species |
+  |---|---|---|
+  | Bronze | 10 (1) | It comes to your bait more often and takes it more readily |
+  | Silver | 25 (3) | It pulls and lasts 10% less |
+  | Gold | 50 (5) | It runs bigger, and you can build its **Gold Trophy Plaque** with the hammer (fine wood, bronze, resin) |
+
+  Baitfish only go to Bronze. A plaque is a wall piece with a gold-plated fish of that species mounted on it and its name on a gold nameplate (a boss fish is mounted at 80% of its true size on a board grown to fit it, for 10 fine wood, 3 bronze and 5 resin); turn it to face out from the wall.
 - **Angler ranks:** ten ranks, shown at the top of the catch log with a bar to the next rank and what it unlocks.
-  Points: 10 per new species (40 for a legendary), 1 per fish landed, 5 per Trophy-size catch and 1 per 10 kg landed.
+  Points: 10 per new species (40 for a legendary), 1 per fish landed, 5 per Trophy-size catch, 1 per 10 kg landed and
+  10 / 20 / 40 for each species' mastery tiers.
   The top rods, lures and Fish Cleaning Table recipes stay hidden from the crafting list until you reach their rank.
   (The Bog Witch still sells boss lures to anyone.)
 
@@ -460,6 +471,7 @@ For testing and server admins. These need `devcommands`.
 - `vdw_debug boss <fish id>`: the next cast summons that boss fish anywhere, with any bait (for testing).
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
 - `vdw_debug resetlog`: clears your catch log.
+- `vdw_debug master <fish> [count]`: sets how many of a species you've caught (default 50), for the mastery tiers.
 - `vdw_debug rank <points>`: adds angler rank points (default 100); `vdw_debug resetrank` clears the trophies and weight counted.
 - `vdw_debug tokens`: exports the text for translating.
 

@@ -166,6 +166,7 @@ public static class VdwModelImporter
         new Entry("tacklebox_mountain", "buffs", Kind.Static),
         new Entry("tacklebox_mistlands", "buffs", Kind.Static, 1f),
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
+        new Entry("piece_plaque", "pieces", Kind.Static),   // the Gold Trophy Plaque board (species mastery); the fish is added in game
         new Entry("piece_feast_forest", "pieces", Kind.Static),
         new Entry("piece_feast_mountain", "pieces", Kind.Static),
         new Entry("piece_feast_ocean", "pieces", Kind.Static),

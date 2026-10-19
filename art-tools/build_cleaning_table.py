@@ -10,6 +10,7 @@
 #   food_grilled_fillet, food_travel_rations   (dishes, after the photos in Mesh/cleaning table/Reference)
 #   prep_fillet, prep_roe, prep_dried          (the table's prepared ingredients)
 #   bait_stinkbait, buff_lantern_float          (the Bog Witch's brews; float_lantern = the lantern float at bobber size, on the line)
+#   piece_plaque         the Gold Trophy Plaque board (wall piece: back on Y = 0, out toward -Y); the fish is added in game
 #   piece_feast_<forest|mountain|ocean|plains|mistlands|ashlands|deepnorth>  the fish feasts: board/pot + food_full/half/low stages
 # env: VDW_PIECE (one of the above), VDW_OUT (folder), VDW_NAME (defaults to VDW_PIECE)
 import bpy, bmesh, math, os
@@ -662,7 +663,8 @@ elif PIECE.startswith("tacklebox_"):
     else:
         for z in (H * 0.25, H * 0.55):
             box((0, 0, z), (L + 0.012, Wd + 0.012, 0.018), "iron")                                                # dvergr iron bands
-        for k in range(3): blob((-0.12 + 0.12 * k, -Wd / 2 - 0.01, H * 0.4), 0.01, "eitr", seg=8, rings=5)       # eitr rivets, glowingelif PIECE == "bait_stinkbait":
+        for k in range(3): blob((-0.12 + 0.12 * k, -Wd / 2 - 0.01, H * 0.4), 0.01, "eitr", seg=8, rings=5)       # eitr rivets, glowing
+elif PIECE == "bait_stinkbait":
     # Stinkbait: a few dark rolled balls of guts and fish oil with pungent pebbles pressed in (about 5 cm; baits show at x2)
     rnd = np.random.default_rng(14)
     for k, (x, y, r) in enumerate(((0.0, 0.0, 0.012), (0.017, 0.008, 0.009), (-0.014, 0.01, 0.0085), (0.006, -0.015, 0.008))):
@@ -699,6 +701,29 @@ elif PIECE == "prep_dried":
         n0 = mark(); roundfish(0.22, "driedfish", fat=0.6); turn(n0, (0, 0, 0), 'Y', 90)                                # lay it along X, head toward +X
         turn(n0, (0, 0, 0), 'X', 90); shift(n0, (0.0, 0.0, 0.012 + 0.007 * (k % 2))); turn(n0, (-0.19, 0, 0), 'Z', -16 + 8 * k)   # fanned out from the tied tails
     ring((-0.175, 0.0, 0.016), (1, 0, 0), 0.02, 0.003, "rope", seg=12)
+elif PIECE == "piece_plaque":
+    # The Gold Trophy Plaque (roadmap #22): a dark board with notched corners, a raised lighter panel, a gold rim, a brass
+    # nameplate and studs. A wall piece: its back is flat on Y = 0 and everything stands out toward -Y, centred on the
+    # origin up and down. The species' own fish is mounted on it in game.
+    W, H, T = 0.9, 0.56, 0.04
+    def notched(w, h, r, n=6):
+        pts = []
+        for cx, cy, a0 in ((w / 2, h / 2, math.pi), (-w / 2, h / 2, 1.5 * math.pi), (-w / 2, -h / 2, 0.0), (w / 2, -h / 2, 0.5 * math.pi)):
+            for k in range(n, -1, -1):                                                              # a quarter circle cut into each corner
+                a = a0 + 0.5 * math.pi * k / n
+                pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+        return pts
+    def standing(fn, y_back):
+        n0 = mark(); fn(); turn(n0, (0, 0, 0), 'X', 90); shift(n0, (0, y_back, 0))                # XY outline -> wall-facing XZ
+    standing(lambda: plate(notched(W, H, 0.07), T, "darkwood", smooth=False), -T / 2)                  # the board
+    standing(lambda: plate(notched(W - 0.09, H - 0.09, 0.05), 0.014, "wood", smooth=False), -T - 0.007)   # the raised panel
+    rim = [(x, -T - 0.004, z) for x, z in notched(W - 0.035, H - 0.035, 0.06, 4)]
+    tube(rim + [rim[0]], [0.0075] * (len(rim) + 1), "gold", seg=6, caps=False)                         # the gold rim
+    box((0, -T - 0.018, -H / 2 + 0.085), (0.5, 0.01, 0.1), "gold")                                      # the gold nameplate (the mod writes the species on it)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            blob((sx * (W / 2 - 0.075), -T - 0.012, sz * (H / 2 - 0.075)), 0.012, "gold", seg=8, rings=5, scale=(1, 0.6, 1))   # studs
+    ring((0, -0.01, H / 2 + 0.02), (0, 1, 0), 0.025, 0.004, "gold", seg=12)                              # hanging ring
 
 
 # clean up for Unity: weld points  that sit on top of each other (the poles of the round parts), drop degenerate faces,
