@@ -43,10 +43,10 @@ namespace ValheimDeepWaters
         };
 
         private const float DrawnWeight = 3f;          // a fish the lure draws is this much likelier to be the one that comes
-        private const float IgnoredWeight = 0.3f;      // ...and one it doesn't, this much less likely
+        private const float IgnoredWeight = FishingController.OffTargetWeight;   // ...and one it doesn't, only rarely (a stray bite)
         private const float WidenedWeight = 2.5f;      // a fish only the trailer draws
         private const float DefaultTrailerBoost = 1.6f;
-        private const float DrawnInterest = 0.25f, IgnoredInterest = -0.15f, WidenedInterest = 0.2f, BoostedInterest = 0.15f;
+        private const float DrawnInterest = 0.25f, IgnoredInterest = -0.3f, WidenedInterest = 0.2f, BoostedInterest = 0.15f;
 
         public static LureKind KindOf(BaitDefinition? bait)
         {
@@ -59,6 +59,15 @@ namespace ValheimDeepWaters
         public static bool Draws(BaitDefinition lure, FishDefinition fish) =>
             (KindTargets.TryGetValue(KindOf(lure), out var ids) && ids.Contains(fish.Id)) ||
             (lure.TargetFish != null && lure.TargetFish.Contains(fish.Id));
+
+        /// <summary>Whether a fish goes for this bait, or this lure and its trailer - anything else bites it only rarely.</summary>
+        public static bool Takes(FishDefinition fish, BaitDefinition? bait, BaitDefinition? trailer)
+        {
+            if (bait == null) return false;
+            if (fish.ForbiddenBaits != null && fish.ForbiddenBaits.Contains(bait.Id)) return false;
+            if (bait.IsLure) return Draws(bait, fish) || TrailerDraws(trailer, fish);
+            return (bait.TargetFish != null && bait.TargetFish.Contains(fish.Id)) || (fish.PreferredBaits != null && fish.PreferredBaits.Contains(bait.Id));
+        }
 
         private static bool TrailerDraws(BaitDefinition? trailer, FishDefinition fish) =>
             trailer?.TargetFish != null && trailer.TargetFish.Contains(fish.Id);

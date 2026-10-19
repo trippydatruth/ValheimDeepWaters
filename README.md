@@ -137,7 +137,8 @@ You need a hook to cast, and each size suits a range of fish weights.
 | Large 2/0 | 8–40 kg | Forge 2 | Iron 1 (4) |
 | Heavy 5/0 | 25–100 kg | Forge 3 | Iron 1, Silver 1 (3) |
 | Giant 8/0 | 60–250 kg | Forge 5 | Black metal 2 (3) |
-| Fimbul 12/0 | 0–300 kg, never bends, kept half the time the line breaks | Forge 5 | Rimefrost Fin 1, Silver 2 (1) |
+| Fimbul 12/0 | 25–300 kg, never bends, kept half the time the line breaks | Forge 5 | Rimefrost Fin 1, Silver 2 (1) |
+| Golden 10/0 | Any fish (0–300 kg), never bends, kept three times in four when the line breaks, +5% hook chance and +15% hook window | Can't be crafted | A relic: very rarely inside a legendary fish |
 
 - **Too big for the fish:** much harder to hook.
 - **Too small:** a big fish can straighten it mid-fight, and a fish far too big won't bite at all.
@@ -247,8 +248,7 @@ The fight brings up a **boss bar** with its name - its stamina, which drains fas
 (tight drag, high tension) and recovers if you give it slack, so no two fights are alike. It plays its boss's
 **music** and goes through **phases**: at two thirds it's enraged (pulls harder, leaps more), at one third
 desperate (dives that tear line off the reel). An empty bar means it's beaten; then reel it in. Landing one
-drops its **trophy** the first time, a **boss material** every time, sometimes a **relic** (Pearl of Njord,
-Jörmungandr's Scale or the Golden Hook), and tells the whole server. One material
+drops its **trophy** the first time and a **boss material** every time, and tells the whole server. One material
 from each of the six strings the **Leviathan Rod** (black forge), the best rod there is.
 
 Fenringfin, Thor's Hammerhead and Odin's Eye are **mini-bosses**: they still bite by luck and fight the same
@@ -262,11 +262,33 @@ way (phases and all), with no bar, music or messages, and drop their trophy the 
 | Grubs | Sometimes found when you chop up a log |
 | Flies | Swarms along rivers, lakes and the coast in dry weather (fireflies at night); walk up and use one to catch it |
 | Leeches | Dropped by swamp leeches |
-| Minnows, Large Baitfish, Shrimp | Catch them as small fish with worms, grubs or flies on a Tiny hook; they swim in schools where they live |
+| Minnows, Large Baitfish, Shrimp, Live Bluegill | Catch them as small fish with worms, grubs or flies on a Tiny hook; they swim in schools where they live (bluegill in Meadows lakes, on worms and grubs) |
 | Abyssal, Frost and Runed bait | Crafted at the cauldron or forge |
 | Northern Bait | Crafted at the cauldron (seal blubber and lingonberries); the Deep North's fish want it |
 
 Wriggling soil only grows in parts of the world generated after installing the mod.
+
+Each bait goes for a few fish, so pick it for the fish you're after; anything else takes it only now and then. A bait's
+tooltip lists what it catches (species you haven't caught show as ???), the catch log shows each species' bait, and a
+cast tells you when nothing in that water goes for yours. You need bait (or a lure) to cast.
+
+| Bait | Catches |
+|---|---|
+| Worm | Perch, Bluegill, Greydwarf Goby, Catfish |
+| Grub | Trout, Bass, Perch, Bluegill |
+| Fly | Trout, Frost Char, Glacier Grayling, Tetra |
+| Minnow | Pike, Bass, Mackerel, Sea Bass |
+| Large Baitfish | Tuna, Lingcod, Serpentfin, Grouper |
+| Live Bluegill | Catfish, Bass, Pike |
+| Leech | Catfish, Mistfin, Trollfish, Pike |
+| Stinkbait | Catfish, Trollfish, Mistfin |
+| Shrimp | Coral Cod, Herring, Pufferfish, Sea Bass, Halibut |
+| Abyssal Bait | Anglerfish, Bonemaw, Jotunn Perch, Magmafish, Halibut |
+| Frost Bait | Tetra, Frost Char, Salmon, Fenringfin |
+| Northern Bait | Salmon, Rimejaw Cod, Glacier Grayling, Frost Sculpin |
+| Runed Bait | Odin's Eye, Thor's Hammerhead, Moder Scale Fish, Yagluth Gill, Fenringfin |
+
+Deep Waters replaces vanilla fishing: the vanilla rod and baits aren't sold or crafted, and the vanilla rod can't be used.
 
 ## Lures and trailers
 
@@ -335,9 +357,16 @@ Tiered items that unlock as you progress:
   5 minutes, for anyone fishing there.
   **Blubber Chum** (seal blubber, lingonberries) is the strongest and lasts 6 minutes.
 - **Totems** (hammer): the Fisherman's Totem and Shrine of Njord buff anyone fishing nearby.
-- **Relics** (can't be crafted): the **Horn of Ægir** is very rarely found inside a landed fish (more often in
-  legendaries, never in bait fish). The **Pearl of Njord**, **Jörmungandr's Scale** and the **Golden Hook** are
-  only left behind by boss fish: each boss you land has a 1 in 4 chance of one, one you don't have yet first.
+- **Relics** (can't be crafted, and each takes a slot of its own - they don't stack). Each comes from one place:
+
+  | Relic | Where it comes from |
+  |---|---|
+  | Horn of Ægir | Hildir's prize for your 15th fishing bounty |
+  | Pearl of Njord | Logging every species in the catch log |
+  | Golden Hook | Very rarely (about 1 in 50) found inside a legendary fish you land |
+  | Jörmungandr's Scale | Very rarely (about 1 in 33) dropped by a sea serpent you kill |
+
+  The Hook and the Scale can turn up again; Hildir buys spares.
 
 ## The Bog Witch
 
@@ -379,7 +408,7 @@ after dark.
 
 **Fishing bounties.** Hildir posts one bounty a day for a species you've caught: at least so heavy, sometimes caught in
 the rain, at night or Trophy-size. Hand the fish in from the trade panel for coins and bait. Your 5th, 15th and 30th
-bounties earn the Horn of Ægir, the Golden Hook and the Pearl of Njord.
+bounties earn a Yule Hat, the Horn of Ægir and Megingjord, with a Thunder Stone at 10 and a Dverger Circlet at 20.
 
 **Lost tackle boxes.** Three of Hildir's tackle boxes turn up in dungeon chests. Give one back (use it on her, or from
 the trade panel) and her shop gains more:
@@ -389,6 +418,8 @@ the trade panel) and her shop gains more:
 | Mossy Tackle Box | Sunken Crypts | Bog-Dyed Fisherman's gear, Guck Crawlers, Leather Grubs |
 | Frosted Tackle Box | Frost Caves | Frost-Dyed Fisherman's gear, Silver Swimbaits, Frost Bait |
 | Dvergr-Mended Tackle Box | Mistlands dvergr ruins | Mist-Dyed Fisherman's gear, Bone Jigs, Abyssal Bait |
+
+The dyed gear is bought, not crafted, but repairs at the workbench (level 2) like the rest of the set.
 
 ## Fisherman's gear
 
@@ -410,8 +441,15 @@ and makes reeling cheaper and the hookset window longer.
 
   Your catch sells from the **Sell your catch** panel beside the store window (it works alongside trader UI mods);
   click a row to pick what to sell, or Sell all. The store's own sell button sells vanilla valuables, as in vanilla.
-- **Catch log** (`J`): records every species you catch. New species earn rewards at 5, 10, 15 and 20
-  species and for catching them all.
+- **Catch log** (`J`): records every species you catch, with your angler rank, the reward ladder and biome sets in a
+  sidebar and each species as a card (its bait, mastery and record). The mouse is free while it's open: click a biome to filter, the arrows or the wheel to turn pages, Close (or J / Escape) to shut it.
+  - **Rewards** every 5 species (hooks, meads, chum, a Lantern Float, a Trophy Fin, coins) and the Pearl of Njord for
+    all of them.
+  - **Biome sets:** catch every non-legendary fish of a biome *in that biome* for 10 of its bait, some coins and 25
+    rank points. A fish that lives in two biomes (pike: Black Forest and Swamp) has to be caught in each to count for both.
+  - **Finds:** now and then a catch has a valuable inside (amber, amber pearls, rubies, silver necklaces, by where you
+    fish): rarely in small, common fish, more often in big or rare ones.
+  - **Personal best:** +5 rank points. **Each angler rank** comes with a small gift.
 - **Species mastery:** catch enough of one species and it gets easier for you. Each tier also gives angler rank
   points (10 / 20 / 40), and the catch log shows a bronze, silver or gold mark and the count to the next tier.
 

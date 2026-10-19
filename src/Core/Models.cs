@@ -105,6 +105,8 @@ namespace ValheimDeepWaters
         public bool Craftable = true;
         public bool NeverStraightens = false;
         public float KeepChance = 0f;     // chance the hook survives a snapped line or broken rod
+        public float HookBonus = 0f;      // + chance the strike sets the hook (added like a rod's or bait's)
+        public float HookWindow = 0f;     // +x: longer to strike after the bite
         public FindDefinition? Find;      // for non-craftable hooks: where they turn up
     }
 

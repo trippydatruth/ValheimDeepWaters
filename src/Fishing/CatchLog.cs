@@ -72,10 +72,14 @@ namespace ValheimDeepWaters
 
         private static readonly Milestone[] Milestones =
         {
-            new Milestone { Species = 5,  Label = "3 Minor Angler's Mead and 100 coins", Items = new[] { ("VDW_Buff_angler_minor", 3), ("Coins", 100) } },
-            new Milestone { Species = 10, Label = "2 Steady-Hand Tonics and 300 coins",  Items = new[] { ("VDW_Buff_steady_medium", 2), ("Coins", 300) } },
-            new Milestone { Species = 15, Label = "3 Bloodbait Chum and 500 coins",      Items = new[] { ("VDW_Buff_chum_blood", 3), ("Coins", 500) } },
-            new Milestone { Species = 20, Label = "the Horn of Ægir",                    Items = new[] { ("VDW_Buff_relic_horn", 1) } },
+            // every five species, small and useful for the next few (roadmap #27); never boss lures - those you work for
+            new Milestone { Species = 5,  Label = "3 Small Hooks",                       Items = new[] { ("VDW_Hook_small", 3) } },
+            new Milestone { Species = 10, Label = "2 Angler's Meads",                    Items = new[] { ("VDW_Buff_angler_medium", 2) } },
+            new Milestone { Species = 15, Label = "2 Chum Buckets and a Lantern Float",  Items = new[] { ("VDW_Buff_chum_basic", 2), ("VDW_Buff_lantern_float", 1) } },
+            new Milestone { Species = 20, Label = "3 Large Hooks and 10 Shrimp Bait",    Items = new[] { ("VDW_Hook_large", 3), ("VDW_Bait_shrimp", 10) } },
+            new Milestone { Species = 25, Label = "2 Steady-Hand Tonics",                Items = new[] { ("VDW_Buff_steady_medium", 2) } },
+            new Milestone { Species = 30, Label = "a Trophy Fin and 500 coins",          Items = new[] { ("VDW_Mat_trophy", 1), ("Coins", 500) } },
+            new Milestone { Species = 35, Label = "1,000 coins",                         Items = new[] { ("Coins", 1000) } },
             new Milestone { Species = AllSpecies, Label = "the Pearl of Njord",          Items = new[] { ("VDW_Buff_relic_pearl", 1) } },
         };
 
@@ -113,6 +117,14 @@ namespace ValheimDeepWaters
 
             player.m_customData[RewardsKey] = string.Join(",", claimed);
             return given;
+        }
+
+        /// <summary>The milestone ladder for the catch log: each step's species count ("All" for every one), its reward and whether it's earned.</summary>
+        public static List<(string at, string label, bool done)> Ladder(Player player)
+        {
+            var claimed = Claimed(player);
+            return Milestones.Select(m => (m.Species == AllSpecies ? "All" : m.Species.ToString(CultureInfo.InvariantCulture), m.Label,
+                                           claimed.Contains(m.Species.ToString(CultureInfo.InvariantCulture)))).ToList();
         }
 
         /// <summary>"Next reward: ..." for the catch log, or null when everything's been earned.</summary>

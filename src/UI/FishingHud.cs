@@ -27,7 +27,7 @@ namespace ValheimDeepWaters
         private static readonly Color Well = new Color(0f, 0f, 0f, 0.55f);
 
         private static Texture2D? _white, _panelTex, _chipTex, _discTex, _pipTex;
-        private static GUIStyle _panel = null!, _chip = null!, _big = null!, _text = null!, _small = null!, _smallBold = null!, _hint = null!;
+        private static GUIStyle _panel = null!, _chip = null!, _big = null!, _text = null!, _small = null!, _smallBold = null!, _hint = null!, _smallWrap = null!, _smallClip = null!, _textClip = null!;
         private static bool _stylesReady, _fontApplied;
         private static float _width, _height; // virtual screen size
         private static float _vu;             // one Valheim 1080p UI unit, in virtual units
@@ -308,87 +308,205 @@ namespace ValheimDeepWaters
         // ------------------------------------------------------------------
 
         private static List<FishDefinition>? _logOrder; // the species list never changes after loading
+        private static int _logFilter, _logPage;           // which biome filter (0 = all) and page the catch log shows
 
+        private const float LogW = 1120f, LogH = 650f, SideW = 320f, CardH = 62f, CardGap = 8f;
+        private const int CardCols = 3;
+
+        /// <summary>
+        /// The catch log: a sidebar with the angler rank (and what the next one unlocks), the reward ladder and each
+        /// biome set's progress; beside it the species as cards - mastery square, name, the bait it goes for on its own
+        /// line, the count to the next tier and the record weight. The mouse is free while it's open: click a biome chip
+        /// to filter, the arrows (or the wheel) to turn pages.
+        /// </summary>
         private static void DrawLog(Player player)
         {
             var entries = CatchLog.Load(player);
-            var fish = _logOrder ??= ContentRegistry.Fish.Values
+            var all = _logOrder ??= ContentRegistry.Fish.Values
                 .OrderBy(f => f.Legendary).ThenBy(f => f.Water).ThenBy(f => f.Name).ToList();
+            var sets = Rewards.Sets();
 
-            const float rowH = 24f, colW = 340f, perCol = 16;
-            int cols = Mathf.Max(1, Mathf.CeilToInt(fish.Count / perCol));
-            float w = colW * cols + 40f;
-            const float rankH = 124f;
-            float h = 92f + rankH + perCol * rowH;
-            var r = new Rect(_width / 2f - w / 2f, _height / 2f - h / 2f, w, h);
+            // filters: All, Legendary, then each biome
+            var filters = new List<(string name, string? biome, List<FishDefinition> fish)> { ("All", null, all), ("Legendary", null, all.Where(f => f.Legendary).OrderBy(f => f.Name).ToList()) };
+            foreach (var s in sets) filters.Add((s.Name, s.Key, s.Fish.OrderBy(f => f.Name).ToList()));
+
+            _logFilter = Mathf.Clamp(_logFilter, 0, filters.Count - 1);
+
+            var r = new Rect(_width / 2f - LogW / 2f, _height / 2f - LogH / 2f, LogW, LogH);
             Panel(r);
-
-            int found = fish.Count(f => entries.ContainsKey(f.Id));
-            var head = new Rect(r.x + 20f, r.y + 14f, w - 40f, 32f);
-            Label(head, "Catch Log", _big, Gold, TextAnchor.MiddleLeft);
-            Label(head, $"{found} / {fish.Count} species", _text, Cream, TextAnchor.MiddleRight);
-            Fill(new Rect(r.x + 20f, r.y + 52f, w - 40f, 1f), Trim);
-
-            DrawRank(player, new Rect(r.x + 20f, r.y + 62f, w - 40f, rankH - 10f));
-            Fill(new Rect(r.x + 20f, r.y + 52f + rankH, w - 40f, 1f), Trim);
-
-            for (int i = 0; i < fish.Count; i++)
-            {
-                var f = fish[i];
-                var row = new Rect(r.x + 20f + (int)(i / perCol) * colW, r.y + 62f + rankH + (i % (int)perCol) * rowH, colW - 12f, rowH);
-                if (entries.TryGetValue(f.Id, out var e))
-                {
-                    // the mastery pip (bronze / silver / gold; an empty frame before Bronze) and the count to the next tier
-                    int tier = Mastery.TierFor(f, e.Count);
-                    var t = Mastery.Thresholds(f);
-                    var pip = new Rect(row.x, row.y + rowH / 2f - 6f, 12f, 12f);
-                    Fill(pip, tier == Mastery.None ? new Color(0f, 0f, 0f, 0.4f) : TierColors[tier]);
-                    if (tier == Mastery.None) Fill(new Rect(pip.x + 2f, pip.y + 2f, 8f, 8f), Wood);
-                    Label(new Rect(row.x + 18f, row.y, row.width - 18f, row.height), f.Name, _text, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
-                    string progress = tier < t.Length - 1 ? $"{e.Count}/{t[tier + 1]}" : $"{e.Count} · {Mastery.TierNames[tier]}";
-                    Label(row, $"{progress}  ·  best {e.BestKg:0.0} kg", _small, Dim, TextAnchor.MiddleRight);
-                }
-                else
-                {
-                    Label(row, "???", _text, new Color(0.5f, 0.46f, 0.40f), TextAnchor.MiddleLeft);
-                }
-            }
-
-            string? next = CatchLog.NextReward(player);
-            Label(new Rect(r.x + 20f, r.yMax - 30f, w - 160f, 24f), next ?? "Every catch-log reward earned.", _small, Gold, TextAnchor.MiddleLeft);
-            KeyPrompts(new[] { (VdwConfig.LogKey.Value.ToString(), "Close") }, r.xMax - 20f, r.yMax - 30f, alignRight: true);
+            var side = new Rect(r.x, r.y, SideW, r.height);
+            Fill(new Rect(side.xMax, r.y + 12f, 1f, r.height - 24f), Trim);
+            DrawLogSidebar(player, entries, all, sets, new Rect(side.x + 20f, side.y + 16f, side.width - 36f, side.height - 32f));
+            DrawLogCards(player, entries, filters, new Rect(side.xMax + 20f, r.y + 16f, r.xMax - side.xMax - 40f, r.height - 32f));
         }
 
-        /// <summary>The angler rank: its name, a bar to the next rank with the percent, and what the next rank unlocks.</summary>
-        private static void DrawRank(Player player, Rect r)
+        private static void DrawLogSidebar(Player player, Dictionary<string, CatchEntry> entries, List<FishDefinition> all, List<Rewards.BiomeSet> sets, Rect r)
         {
+            float y = r.y;
+            Label(new Rect(r.x, y, r.width, 32f), "Catch Log", _big, Gold, TextAnchor.MiddleLeft); y += 32f;
+            int found = all.Count(f => entries.ContainsKey(f.Id));
+            Label(new Rect(r.x, y, r.width, 22f), $"{found} of {all.Count} species logged", _small, Dim, TextAnchor.MiddleLeft); y += 32f;
+
+            // the angler rank, its bar, and what the next rank unlocks
             int points = AnglerRanks.Points(player);
             int idx = AnglerRanks.RankIndex(points);
             var rank = AnglerRanks.Ranks[idx];
             bool top = idx >= AnglerRanks.Ranks.Length - 1;
             var next = top ? null : AnglerRanks.Ranks[idx + 1];
-
-            var line = new Rect(r.x, r.y, r.width, 28f);
-            Label(line, "Angler rank:  " + rank.Name, _big, Gold, TextAnchor.MiddleLeft);
-            Label(line, $"Rank {idx + 1} of {AnglerRanks.Ranks.Length}  ·  {points:N0} points", _text, Cream, TextAnchor.MiddleRight);
-
+            Label(new Rect(r.x, y, r.width, 20f), $"Angler rank {idx + 1} of {AnglerRanks.Ranks.Length}", _small, Dim, TextAnchor.MiddleLeft); y += 20f;
+            Label(new Rect(r.x, y, r.width, 26f), rank.Name, _text, Gold, TextAnchor.MiddleLeft); y += 28f;
             float frac = top ? 1f : Mathf.Clamp01((points - rank.Points) / (float)(next!.Points - rank.Points));
-            var bar = new Rect(r.x, r.y + 36f, r.width, 20f);
+            var bar = new Rect(r.x, y, r.width, 12f);
             Fill(bar, new Color(0f, 0f, 0f, 0.55f));
-            Fill(new Rect(bar.x + 2f, bar.y + 2f, (bar.width - 4f) * frac, bar.height - 4f), new Color(0.86f, 0.62f, 0.2f, 0.95f));
-            string barText = top ? "Highest rank reached" : $"{points - rank.Points:N0} / {next!.Points - rank.Points:N0}  ({Mathf.FloorToInt(frac * 100f)}%)  to {next.Name}";
-            Label(bar, barText, _smallBold, Cream, TextAnchor.MiddleCenter);
-
-            var unlock = new Rect(r.x, r.y + 64f, r.width, 22f);
-            if (top) Label(unlock, "Every rank-locked rod, lure and table recipe is yours.", _small, Cream, TextAnchor.MiddleLeft);
-            else
+            Fill(new Rect(bar.x + 1f, bar.y + 1f, (bar.width - 2f) * frac, bar.height - 2f), new Color(0.86f, 0.62f, 0.2f, 0.95f));
+            y += 16f;
+            Label(new Rect(r.x, y, r.width, 20f), top ? "Highest rank reached" : $"{points - rank.Points:N0} / {next!.Points - rank.Points:N0} ({Mathf.FloorToInt(frac * 100f)}%) to {next.Name}", _small, Cream, TextAnchor.MiddleLeft);
+            y += 20f;
+            if (!top)
             {
-                string list = next!.Unlocks.Length > 0 ? string.Join(",  ", next.Unlocks.Select(AnglerRanks.ItemName)) : "nothing new";
-                Label(unlock, $"Next rank unlocks:  {list}", _small, Cream, TextAnchor.MiddleLeft);
+                string unlocks = next!.Unlocks.Length > 0 ? string.Join(", ", next.Unlocks.Select(AnglerRanks.ItemName)) : "nothing new";
+                string line = "Next rank unlocks: " + unlocks;
+                float h = _smallWrap.CalcHeight(new GUIContent(line), r.width);
+                Label(new Rect(r.x, y, r.width, h), line, _smallWrap, Dim, TextAnchor.UpperLeft); y += h + 12f;
             }
-            Label(new Rect(r.x, r.y + 88f, r.width, 20f),
-                $"Points: {AnglerRanks.SpeciesPoints} per new species ({AnglerRanks.LegendaryPoints} legendary)  ·  {AnglerRanks.CatchPoints} per catch  ·  {AnglerRanks.TrophyPoints} per Trophy-size  ·  1 per {AnglerRanks.KgPerPoint:0} kg  ·  mastery {Mastery.TierPoints[1]} / {Mastery.TierPoints[2]} / {Mastery.TierPoints[3]}",
-                _small, Dim, TextAnchor.MiddleLeft);
+            else y += 12f;
+
+            // the reward ladder: done steps dimmed, the next one in gold
+            Label(new Rect(r.x, y, r.width, 20f), "Catch log rewards", _small, Dim, TextAnchor.MiddleLeft); y += 22f;
+            // earned steps and the next one; the rest stay a surprise
+            bool nextMarked = false;
+            foreach (var (at, label, done) in CatchLog.Ladder(player))
+            {
+                bool isNext = !done && !nextMarked;
+                if (!done && !isNext) continue;
+                if (isNext) nextMarked = true;
+                var c = done ? new Color(0.49f, 0.45f, 0.38f) : isNext ? Gold : Cream;
+                Label(new Rect(r.x, y, 32f, 18f), at, _small, c, TextAnchor.MiddleRight);
+                var dot = new Rect(r.x + 40f, y + 5f, 8f, 8f);
+                Fill(dot, done ? new Color(0.85f, 0.62f, 0.2f) : new Color(0f, 0f, 0f, 0.5f));
+                Label(new Rect(r.x + 56f, y, r.width - 56f, 18f), label, _smallClip, c, TextAnchor.MiddleLeft);
+                y += 19f;
+            }
+            y += 10f;
+
+            // biome sets: a thin bar each, gold when complete
+            Label(new Rect(r.x, y, r.width, 20f), "Biome sets", _small, Dim, TextAnchor.MiddleLeft); y += 22f;
+            foreach (var s in sets)
+            {
+                if (y > r.yMax - 22f) break;
+                int have = s.Fish.Count(f => Rewards.LoggedIn(player, f, s.Key, entries));
+                bool done = Rewards.SetDone(player, s);
+                Label(new Rect(r.x, y, r.width, 16f), s.Name, _small, done ? Gold : Cream, TextAnchor.MiddleLeft);
+                Label(new Rect(r.x, y, r.width, 16f), $"{have} / {s.Fish.Count}", _small, Dim, TextAnchor.MiddleRight);
+                var b = new Rect(r.x, y + 18f, r.width, 4f);
+                Fill(b, new Color(0f, 0f, 0f, 0.5f));
+                Fill(new Rect(b.x, b.y, b.width * have / Mathf.Max(1, s.Fish.Count), b.height), done ? Gold : new Color(0.54f, 0.63f, 0.44f));
+                y += 26f;
+            }
+        }
+
+        private static void DrawLogCards(Player player, Dictionary<string, CatchEntry> entries, List<(string name, string? biome, List<FishDefinition> fish)> filters, Rect r)
+        {
+            // the filter chips, wrapping onto a second row when they don't fit on one
+            float x = r.x, chipY = r.y;
+            for (int i = 0; i < filters.Count; i++)
+            {
+                string name = filters[i].name;
+                float w = _small.CalcSize(new GUIContent(name)).x + 18f;
+                if (x + w > r.xMax) { x = r.x; chipY += 28f; }
+                var chip = new Rect(x, chipY, w, 24f);
+                if (GUI.Button(chip, GUIContent.none, GUIStyle.none)) { _logFilter = i; _logPage = 0; }
+                bool hover = chip.Contains(Event.current.mousePosition);
+                if (i == _logFilter || hover) GUI.Box(chip, GUIContent.none, _chip);
+                Label(chip, name, _small, i == _logFilter ? Gold : Dim, TextAnchor.MiddleCenter);
+                x += w + 4f;
+            }
+
+            var fish = filters[_logFilter].fish;
+            float cardW = (r.width - (CardCols - 1) * CardGap) / CardCols;
+            float top = chipY + 36f, bottom = r.yMax - 34f;
+            int rows = Mathf.Max(1, Mathf.FloorToInt((bottom - top + CardGap) / (CardH + CardGap)));
+            int perPage = rows * CardCols;
+            int pages = Mathf.Max(1, Mathf.CeilToInt(fish.Count / (float)perPage));
+            // the mouse wheel over the cards turns the page
+            var ev = Event.current;
+            if (ev.type == EventType.ScrollWheel && new Rect(r.x, top, r.width, bottom - top).Contains(ev.mousePosition))
+            {
+                _logPage += ev.delta.y > 0 ? 1 : -1;
+                ev.Use();
+            }
+            _logPage = Mathf.Clamp(_logPage, 0, pages - 1);
+
+            for (int i = 0; i < perPage; i++)
+            {
+                int n = _logPage * perPage + i;
+                if (n >= fish.Count) break;
+                var card = new Rect(r.x + (i % CardCols) * (cardW + CardGap), top + (i / CardCols) * (CardH + CardGap), cardW, CardH);
+                DrawFishCard(player, fish[n], entries, filters[_logFilter].biome, card);
+            }
+
+            // the page arrows, and a close button (J or Escape close it too)
+            float by = r.yMax - 26f;
+            if (pages > 1)
+            {
+                if (LogButton(new Rect(r.x, by, 34f, 26f), "<", _logPage > 0)) _logPage--;
+                Label(new Rect(r.x + 40f, by, 110f, 26f), $"Page {_logPage + 1} of {pages}", _small, Dim, TextAnchor.MiddleCenter);
+                if (LogButton(new Rect(r.x + 156f, by, 34f, 26f), ">", _logPage < pages - 1)) _logPage++;
+            }
+            if (LogButton(new Rect(r.xMax - 90f, by, 90f, 26f), "Close", true)) FishingController.CloseLog();
+        }
+
+        /// <summary>A small wooden button for the catch log: a chip that lights on hover; greyed out and dead when disabled.</summary>
+        private static bool LogButton(Rect b, string text, bool enabled)
+        {
+            bool hover = enabled && b.Contains(Event.current.mousePosition);
+            GUI.color = enabled ? (hover ? new Color(1f, 0.9f, 0.7f) : Color.white) : new Color(1f, 1f, 1f, 0.35f);
+            GUI.Box(b, GUIContent.none, _chip);
+            GUI.color = Color.white;
+            Label(b, text, _smallBold, enabled ? (hover ? Gold : Cream) : Dim, TextAnchor.MiddleCenter);
+            return enabled && GUI.Button(b, GUIContent.none, GUIStyle.none);
+        }
+
+        private static void DrawFishCard(Player player, FishDefinition f, Dictionary<string, CatchEntry> entries, string? biome, Rect c)
+        {
+            // in a biome's tab, a species caught only elsewhere so far: named, but not yet logged here
+            if (biome != null && entries.ContainsKey(f.Id) && !Rewards.LoggedIn(player, f, biome, entries))
+            {
+                Fill(c, new Color(0.14f, 0.105f, 0.07f, 0.9f));
+                var box = new Rect(c.x + 10f, c.y + 6f, c.width - 20f, c.height - 12f);
+                Label(new Rect(box.x, box.y, box.width, 22f), f.Name, _textClip, new Color(0.6f, 0.55f, 0.46f), TextAnchor.MiddleLeft);
+                string here = Rewards.Sets().FirstOrDefault(s => s.Key == biome)?.Name ?? biome;
+                Label(new Rect(box.x, box.y + 26f, box.width, 18f), $"Not caught in the {here} yet", _smallClip, Dim, TextAnchor.MiddleLeft);
+                return;
+            }
+            Fill(c, new Color(0.14f, 0.105f, 0.07f, 0.9f));
+            Fill(new Rect(c.x, c.y, c.width, 1f), f.Legendary ? Trim : new Color(0.29f, 0.23f, 0.16f));
+            var inner = new Rect(c.x + 10f, c.y + 6f, c.width - 20f, c.height - 12f);
+            if (!entries.TryGetValue(f.Id, out var e))
+            {
+                Label(new Rect(inner.x, inner.y, inner.width, 22f), "???", _text, new Color(0.49f, 0.45f, 0.38f), TextAnchor.MiddleLeft);
+                string where = string.Join(", ", Rewards.BiomesOf(f).Select(b => Rewards.Sets().FirstOrDefault(s => s.Key == b)?.Name ?? b));
+                Label(new Rect(inner.x, inner.y + 26f, inner.width, 18f), "Not caught yet" + (where.Length > 0 ? " · " + where : ""), _smallClip, Dim, TextAnchor.MiddleLeft);
+                return;
+            }
+
+            int tier = Mastery.TierFor(f, e.Count);
+            var t = Mastery.Thresholds(f);
+            var pip = new Rect(inner.x, inner.y + 5f, 12f, 12f);
+            Fill(pip, tier == Mastery.None ? new Color(0f, 0f, 0f, 0.4f) : TierColors[tier]);
+            if (tier == Mastery.None) Fill(new Rect(pip.x + 2f, pip.y + 2f, 8f, 8f), Wood);
+            Label(new Rect(inner.x + 18f, inner.y, inner.width - 18f, 22f), f.Name, _textClip, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
+
+            string bait = BaitTargets.BaitsFor(f);
+            if (Mastery.IsBaitfish(f)) bait = (bait.Length > 0 ? bait + " · " : "") + "baitfish";
+            Label(new Rect(inner.x, inner.y + 22f, inner.width, 16f), bait, _smallClip, Dim, TextAnchor.MiddleLeft);
+
+            // the count to the next tier, or the top tier with the count (baitfish stop at Bronze)
+            string progress = tier < t.Length - 1
+                ? $"{e.Count} / {t[tier + 1]} to {Mastery.TierNames[tier + 1]}"
+                : $"{e.Count} caught · {Mastery.TierNames[tier]} ({(Mastery.IsBaitfish(f) ? "top for baitfish" : "top")})";
+            Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), progress, _smallClip, Dim, TextAnchor.MiddleLeft);
+            Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), $"best {e.BestKg:0.0} kg", _small, Dim, TextAnchor.MiddleRight);
         }
 
         // ------------------------------------------------------------------
@@ -471,6 +589,9 @@ namespace ValheimDeepWaters
                 _small = TextStyle(15, FontStyle.Normal);
                 _smallBold = TextStyle(15, FontStyle.Bold);
                 _hint = TextStyle(24, FontStyle.Bold);
+                _smallWrap = TextStyle(15, FontStyle.Normal); _smallWrap.wordWrap = true;
+                _smallClip = TextStyle(15, FontStyle.Normal); _smallClip.clipping = TextClipping.Clip;
+                _textClip = TextStyle(18, FontStyle.Normal); _textClip.clipping = TextClipping.Clip;
                 _stylesReady = true;
             }
 
@@ -480,7 +601,7 @@ namespace ValheimDeepWaters
                 var font = VdwFont.Get();
                 if (font != null)
                 {
-                    foreach (var st in new[] { _big, _text, _small, _smallBold, _hint }) st.font = font;
+                    foreach (var st in new[] { _big, _text, _small, _smallBold, _hint, _smallWrap, _smallClip, _textClip }) st.font = font;
                     _fontApplied = true;
                 }
             }

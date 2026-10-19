@@ -48,7 +48,7 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
 19. **Per-trader selling.** *Done 2026-10-18: each trader's buy list and prices (TraderSales.cs), and a button beside Sell to pick what to sell. Golden variants join Hildir's list with #23.* Haldor buys ordinary and cooked fish and treasure; Hildir buys Trophy-size fish, golden
     variants and spare relics at a premium; the Bog Witch as above. A way to pick what to sell (vanilla sells the
     first valuable).
-20. **Hildir.** *Done 2026-10-18: daily bounties (coins, bait, relics at 5/15/30) and the three tackle boxes (Bog-, Frost- and Mist-Dyed gear and tackle), in the trade panel. Her Sparkler / hats / fireworks recipes are still to do.* Fishing bounties (e.g. "a pike over 8 kg in the rain") for coins and unique items. Three lost
+20. **Hildir.** *Done 2026-10-18: daily bounties (coins, bait, relics at 5/15/30) and the three tackle boxes (Bog-, Frost- and Mist-Dyed gear and tackle), in the trade panel. Her Sparkler / hats / fireworks recipes are planned for after the first release (below).* Fishing bounties (e.g. "a pike over 8 kg in the rain") for coins and unique items. Three lost
     tackle boxes in Sunken Crypts, Frost Caves and Infested Mines, each adding lures and dyed Fisherman's gear to her
     shop. Her stock in recipes: Sparkler (glowing night popper), Straw Hat / Fur Cap (summer and ice-fishing angler
     hats), Basic Fireworks (a flare marking a boss fish for friends).
@@ -70,3 +70,29 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
     - **Ember Float** (Ashlands: charred bone, sulfur) - won't burn in hot water, Ashlands fish keener.
     - **Rime Float** (Deep North: frostcore, moose sinew) - a heavy float for heavy fish (Tension).
     Effects that need a condition (river, cold water, deep water) get their own stat, like the lantern float's NightBite.
+
+## Polish pass (2026-10-19)
+
+Improvements first, new content last, in this order:
+
+26. **Bait targets fish.** *Done 2026-10-19: a fish not on a bait's list is 1/100 as likely and rarely bites (strays ~2% where nothing takes it); new bait table; tooltips, catch log and a cast hint show what takes what; data files updated once (ReplacedFields); vanilla rod blocked.* Rework the bait system so each bait and lure only works for a select few fish, so players
+    pick their bait for the fish they want.
+27. **Rewards rework.** *Done 2026-10-19 (Rewards.cs): catch log rewards every 5 species (no boss lures), biome sets (bait, coins, +25 rank points), rare valuables inside catches (1-4%), +5 rank points for a personal best, a gift at each angler rank, Hildir's prizes from Haldor's uncraftable items (Yule Hat, Thunder Stone, Horn, Dverger Circlet, Megingjord); the catch log redrawn (sidebar with rank and unlocks, reward ladder, biome sets; species cards with biome filters). Custom rewards designed in docs/CUSTOM_REWARDS.md and handed out once modelled.* Rework the rewards for the catch log and for regular catches.
+28. **Dyed gear repair.** *Done 2026-10-19: each dyed piece has a disabled workbench recipe - repair only needs a recipe to exist, the craft list only shows enabled ones - so it repairs at workbench 2 but can't be crafted.* Hildir's dyed Fisherman's gear (bought, so it has no recipe) can't be repaired - give it a way.
+29. **Fights everyone can see.** Other players see the fish fight - the line, the hooked fish and the angler.
+30. **Relics.** *Done 2026-10-19 (Relics.cs): Horn = Hildir's 15th bounty, Pearl = full catch log, Golden Hook ~2% per legendary landed, Scale ~3% from sea serpents killed; stack size 1; boss relic drops and the Horn's fish find removed; data files updated once.* Relics don't stack, turn up only very rarely, and each comes from a different place.
+31. **No accidental recast.** *Done 2026-10-19: a cast that ends with the pull (left click) still held waits for it to be let go before a new cast can charge.* Reeling and pulling the rod (left click) as the fish lands shouldn't cast again straight away.
+32. **Crab traps and crustaceans.** Traps set in the water, and crabs, lobsters and other crustaceans to catch in them.
+33. **Catch sea serpents.** Vanilla sea serpents near your bait can take it and be hooked, in the Queen Eel's serpent fight. Could become another source of Jörmungandr's Scale.
+## After the first release
+
+- **Hildir's stock in recipes** (the rest of #20). Checked in the game files: Sparkler (`Sparkler`), Basic Fireworks
+  (`FireworksRocket_White`), her caps `HelmetHat1`-`10` (Brown Fur Cap = `HelmetHat3`, Grey Fur Cap = `HelmetHat8`,
+  Simple Red Cap = `HelmetHat5`); vanilla has no straw hat.
+  - **Sparkler Popper** - a topwater lure (Sparkler 1, fine wood 2, fish scales 2 -> 3 at the workbench) with its own
+    model and icon: at night it lights the float like the Lantern Float and fish bite sooner (~+40%).
+  - **Ice Angler's Fur Cap** (Grey Fur Cap, wolf pelt, rime scales): frost resistance and a longer hook window.
+  - **Sun Angler's Cap** (Simple Red Cap, feathers, fish scales): fish bite sooner by day. Open: keep her caps' look or
+    tint them (new icons); model a real straw hat instead?
+  - **Angler's Flare** (Basic Fireworks, fish oil): hooking a boss fish while carrying one fires it - a firework over
+    you, a map ping for everyone and a shout naming the boss. Open: automatic, or fired by hand.

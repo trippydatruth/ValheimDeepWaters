@@ -1,3 +1,4 @@
+using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using System;
@@ -123,14 +124,33 @@ namespace ValheimDeepWaters
                 }).ToArray();
             }
             ItemManager.Instance.AddItem(item);
+
+            // Repair needs a recipe for the item at the station - but not an enabled one, and only enabled recipes show
+            // in the crafting list. So this one makes the dyed gear repairable at the workbench (level 2, like the
+            // Fisherman's set) without it ever being craftable: Hildir is still the only way to get it.
+            ItemManager.Instance.AddRecipe(new CustomRecipe(new RecipeConfig
+            {
+                Name = "Recipe_" + item.ItemPrefab.name,
+                Item = item.ItemPrefab.name,
+                CraftingStation = "piece_workbench",
+                RepairStation = "piece_workbench",
+                MinStationLevel = 2,
+                Enabled = false,
+                Requirements = new[] { new RequirementConfig(basePrefab, 1) }
+            }));
             return item.ItemDrop;
         }
 
         // ------------------------------------------------------------------ bounties
 
         private const string DoneKey = "vdw_bounty_done_day", CountKey = "vdw_bounties";
-        private static readonly (int count, string prefab, string name)[] Milestones =
-            { (5, "VDW_Buff_relic_horn", "the Horn of Ægir"), (15, "VDW_Hook_golden", "the Golden Hook"), (30, "VDW_Buff_relic_pearl", "the Pearl of Njord") };
+        // her prizes: the things Haldor sells that can't be crafted, and the Horn, her relic (roadmaps #27, #30);
+        // vanilla items by their name token, so a renamed prefab can't break them
+        private static readonly (int count, string prefab, int amount, string name)[] Milestones =
+        {
+            (5, "$item_helmet_yule", 1, "a Yule Hat"), (10, "$item_thunderstone", 1, "a Thunder Stone"), (15, Relics.Horn, 1, "the Horn of Ægir"),
+            (20, "$item_helmet_dverger", 1, "a Dverger Circlet"), (30, "$item_beltstrength", 1, "Megingjord"),
+        };
 
         private sealed class Bounty
         {
@@ -286,7 +306,7 @@ namespace ValheimDeepWaters
             player.m_customData[CountKey] = done.ToString(CultureInfo.InvariantCulture);
             player.m_customData[DoneKey] = Day().ToString(CultureInfo.InvariantCulture);
             string msg = $"Bounty done: {b.Coins} coins and bait.";
-            foreach (var m in Milestones.Where(m => m.count == done)) { Give(m.prefab, 1); msg += $"\nHildir gives you {m.name} for {done} bounties!"; }
+            foreach (var m in Milestones.Where(m => m.count == done)) { Rewards.Give(player, m.prefab, m.amount); msg += $"\nHildir gives you {m.name} for {done} bounties!"; }
             player.Message(MessageHud.MessageType.Center, msg);
             trader.OnSold();
         }

@@ -101,13 +101,6 @@ namespace ValheimDeepWaters
         private const float DeepWater = 15f;        // the same depth that counts as deep ocean for fishing
         private const float NearRadius = 300f;      // how far off the coast a biome still counts as "off" it
         private const string TrophiesKey = "vdw_trophies";
-        private const string RelicsKey = "vdw_boss_relics";
-
-        /// <summary>The relics only bosses leave behind (never found in other fish): Pearl, Scale, Golden Hook.</summary>
-        private static readonly string[] BossRelics = { "VDW_Buff_relic_pearl", "VDW_Buff_relic_scale", "VDW_Hook_golden" };
-        private const float BossRelicChance = 0.25f;
-
-        public static bool IsBossRelic(string prefabName) => System.Array.IndexOf(BossRelics, prefabName) >= 0;
 
         public static readonly Dictionary<string, GameObject> Trophies = new();   // by fish id, every legendary
         public static readonly Dictionary<string, GameObject> Materials = new();  // by fish id, bosses only
@@ -242,13 +235,6 @@ namespace ValheimDeepWaters
                 text += $"\n+ {n} {Loc.Text(mat.GetComponent<ItemDrop>().m_itemData.m_shared.m_name)}";
             }
 
-            // Sometimes one of the boss relics, one the player doesn't have yet if there is one.
-            if (UnityEngine.Random.value < BossRelicChance && PickRelic(player) is GameObject relic)
-            {
-                Drop(player, relic, 1, dropPos);
-                text += $"\nSomething glints in its belly... {Loc.Text(relic.GetComponent<ItemDrop>().m_itemData.m_shared.m_name)}!";
-            }
-
             MessageHud.instance?.MessageAll(MessageHud.MessageType.Center, $"{player.GetPlayerName()} has landed the {fish.Name}!");
             return text;
         }
@@ -257,19 +243,6 @@ namespace ValheimDeepWaters
         {
             var drop = prefab.GetComponent<ItemDrop>();
             if (drop != null) Drops.Give(player, drop, amount, pos + Vector3.up * 0.4f);
-        }
-
-        private static GameObject? PickRelic(Player player)
-        {
-            player.m_customData.TryGetValue(RelicsKey, out var raw);
-            var got = new HashSet<string>((raw ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-            var available = BossRelics.Where(p => ZNetScene.instance?.GetPrefab(p) != null).ToList();
-            if (available.Count == 0) return null;
-            var fresh = available.Where(p => !got.Contains(p)).ToList();
-            string pick = (fresh.Count > 0 ? fresh : available)[UnityEngine.Random.Range(0, fresh.Count > 0 ? fresh.Count : available.Count)];
-            got.Add(pick);
-            player.m_customData[RelicsKey] = string.Join(",", got);
-            return ZNetScene.instance!.GetPrefab(pick);
         }
 
         /// <summary>True the first time this player lands this legendary.</summary>

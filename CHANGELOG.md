@@ -19,6 +19,23 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Rewards rework**: catch log rewards every five species, biome sets (catch every fish of a biome in that biome for
+  its bait, coins and rank points), the odd valuable inside a catch (amber, rubies, silver necklaces by where you fish), rank points for a
+  personal best, a gift at each angler rank, and Hildir's bounty prizes are now a Yule Hat, Thunder Stone, the Horn of
+  Ægir, a Dverger Circlet and Megingjord.
+- **Catch log redrawn**: a sidebar with your rank (and what the next one unlocks), the reward ladder and biome sets;
+  species cards with the bait on its own line, the count to the next mastery tier and the record. The cursor is free
+  while it's open: click a biome to filter, the arrows or the mouse wheel to turn pages.
+- **Fimbul Hook** is for big fish only (25–300 kg); the Golden Hook stays the one hook that suits every fish, and now
+  sets the hook more easily too (+5% hook chance, +15% hook window). Hooks can carry a HookBonus and HookWindow in Hooks.json.
+- **Relics**: each comes from one place and takes its own slot (no stacking): the Horn of Ægir from Hildir's 15th bounty,
+  the Pearl of Njord for a full catch log, the Golden Hook rarely from inside legendary fish, and Jörmungandr's Scale
+  rarely from sea serpents you kill. Boss fish no longer drop relics; the Horn is no longer found in fish.
+- **Dyed gear repairs**: Hildir's Bog-, Frost- and Mist-Dyed Fisherman's gear repairs at the workbench like the rest of the set (it still can't be crafted).
+- **No accidental recast**: still holding the pull (left click) as a fish lands no longer casts again straight away; let go and press again to cast.
+- **Bait targets fish**: each bait and lure goes for a few fish (other fish take it only rarely), so you choose your
+  bait for the fish you want. Bait tooltips list what they catch, the catch log shows each species' bait, and a cast
+  says when nothing there goes for yours. Data files take the new bait lists once. The vanilla rod can't be used.
 - **Species mastery**: 10 / 25 / 50 of a species (1 / 3 / 5 for legendary and boss fish) for Bronze, Silver and Gold - it
   bites more readily, fights weaker, then runs bigger for you - with rank points for each tier and a Gold Trophy Plaque
   (a wall piece with the species mounted on it, gold-plated) to build at Gold. The catch log shows each species' tier.

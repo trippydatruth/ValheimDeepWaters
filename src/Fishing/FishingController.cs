@@ -93,6 +93,8 @@ namespace ValheimDeepWaters
 
         // Charge-cast state, live only while _session == null.
         private static bool _charging;
+        /// <summary>Set when a cast ends while Attack is held (pulling on the fish as it lands): no new charge until it's let go.</summary>
+        internal static bool _waitAttackRelease;
         private static float _chargeStart;
         private static bool _pendingCastActive;
         private static float _pendingCastTime;
@@ -163,6 +165,7 @@ namespace ValheimDeepWaters
 
             if (VdwConfig.LogKey.Value.IsDown() && !InputBlocked())
                 _logOpen = !_logOpen;
+            UpdateLogCursor(player);
 
             if (!_rodEquipped || player.IsDead() || player.IsSwimming())
             {
@@ -253,6 +256,13 @@ namespace ValheimDeepWaters
             {
                 bool attackHeld = ZInput.GetButton("Attack");
                 bool attackUp = ZInput.GetButtonUp("Attack");
+                // still holding the pull from the fight that just ended: wait for a fresh press
+                if (_waitAttackRelease)
+                {
+                    if (attackHeld) return;
+                    _waitAttackRelease = false;
+                    attackUp = false;
+                }
 
                 if (attackHeld && !_charging && !_pendingCastActive)
                 {
@@ -288,6 +298,23 @@ namespace ValheimDeepWaters
                 TryCast(player, _pendingCastFraction);
             }
         }
+
+        private static bool _logHoldsInput;
+
+        /// <summary>
+        /// The open catch log frees the mouse (and holds the player's controls, like any Valheim window) so its filters
+        /// and pages can be clicked; Escape, dying or another window closes it.
+        /// </summary>
+        private static void UpdateLogCursor(Player player)
+        {
+            if (_logOpen && (Input.GetKeyDown(KeyCode.Escape) || player.IsDead() || Menu.IsVisible() || InventoryGui.IsVisible()))
+                _logOpen = false;
+            if (_logOpen == _logHoldsInput) return;
+            _logHoldsInput = _logOpen;
+            Jotunn.Managers.GUIManager.BlockInput(_logOpen);
+        }
+
+        internal static void CloseLog() => _logOpen = false;
 
         private static bool InputBlocked()
         {
@@ -358,6 +385,26 @@ namespace ValheimDeepWaters
             if (!VdwConfig.Enabled.Value || __instance != Player.m_localPlayer) return;
             if (!ContentRegistry.IsRod(__instance.GetCurrentWeapon())) return;
             attack = attackHold = block = blockHold = false;
+        }
+    }
+}
+
+namespace ValheimDeepWaters
+{
+    /// <summary>
+    /// Deep Waters replaces vanilla fishing: the vanilla rod (one found or kept from before) can't be equipped, so its
+    /// vanilla float and baits never come into play. (Traders and recipes no longer offer it or the vanilla baits.)
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
+    internal static class VanillaRodBlocked
+    {
+        private static bool Prefix(Humanoid __instance, ItemDrop.ItemData item, ref bool __result)
+        {
+            if (!VdwConfig.Enabled.Value || item?.m_dropPrefab == null || item.m_dropPrefab.name != "FishingRod") return true;
+            if (__instance == Player.m_localPlayer)
+                Player.m_localPlayer.Message(MessageHud.MessageType.Center, "This old rod is no use here - craft a Deep Waters fishing rod at the workbench.");
+            __result = false;
+            return false;
         }
     }
 }

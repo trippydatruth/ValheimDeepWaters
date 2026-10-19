@@ -253,8 +253,7 @@ namespace ValheimDeepWaters
             var shared = item.ItemDrop.m_itemData.m_shared;
             shared.m_name = DisplayName(b);
             string source = b.Craftable ? ""
-                : BossFish.IsBossRelic(PrefabName(b)) ? "\n\nCan't be crafted. Sometimes left behind by a boss fish."
-                : "\n\nCan't be crafted. Sometimes found inside a fish.";
+                : Relics.SourceText(PrefabName(b)) ?? "\n\nCan't be crafted. Sometimes found inside a fish.";
             shared.m_description = Loc.Token("vdw_buff_" + b.Id + "_desc", $"{b.Description}\n\n{EffectText(b)}{source}");
 
             var icon = shared.m_icons != null && shared.m_icons.Length > 0 ? shared.m_icons[0] : null;
@@ -357,7 +356,6 @@ namespace ValheimDeepWaters
 
             foreach (var (prefab, find) in candidates.OrderBy(c => c.find.Chance))
             {
-                if (BossFish.IsBossRelic(prefab)) continue;
                 if (s.FishWeight < find.MinFishKg || (find.OceanOnly && !s.Ocean)) continue;
                 float chance = s.Fish.Legendary && find.LegendaryChance > 0f ? find.LegendaryChance : find.Chance;
                 if (UnityEngine.Random.value < chance)

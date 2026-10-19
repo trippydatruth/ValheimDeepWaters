@@ -71,7 +71,7 @@ namespace ValheimDeepWaters
 
             SetBiterFish(s, s.Fish, weight);
             s.Phase = FishingPhase.Bite;
-            s.HookDeadline = Time.time + HookWindowSeconds * BossHookWindowMult * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + SkillHookWindow * Skill(player));
+            s.HookDeadline = Time.time + HookWindowSeconds * BossHookWindowMult * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
             FishingFx.Bite(bobberPos);
             FishingFx.FishSplash(bobberPos, 1.8f);
             GameCamera.instance?.AddShake(player.transform.position, 30f, 2f, false);

@@ -160,6 +160,9 @@ namespace ValheimDeepWaters
         /// <summary>A model's prefab from the bundles (see FindBundlePrefab), or null.</summary>
         public static GameObject? GetBundlePrefab(string baseName) => FindBundlePrefab(baseName, out _);
 
+        /// <summary>Whether the bundles (or loose model files) have a model by this name.</summary>
+        public static bool HasModel(string baseName) => FindBundlePrefab(baseName, out _) != null || TryGetCustom(baseName, out _, out _);
+
         /// <summary>Any asset (a sound, a texture...) with this name from any bundle in the Models folder, or null.</summary>
         public static T? LoadBundleAsset<T>(string name) where T : UnityEngine.Object =>
             BundleIndex.TryGetValue(name.ToLowerInvariant(), out var entry) ? entry.bundle.LoadAsset<T>(entry.assetPath) : null;

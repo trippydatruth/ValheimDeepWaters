@@ -204,7 +204,7 @@ namespace ValheimDeepWaters
                         s.Biter = biter;
                         SetBiterFish(s, biter.Fish, biter.WeightKg);
                         s.Phase = FishingPhase.Bite;
-                        s.HookDeadline = Time.time + HookWindowSeconds * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + SkillHookWindow * Skill(player));
+                        s.HookDeadline = Time.time + HookWindowSeconds * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
                         FishingFx.Bite(bobberPos);
                         Msg("FISH ON!");
                     }
@@ -305,7 +305,7 @@ namespace ValheimDeepWaters
         {
             RodMotion.Trigger(RodEvent.HookSet);   // the sweep, whether it sticks or not
             float bonus = s.Bait?.HookBonus ?? 0f;
-            float chance = Mathf.Clamp01(BaseHookChance + bonus + s.Rod.HookBonus + FishingBuffs.Total(player, BuffStat.HookChance) + SkillHookChance * Skill(player));
+            float chance = Mathf.Clamp01(BaseHookChance + bonus + s.Rod.HookBonus + (s.Hook?.HookBonus ?? 0f) + FishingBuffs.Total(player, BuffStat.HookChance) + SkillHookChance * Skill(player));
             bool tooBig = HookTooBig(s.Hook, s.FishWeight);
             if (tooBig) chance *= HookTooBigChance;
             if (s.Boss != null) { chance = 1f; tooBig = false; }

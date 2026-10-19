@@ -76,7 +76,12 @@ namespace ValheimDeepWaters
                 boss = DebugBoss != null ? lureBoss : SummonedBoss(lureBoss, spot, ocean, depth, biome);
                 DebugBoss = null;
             }
-            else fish = SelectFish(baitDef, ocean, depth, 1f, biome, null, trailer);
+            else
+            {
+                fish = SelectFish(baitDef, ocean, depth, 1f, biome, null, trailer, allowNone: false);   // a stand-in until one bites
+                if (fish != null && baitDef != null && !AnyTakers(baitDef, trailer, ocean, depth, biome))
+                    Msg($"Nothing in these waters goes for {Loc.Text(BaitItemName(baitDef))}. Try another bait.");
+            }
             if (fish == null)
             {
                 Msg("Nothing seems to live in these waters.");
@@ -195,6 +200,7 @@ namespace ValheimDeepWaters
             float chance = 0.55f * Mathf.Max(0.5f, bait.Attraction);
             if (fish.PreferredBaits != null && fish.PreferredBaits.Contains(bait.Id)) chance += 0.25f;
             if (bait.TargetFish != null && bait.TargetFish.Contains(fish.Id)) chance += 0.25f;
+            if (!Lures.Takes(fish, bait, null)) chance *= 0.4f;   // a stray: it looks, and mostly swims off
             return Mathf.Clamp(chance, 0.1f, 0.95f);
         }
 
@@ -205,6 +211,21 @@ namespace ValheimDeepWaters
             s.FishStamina = s.FishStaminaMax;
             s.FishWeight = weightKg;
         }
+
+        /// <summary>A fish that doesn't go for the bait is this much less likely to be the one that comes...</summary>
+        internal const float OffTargetWeight = 0.03f;
+        /// <summary>...and where nothing goes for it, the chance a fish comes to look at all (per fish rolled round the bait).</summary>
+        private const float StrayChance = 0.02f;
+
+        /// <summary>Whether any fish living here goes for this bait (else the cast gets a hint to try another).</summary>
+        private static bool AnyTakers(BaitDefinition bait, BaitDefinition? trailer, bool ocean, float depth, Heightmap.Biome biome)
+        {
+            bool deep = ocean && depth >= DeepOceanDepth;
+            return ContentRegistry.Fish.Values.Any(f => !BossFish.IsBoss(f.Id) && Matches(f, ocean, deep, depth) && InBiome(f, ocean, biome) && Lures.Takes(f, bait, trailer));
+        }
+
+        private static string BaitItemName(BaitDefinition bait) =>
+            ContentRegistry.BaitItems.TryGetValue(bait.Id, out var p) && p.GetComponent<ItemDrop>() is ItemDrop d ? d.m_itemData.m_shared.m_name : bait.Name;
 
         /// <summary>Most fish come in near the bottom of their species' range; big ones are rarer.</summary>
         /// <param name="heavier">FishWeight buff: shifts the roll toward the top of the range.</param>
@@ -257,7 +278,7 @@ namespace ValheimDeepWaters
 
         private static FishDefinition? SelectFish(BaitDefinition? bait, bool ocean, float depth, float legendaryBoost = 1f,
             Heightmap.Biome biome = Heightmap.Biome.None, IEnumerable<string>? nearby = null, BaitDefinition? trailer = null,
-            RetrieveStyle style = RetrieveStyle.None)
+            RetrieveStyle style = RetrieveStyle.None, bool allowNone = true)
         {
             bool deep = ocean && depth >= DeepOceanDepth;
             // Boss fish are never caught by chance: only their lure brings them.
@@ -267,7 +288,7 @@ namespace ValheimDeepWaters
             if (pool.Count == 0) return null;
 
             var weights = new float[pool.Count];
-            float total = 0f;
+            float total = 0f, takers = 0f;
             for (int i = 0; i < pool.Count; i++)
             {
                 var f = pool[i];
@@ -291,16 +312,22 @@ namespace ValheimDeepWaters
                     else if (bait.IsLure) w *= Lures.WeightFactor(f, bait, trailer) * Retrieves.Factor(f, bait, style);   // its kind, list, trailer and how it's worked
                     else
                     {
-                        if (bait.TargetFish != null && bait.TargetFish.Contains(f.Id)) w *= 3f;
-                        if (f.PreferredBaits != null && f.PreferredBaits.Contains(bait.Id)) w *= 2f;
+                        bool target = bait.TargetFish != null && bait.TargetFish.Contains(f.Id);
+                        bool preferred = f.PreferredBaits != null && f.PreferredBaits.Contains(bait.Id);
+                        if (target) w *= 3f;
+                        if (preferred) w *= 2f;
+                        if (!target && !preferred) w *= OffTargetWeight;   // not its bait: only a rare stray bite
                     }
                 }
 
                 weights[i] = w;
                 total += w;
+                if (Lures.Takes(f, bait, trailer)) takers += w;
             }
 
-            if (total <= 0f) return pool[UnityEngine.Random.Range(0, pool.Count)];
+            if (total <= 0f) return allowNone ? null : pool[UnityEngine.Random.Range(0, pool.Count)];
+            // nothing here goes for this bait: now and then a stray fish takes it anyway, mostly nothing comes
+            if (bait != null && takers <= 0f && allowNone && UnityEngine.Random.value > StrayChance) return null;
 
             float roll = UnityEngine.Random.value * total;
             for (int i = 0; i < pool.Count; i++)

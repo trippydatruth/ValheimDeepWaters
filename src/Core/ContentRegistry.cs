@@ -60,6 +60,7 @@ namespace ValheimDeepWaters
                 RemoveVanillaFishingGear();
                 BaitSources.Register();
                 try { FishSize.RegisterTrophyMount(); } catch (Exception ex) { Plugin.Log.LogError($"Trophy mount failed: {ex.Message}"); }
+                try { Relics.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Relics failed: {ex}"); }
                 try { Mastery.RegisterPlaques(); } catch (Exception ex) { Plugin.Log.LogError($"Gold plaques failed: {ex}"); }
                 try { FishingBoat.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fishing Boat failed: {ex}"); }
             }
@@ -182,6 +183,8 @@ namespace ValheimDeepWaters
             ("Rods", "blackmetal", "LineCapacity", 85), ("Rods", "yggdrasil", "LineCapacity", 100),
             ("Rods", "ashwood", "LineCapacity", 120), ("Rods", "frostwood", "LineCapacity", 135),
             ("Rods", "haldor", "LineCapacity", 140), ("Rods", "leviathan", "LineCapacity", 160),
+            // the Fimbul Hook is for big fish only (25 kg up); the Golden Hook stays the one that suits any fish (0.15.0)
+            ("Hooks", "fimbul", "MinKg", 0),
         };
 
         /// <summary>
@@ -194,6 +197,24 @@ namespace ValheimDeepWaters
             ("Rods", "Upgrade"),       // rod upgrade levels (0.15.0)
             ("Buffs", "FloatModel"),   // floats your line wears (0.15.0)
             ("Buffs", "FloatLight"),
+            ("Hooks", "HookBonus"),    // the Golden Hook's edge in the strike (0.15.0)
+            ("Hooks", "HookWindow"),
+        };
+
+        /// <summary>
+        /// Fields whose defaults were reworked: once (by tag), the player's entry takes the default's value, edited or not -
+        /// for a rework the old values no longer fit. (file, field, tag)
+        /// </summary>
+        private static readonly (string kind, string field, string tag)[] ReplacedFields =
+        {
+            ("Baits", "TargetFish", "bait_targets_1"),       // each bait goes for a few fish (roadmap #26)
+            ("Fish", "PreferredBaits", "bait_targets_1"),
+            ("Fish", "PreferredBaits", "bluegill_bait_1"),   // the bluegill is a baitfish for catfish, bass and pike
+            ("Fish", "CatchBait", "bluegill_bait_1"),
+            ("Fish", "CatchAmount", "bluegill_bait_1"),
+            ("Fish", "ForbiddenBaits", "bluegill_bait_1"),
+            ("Buffs", "Find", "relics_1"),                   // relics: one source each (roadmap #30) - the Horn is no longer found in fish
+            ("Hooks", "Find", "relics_1"),                   // ...and the Golden Hook is, rarely, in legendaries
         };
 
         private static string RecipeKey(JToken? recipe) =>
@@ -298,6 +319,23 @@ namespace ValheimDeepWaters
                         filled.Add(id + "." + field);
                         if (byId.TryGetValue(id, out var entry) && entry[field] == null) { entry[field] = d[field]!.DeepClone(); changed = true; }
                     }
+                }
+
+                var replaced = offered[kind + "_replaced"] as JArray ?? new JArray();
+                offered[kind + "_replaced"] = replaced;
+                var replacedKeys = new HashSet<string>(replaced.Values<string>().Where(s => s != null)!);
+                foreach (var (k, field, tag) in ReplacedFields)
+                {
+                    if (k != kind || !replacedKeys.Add(tag + "." + field)) continue;
+                    replaced.Add(tag + "." + field);
+                    foreach (var d in defaults.OfType<JObject>())
+                    {
+                        string? id = (string?)d["Id"];
+                        if (id == null || !byId.TryGetValue(id, out var entry)) continue;
+                        if (d[field] == null) { if (entry[field] != null) { entry.Remove(field); changed = true; } continue; }   // gone from the default: gone here too
+                        if (!JToken.DeepEquals(entry[field], d[field])) { entry[field] = d[field]!.DeepClone(); changed = true; }
+                    }
+                    Plugin.Log.LogInfo($"{Path.GetFileName(path)}: {field} brought up to the new defaults ({tag}).");
                 }
 
                 foreach (var (k, id, oldName) in RenamedDefaults)
@@ -415,9 +453,10 @@ namespace ValheimDeepWaters
                     shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\nSuits fish of {hook.MinKg:0.#}–{hook.MaxKg:0.#} kg. " +
                                            (hook.NeverStraightens ? "Never straightens. " : "Smaller fish struggle to take it; bigger ones can straighten it, and much bigger ones won't bite. ") +
                                            (hook.KeepChance > 0f ? $"{hook.KeepChance * 100f:0}% chance to survive a snapped line. " : "") +
+                                           (hook.HookBonus > 0f ? $"Hook chance +{hook.HookBonus * 100f:0}%. " : "") +
+                                           (hook.HookWindow > 0f ? $"Hook window +{hook.HookWindow * 100f:0}%. " : "") +
                                            (hook.Craftable ? ""
-                                               : BossFish.IsBossRelic("VDW_Hook_" + hook.Id) ? "\n\nCan't be crafted. Sometimes left behind by a boss fish."
-                                               : "\n\nCan't be crafted. Sometimes found inside a fish."));
+                                               : Relics.SourceText("VDW_Hook_" + hook.Id) ?? "\n\nCan't be crafted. Sometimes found inside a fish."));
                     shared.m_weight = 0.05f;
                     shared.m_maxStackSize = 50;
 
@@ -538,6 +577,18 @@ namespace ValheimDeepWaters
             return fallback;
         }
 
+        /// <summary>
+        /// A bait's model: its own "bait_<id>", else - for a baitfish's live bait without one (the bluegill) - the model of
+        /// the fish it comes from.
+        /// </summary>
+        private static string BaitModelKey(string baitId)
+        {
+            string own = "bait_" + baitId;
+            if (CustomModels.HasModel(own)) return own;
+            var source = Fish.Values.FirstOrDefault(f => f.CatchBait == baitId);
+            return source != null && CustomModels.HasModel("fish_" + source.Id) ? "fish_" + source.Id : own;
+        }
+
         private static void RegisterBaits()
         {
             foreach (var bait in Baits.Values)
@@ -567,7 +618,7 @@ namespace ValheimDeepWaters
                     item.ItemDrop.m_itemData.m_shared.m_weight = 0.1f;
                     ItemManager.Instance.AddItem(item);
                     BaitItems[bait.Id] = item.ItemPrefab;
-                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "bait_" + bait.Id))
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, BaitModelKey(bait.Id)))
                         GroundPose.FitCollider(item.ItemPrefab);
                     BaitByItemName[itemName] = bait;
                 }
@@ -686,7 +737,7 @@ namespace ValheimDeepWaters
                 f.m_pickupItem = baitPrefab;
                 f.m_pickupItemStackSize = Mathf.Max(1, fish.CatchAmount);
             }
-            CustomModels.ApplyToPrefab(swim, "bait_" + fish.CatchBait);
+            CustomModels.ApplyToPrefab(swim, BaitModelKey(fish.CatchBait));
             PrefabManager.Instance.AddPrefab(swim);
             SwimmingBaitfish[fish.Id] = swim;
             FishIdByPrefab[name] = fish.Id;

@@ -129,6 +129,10 @@ namespace ValheimDeepWaters
                     int before = Mastery.Count(p, fish.Id);
                     CatchLog.SetCount(p, fish.Id, count);
                     string msg = Mastery.OnCatch(fish, before, count);
+                    foreach (var reward in CatchLog.ClaimRewards(p)) msg += " " + reward;   // as a real catch would
+                    var here = Heightmap.FindBiome(p.transform.position);                    // ...made where you stand
+                    Rewards.RecordCaughtIn(p, fish.Id, here, here == Heightmap.Biome.Ocean, false);
+                    msg += Rewards.ClaimBiomeSets(p);
                     Console.instance.Print($"{fish.Name}: {count} caught, mastery {(Mastery.Tier(p, fish) == 0 ? "none" : Mastery.TierNames[Mastery.Tier(p, fish)])}.{msg.Replace("\n", " ")}");
                 }
                 else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))

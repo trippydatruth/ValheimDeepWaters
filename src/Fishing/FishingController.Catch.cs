@@ -77,7 +77,7 @@ namespace ValheimDeepWaters
             }
 
             // Rarely, something else comes up inside the fish.
-            var find = FishingBuffs.RollFind(s);
+            var find = FishingBuffs.RollFind(s) ?? Rewards.RollFind(s);   // a relic first, else now and then a valuable
             var findDrop = find != null ? find.GetComponent<ItemDrop>() : null;
             if (findDrop != null)
             {
@@ -94,7 +94,13 @@ namespace ValheimDeepWaters
             CatchLog.Record(player, s.Fish.Id, s.FishWeight, out bool newSpecies, out bool newRecord);
             if (newSpecies) text += "\nNew species logged!";
             if (newSpecies) foreach (var reward in CatchLog.ClaimRewards(player)) text += "\n" + reward;
-            else if (newRecord) text += "\nNew personal best!";
+            bool newBiome = Rewards.RecordCaughtIn(player, s.Fish.Id, s.Biome, s.Ocean, s.Ocean && s.Depth >= DeepOceanDepth);
+            if (newSpecies || newBiome) text += Rewards.ClaimBiomeSets(player);
+            if (!newSpecies && newRecord)
+            {
+                Rewards.AddBonusPoints(player, Rewards.PersonalBestPoints);
+                text += $"\nNew personal best! (+{Rewards.PersonalBestPoints} rank points)";
+            }
             text += Mastery.OnCatch(s.Fish, countBefore, Mastery.Count(player, s.Fish.Id));
             text += AnglerRanks.OnCatch(player, s.FishWeight, rank >= TrophyThreshold && !baitfish, pointsBefore);
 
@@ -117,6 +123,8 @@ namespace ValheimDeepWaters
             _session = null;
             _reelingNow = false;
             if (s == null) return;
+            // the pull button held as the fish lands (or the line goes) mustn't start the next cast
+            if (ZInput.GetButton("Attack")) _waitAttackRelease = true;
 
             if (s.Bobber != null) UnityEngine.Object.Destroy(s.Bobber.gameObject);
             if (s.HookedFish != null) UnityEngine.Object.Destroy(s.HookedFish.gameObject);

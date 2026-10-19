@@ -61,7 +61,7 @@ namespace ValheimDeepWaters
                 bool legendary = ContentRegistry.Fish.TryGetValue(kv.Key, out var f) && f.Legendary;
                 pts += (legendary ? LegendaryPoints : SpeciesPoints) + kv.Value.Count * CatchPoints;
             }
-            pts += Mastery.RankPoints(CatchLog.Load(p));
+            pts += Mastery.RankPoints(CatchLog.Load(p)) + Rewards.BonusPoints(p);   // biome sets and personal bests
             return pts + Trophies(p) * TrophyPoints + Mathf.FloorToInt(KgLanded(p) / KgPerPoint);
         }
 
@@ -105,6 +105,8 @@ namespace ValheimDeepWaters
                 text += $"\nAngler rank: {r.Name}!";
                 string unlocks = r.Unlocks.Length > 0 ? "Unlocks " + string.Join(", ", r.Unlocks.Select(ItemName)) : "";
                 MessageHud.instance?.QueueUnlockMsg(r.Unlocks.Length > 0 ? ItemIcon(r.Unlocks[0]) : null, "Angler rank: " + r.Name, unlocks);
+                string gift = Rewards.RankGift(player, i);
+                if (gift.Length > 0) text += $" A gift for the rank: {gift}.";
             }
             return text;
         }
