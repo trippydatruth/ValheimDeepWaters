@@ -409,9 +409,26 @@ and makes reeling cheaper and the hookset window longer.
   | Bog Witch | Roe, fish oil, abyssal ink, brined roe, leeches, and swamp, Mistlands and eel-like fish (1.4x) |
 
   Your catch sells from the **Sell your catch** panel beside the store window (it works alongside trader UI mods);
-  the arrows pick what to sell. The store's own sell button sells vanilla valuables, as in vanilla.
+  click a row to pick what to sell, or Sell all. The store's own sell button sells vanilla valuables, as in vanilla.
 - **Catch log** (`J`): records every species you catch. New species earn rewards at 5, 10, 15 and 20
   species and for catching them all.
+- **Angler ranks:** ten ranks, shown at the top of the catch log with a bar to the next rank and what it unlocks.
+  Points: 10 per new species (40 for a legendary), 1 per fish landed, 5 per Trophy-size catch and 1 per 10 kg landed.
+  The top rods, lures and Fish Cleaning Table recipes stay hidden from the crafting list until you reach their rank.
+  (The Bog Witch still sells boss lures to anyone.)
+
+  | Rank | Points | Unlocks |
+  |---|---|---|
+  | Thrall of the Shallows | 0 | - |
+  | Minnow-Karl | 40 | Antler Lure |
+  | Net-Weaver | 100 | Root Lure, Silver Swimbait |
+  | Riverwarden | 200 | Silver Fishing Rod, Ooze Lure, Brined Roe |
+  | Fjord-Farer | 350 | Wyrm Lure, Linen Popper, Ice Spoon, cleaning for Legendary Scales |
+  | Skerry-Reaver | 550 | Black Metal Fishing Rod, Dried Fish |
+  | Wave-Jarl | 800 | Yggdrasil Fishing Rod, Ember Lure |
+  | Serpent-Slayer | 1,100 | Ashwood Fishing Rod, Chitin Lure, Frostcore Jig, cleaning for Cinder Scales |
+  | Ægir's Hand | 1,500 | Frostwood Fishing Rod, cleaning for Rime Scales |
+  | Chosen of Njord | 2,000 | Crown Lure |
 - **Fishing skill:** Valheim's Fishing skill rises as you reel and land fish. It makes reeling cheaper and
   faster and setting the hook easier.
 
@@ -443,6 +460,7 @@ For testing and server admins. These need `devcommands`.
 - `vdw_debug boss <fish id>`: the next cast summons that boss fish anywhere, with any bait (for testing).
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
 - `vdw_debug resetlog`: clears your catch log.
+- `vdw_debug rank <points>`: adds angler rank points (default 100); `vdw_debug resetrank` clears the trophies and weight counted.
 - `vdw_debug tokens`: exports the text for translating.
 
 ## Customising

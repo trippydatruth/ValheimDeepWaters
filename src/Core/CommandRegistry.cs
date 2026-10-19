@@ -76,7 +76,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -112,6 +112,19 @@ namespace ValheimDeepWaters
                 {
                     if (Player.m_localPlayer != null) Player.m_localPlayer.m_customData.Remove("vdw_catchlog");
                     Console.instance.Print("Catch log cleared.");
+                }
+                else if (args[0].Equals("rank", StringComparison.OrdinalIgnoreCase))
+                {
+                    var p = Player.m_localPlayer;
+                    if (p == null) return;
+                    int add = args.Length > 1 && int.TryParse(args[1], out var n) ? n : 100;
+                    string msg = AnglerRanks.DebugAdd(p, add);
+                    Console.instance.Print($"Rank points: {AnglerRanks.Points(p)} ({AnglerRanks.Ranks[AnglerRanks.RankIndex(p)].Name}).{msg.Replace("\n", " ")}");
+                }
+                else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Player.m_localPlayer != null) AnglerRanks.Reset(Player.m_localPlayer);
+                    Console.instance.Print("Rank trophies and weight landed cleared (species and catches still count; resetlog clears those).");
                 }
                 else if (args[0].Equals("listbait", StringComparison.OrdinalIgnoreCase))
                 {

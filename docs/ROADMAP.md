@@ -52,7 +52,7 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
     tackle boxes in Sunken Crypts, Frost Caves and Infested Mines, each adding lures and dyed Fisherman's gear to her
     shop. Her stock in recipes: Sparkler (glowing night popper), Straw Hat / Fur Cap (summer and ice-fishing angler
     hats), Basic Fireworks (a flare marking a boss fish for friends).
-21. **Angler ranks.** Ranks from species caught, Trophy-size catches and weight landed; the top recipes need a rank.
+21. **Angler ranks.** *Done 2026-10-18: ten ranks (AnglerRanks.cs), the rank, progress bar and next unlocks in the catch log; rank-locked top rods, lures and table recipes are hidden until reached.* Ranks from species caught, Trophy-size catches and weight landed; the top recipes need a rank.
 22. **Species mastery.** 10 / 25 / 50 of a species for a small perk or a gold trophy plaque; record weights in the
     catch log.
 23. **Rare variants.** Golden / albino version of each species (about 1 in 300), valuable and collectable.

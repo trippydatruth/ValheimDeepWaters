@@ -19,6 +19,9 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Angler ranks**: ten ranks (Thrall of the Shallows to Chosen of Njord) from species, catches, Trophy-size fish and
+  weight landed, shown in the catch log with a progress bar and the next rank's unlocks. The top rods, lures and Fish
+  Cleaning Table recipes stay hidden until you reach their rank.
 - **Each trader buys their own catch**: Haldor ordinary and cooked fish, Hildir Trophy-size and legendary fish at a
   premium and spare relics, the Bog Witch roe, oil, ink, leeches and swamp and Mistlands fish - from a "Sell your
   catch" panel beside the store (pick from a list, or sell all) that works alongside trader UI mods.

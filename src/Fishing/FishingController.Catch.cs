@@ -89,10 +89,12 @@ namespace ValheimDeepWaters
             // Landing a fish is worth more Fishing skill the harder it fights.
             player.RaiseSkill(Skills.SkillType.Fishing, 1f + Mathf.Max(0f, s.Fish.FightStrength));
 
+            int pointsBefore = AnglerRanks.Points(player);
             CatchLog.Record(player, s.Fish.Id, s.FishWeight, out bool newSpecies, out bool newRecord);
             if (newSpecies) text += "\nNew species logged!";
             if (newSpecies) foreach (var reward in CatchLog.ClaimRewards(player)) text += "\n" + reward;
             else if (newRecord) text += "\nNew personal best!";
+            text += AnglerRanks.OnCatch(player, s.FishWeight, rank >= TrophyThreshold && !baitfish, pointsBefore);
 
             if (s.Fish.Legendary) text = "LEGENDARY!\n" + text;
             RodMotion.Trigger(RodEvent.CatchLift);

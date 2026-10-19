@@ -317,7 +317,8 @@ namespace ValheimDeepWaters
             const float rowH = 24f, colW = 340f, perCol = 16;
             int cols = Mathf.Max(1, Mathf.CeilToInt(fish.Count / perCol));
             float w = colW * cols + 40f;
-            float h = 92f + perCol * rowH;
+            const float rankH = 124f;
+            float h = 92f + rankH + perCol * rowH;
             var r = new Rect(_width / 2f - w / 2f, _height / 2f - h / 2f, w, h);
             Panel(r);
 
@@ -327,10 +328,13 @@ namespace ValheimDeepWaters
             Label(head, $"{found} / {fish.Count} species", _text, Cream, TextAnchor.MiddleRight);
             Fill(new Rect(r.x + 20f, r.y + 52f, w - 40f, 1f), Trim);
 
+            DrawRank(player, new Rect(r.x + 20f, r.y + 62f, w - 40f, rankH - 10f));
+            Fill(new Rect(r.x + 20f, r.y + 52f + rankH, w - 40f, 1f), Trim);
+
             for (int i = 0; i < fish.Count; i++)
             {
                 var f = fish[i];
-                var row = new Rect(r.x + 20f + (int)(i / perCol) * colW, r.y + 62f + (i % (int)perCol) * rowH, colW - 12f, rowH);
+                var row = new Rect(r.x + 20f + (int)(i / perCol) * colW, r.y + 62f + rankH + (i % (int)perCol) * rowH, colW - 12f, rowH);
                 if (entries.TryGetValue(f.Id, out var e))
                 {
                     Label(row, f.Name, _text, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
@@ -345,6 +349,38 @@ namespace ValheimDeepWaters
             string? next = CatchLog.NextReward(player);
             Label(new Rect(r.x + 20f, r.yMax - 30f, w - 160f, 24f), next ?? "Every catch-log reward earned.", _small, Gold, TextAnchor.MiddleLeft);
             KeyPrompts(new[] { (VdwConfig.LogKey.Value.ToString(), "Close") }, r.xMax - 20f, r.yMax - 30f, alignRight: true);
+        }
+
+        /// <summary>The angler rank: its name, a bar to the next rank with the percent, and what the next rank unlocks.</summary>
+        private static void DrawRank(Player player, Rect r)
+        {
+            int points = AnglerRanks.Points(player);
+            int idx = AnglerRanks.RankIndex(points);
+            var rank = AnglerRanks.Ranks[idx];
+            bool top = idx >= AnglerRanks.Ranks.Length - 1;
+            var next = top ? null : AnglerRanks.Ranks[idx + 1];
+
+            var line = new Rect(r.x, r.y, r.width, 28f);
+            Label(line, "Angler rank:  " + rank.Name, _big, Gold, TextAnchor.MiddleLeft);
+            Label(line, $"Rank {idx + 1} of {AnglerRanks.Ranks.Length}  ·  {points:N0} points", _text, Cream, TextAnchor.MiddleRight);
+
+            float frac = top ? 1f : Mathf.Clamp01((points - rank.Points) / (float)(next!.Points - rank.Points));
+            var bar = new Rect(r.x, r.y + 36f, r.width, 20f);
+            Fill(bar, new Color(0f, 0f, 0f, 0.55f));
+            Fill(new Rect(bar.x + 2f, bar.y + 2f, (bar.width - 4f) * frac, bar.height - 4f), new Color(0.86f, 0.62f, 0.2f, 0.95f));
+            string barText = top ? "Highest rank reached" : $"{points - rank.Points:N0} / {next!.Points - rank.Points:N0}  ({Mathf.FloorToInt(frac * 100f)}%)  to {next.Name}";
+            Label(bar, barText, _smallBold, Cream, TextAnchor.MiddleCenter);
+
+            var unlock = new Rect(r.x, r.y + 64f, r.width, 22f);
+            if (top) Label(unlock, "Every rank-locked rod, lure and table recipe is yours.", _small, Cream, TextAnchor.MiddleLeft);
+            else
+            {
+                string list = next!.Unlocks.Length > 0 ? string.Join(",  ", next.Unlocks.Select(AnglerRanks.ItemName)) : "nothing new";
+                Label(unlock, $"Next rank unlocks:  {list}", _small, Cream, TextAnchor.MiddleLeft);
+            }
+            Label(new Rect(r.x, r.y + 88f, r.width, 20f),
+                $"Points: {AnglerRanks.SpeciesPoints} per new species ({AnglerRanks.LegendaryPoints} legendary)  ·  {AnglerRanks.CatchPoints} per catch  ·  {AnglerRanks.TrophyPoints} per Trophy-size  ·  1 per {AnglerRanks.KgPerPoint:0} kg landed",
+                _small, Dim, TextAnchor.MiddleLeft);
         }
 
         // ------------------------------------------------------------------
