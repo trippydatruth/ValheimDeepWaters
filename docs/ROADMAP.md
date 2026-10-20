@@ -84,6 +84,9 @@ Improvements first, new content last, in this order:
 31. **No accidental recast.** *Done 2026-10-19: a cast that ends with the pull (left click) still held waits for it to be let go before a new cast can charge.* Reeling and pulling the rod (left click) as the fish lands shouldn't cast again straight away.
 32. **Crab traps and crustaceans.** Traps set in the water, and crabs, lobsters and other crustaceans to catch in them.
 33. **Catch sea serpents.** Vanilla sea serpents near your bait can take it and be hooked, in the Queen Eel's serpent fight. Could become another source of Jörmungandr's Scale.
+34. **Ice fishing.** Fishing through a hole in the ice on frozen water, with fish that only bite there.
+35. **Fly fishing.** A fly rod and flies, cast and worked on the surface for river fish.
+36. **Different hooks.** More kinds of hook with their own uses, alongside the sizes already in.
 ## After the first release
 
 - **Hildir's stock in recipes** (the rest of #20). Checked in the game files: Sparkler (`Sparkler`), Basic Fireworks

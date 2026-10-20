@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.15.0
+## 1.0.0
+The first public release. Everything from the development builds below is in it; these are the changes since 0.14.0.
+
 ### Added
 - **Fish Cleaning Table**: a crafting station of its own, with three add-ons (Filleting Knife Rack, Brining Barrel,
   Drying Line) that raise its level for the rarer fish and let it prepare Fish Fillets, Brined Roe and Dried Fish.
@@ -70,7 +72,7 @@
 ### Fixed
 - Lures and hooks in the tackle slots survived death when the inventory was full; they now go into the tombstone.
 
-## 0.14.0
+## 0.14.0 (development build)
 ### Added
 - **All 12 vanilla fish can be caught** with Deep Waters rods. Landing one gives the real vanilla item, so vanilla
   cooking and recipes work, and they bite Deep Waters bait.
@@ -137,7 +139,7 @@
 - The float's nibble splash never played.
 - `vdw_give` and `vdw_debug` worked without `devcommands`; they now need it.
 
-## 0.13.0
+## 0.13.0 (development build)
 ### Added
 - **Rods for every era**: eight craftable rods from Wooden to Ashwood, each better than the last, plus
   Haldor's Gilded Rod (sold only by Haldor). Rods wear out while fighting fish and are repaired where they

@@ -4,23 +4,28 @@ A fishing overhaul for Valheim. Fish swim up to your bait, nibble and then bite,
 line tension, drag and stamina. There are rods for every era, hook sizes, bait you gather from the world,
 buffs, trophies and a catch log.
 
-Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.16.
+Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 
 ## Features
 
-- All 12 vanilla fish plus 28 new ones, including 10 legendaries, each with its own biomes, depth,
+- All 12 vanilla fish plus 31 new ones, including 10 legendaries, each with its own biomes, depth,
   favourite bait, time of day and weather
 - Fish you can see swim up to your bait, nibble the float, then bite. Strike too early and you spook them;
   make noise and they flee
 - A real fight: line tension, drag on the mouse wheel, sideways runs, leaps and snapped lines
-- Eleven rods, one for each era plus two special ones, that wear out with use, and hooks in six sizes
+- Twelve rods, one for each era plus special ones, that wear out with use and upgrade to level 4, and hooks in eight kinds
 - Bait from the world: worms, grubs, flies, leeches and baitfish
 - Tackle slots for your bait and hook under the inventory
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
 - Fishing meads, chum, totems, rare relics and a Fisherman's armour set
+- Seven boss fish you summon with boss lures, each with its own weather, music and fight
+- Angler ranks, species mastery with Gold Trophy Plaques, and rare golden and albino catches
+- A Fish Cleaning Table, fish materials, dishes and feasts, and traders who each buy their own catch
+- An endgame: the Allfather's Rod and Njord's Regalia, earned by landing every boss fish
 - Size classes, a trophy mount, cooking, selling, a catch log with rewards, and Valheim's Fishing skill
+- In multiplayer, players nearby see your line, the fish you're fighting and the catch
 
 ## How to fish
 
@@ -510,23 +515,15 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Cycle Bait / Cycle Hook / Catch Log keys | B / H / J | |
 | Drag Control / Reel Speed Control | Mouse Wheel / Alt + Mouse Wheel | Either can be the mouse wheel, Alt + mouse wheel or the mouse side buttons (Mouse 5 up, Mouse 4 down) |
 
-## Console commands
+## Console commands (server admins)
 
-For testing and server admins. These need `devcommands`.
+These need `devcommands`, like Valheim's own spawn command.
 
-- `vdw_give <item> [amount]`: spawns an item, for example `rod_copper`, `hook_small`, `buff_angler_minor`,
+- `vdw_give <item> [amount]`: gives an item, for example `rod_copper`, `hook_small`, `buff_angler_minor`,
   `worm` or a fish id.
-- `vdw_debug listrods | listhooks | listbait | listfish | listbuffs`: lists the ids.
-- `vdw_debug worms`: shows the worm mounds near you and whether flies or rain worms can appear right now.
-- `vdw_debug bite`: the next cast bites straight away.
-- `vdw_debug boss <fish id>`: the next cast summons that boss fish anywhere, with any bait (for testing).
-- `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
+- `vdw_debug listrods | listhooks | listbait | listfish | listbuffs`: lists the item ids.
 - `vdw_debug resetlog`: clears your catch log.
-- `vdw_debug master <fish> [count]`: sets how many of a species you've caught (default 50), for the mastery tiers.
-- `vdw_debug variant <golden|albino>`: the next ordinary fish to bite comes up golden or albino.
-- `vdw_debug rarefish <fish> <golden|albino>`: gives you a golden or albino fish of that species.
-- `vdw_debug rank <points>`: adds angler rank points (default 100); `vdw_debug resetrank` clears the trophies and weight counted.
-- `vdw_debug tokens`: exports the text for translating.
+- `vdw_debug tokens`: exports the mod's text for translating (see Translations below).
 
 ## Customising
 
@@ -648,6 +645,16 @@ Other models used:
 |---|---|---|---|
 | Filleting Knife Rack (blades) | [Kitchen Knife Set - Asset Pack](https://sketchfab.com/3d-models/kitchen-knife-set-asset-pack-c55d34d4f1974b16a8a8cb6cd4ee49f3) | Falxxx | CC BY |
 | Dried Fish | [Hanged Dried Fish](https://www.cgtrader.com/free-3d-models/exterior/other/hanged-dried-fish) | CGTrader | Royalty Free |
+| Earthworm bait | [Earth_ Worm](https://sketchfab.com/3d-models/earth--worm-63ad4a2dfed44f209bc7b174f5d0cb84) | mj.artsi | CC BY |
+| Fly bait | [Low Poly House Fly (Diptera)](https://sketchfab.com/3d-models/low-poly-house-fly-diptera-2baa84955f704a4091a274ef4acec24a) | Glowbox 3D | CC BY |
+| Shrimp bait | [Shrimp (Low Poly)](https://sketchfab.com/3d-models/shrimp-low-poly-652650059ff949b39bbed3bfc34d5e87) | Fecalis | CC BY |
+| Chum buckets | [Bucket](https://sketchfab.com/3d-models/bucket-0be255e1fefe489ab07ec468adafb82e) | dmitryartist | CC BY |
+| Horn of Ægir | [Viking Horns](https://sketchfab.com/3d-models/viking-horns-95d68ebbdb374613955c2575e33c83a4) | Vetech82 | CC BY |
+| Allfather's Rod textures | Metal007, Wood018, Fabric022, Rope001 | [ambientCG](https://ambientcg.com) | CC0 |
+
+Several fish (Catfish, Fenringfin, Glacier Grayling, Lingcod, Mistfin, Rimejaw Cod) and the Njord's Regalia crown were
+started from models generated with [Tripo](https://www.tripo3d.ai) and finished by hand. The glowing effects on the top
+rods and on the legendary and boss fish are Valheim's own weapon effects, borrowed from the game while it runs.
 
 The models were rigged, retextured and restyled for Valheim. Licences:
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/),
