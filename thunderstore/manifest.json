@@ -1,7 +1,7 @@
 {
   "name": "Valheim_Deep_Waters",
   "version_number": "1.0.0",
-  "website_url": "",
+  "website_url": "https://github.com/trippydatruth/ValheimDeepWaters",
   "description": "A full fishing overhaul: fish that swim up and bite, tension and drag fights, rods for every era, lures, seven boss fish, rare golden and albino catches, ranks, mastery, a catch log, cleaning and cooking, and an endgame rod and crown.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2351",
