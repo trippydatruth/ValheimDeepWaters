@@ -9,7 +9,8 @@ namespace ValheimDeepWaters
     /// (buff_relic_scale_cape_Albedo / _Normal / _MetallicSmoothness / _Emission textures in a bundle) on both the
     /// dropped cloth and the worn cape. The Pearl of Njord is a whole belt with the pearl in front (the
     /// buff_relic_pearl model): worn, it takes the vanilla belt's place round the wearer's hips. The Rune of Njord is a
-    /// necklace (buff_rune_njord) hung at the base of the neck. Everyone sees them, since the belt a player wears is
+    /// necklace (buff_rune_njord) hung at the base of the neck. Njord's Regalia (buff_regalia_njord, cloned from the
+    /// Dverger circlet) is a crown on the head, in the circlet's place. Everyone sees them, since the belt a player wears is
     /// synced and this runs on every client.
     /// </summary>
     internal static class RelicVisuals
@@ -23,7 +24,7 @@ namespace ValheimDeepWaters
         public static void Apply(GameObject prefab, string baseName)
         {
             if (baseName == "buff_relic_scale") RetextureCape(prefab);
-            if (baseName == PearlModel || baseName == RuneModel) HideWornBelt(prefab);
+            if (baseName == PearlModel || baseName == RuneModel || baseName == "buff_regalia_njord") HideWornBelt(prefab);
         }
 
         /// <summary>The pearl and the rune replace the belt they're cloned from: the vanilla belt (attach_skin) isn't shown when worn.</summary>
@@ -119,6 +120,7 @@ namespace ValheimDeepWaters
             public float Strength = 1f;               // how fully it follows them (0: rigid on Parent, 1: fully skinned)
             public Vector4 Fit;
             public Vector3 Shape = Vector3.one;
+            public bool Helmet;                       // worn in the helmet slot (in place of the vanilla helmet) rather than the belt
             private int _hash;
             public int Hash => _hash != 0 ? _hash : _hash = Item.GetStableHashCode();
         }
@@ -141,9 +143,19 @@ namespace ValheimDeepWaters
             Strength = 0.5f,                          // half: it bends with the chest without denting at every vertex
             Fit = new Vector4(0f, 0.09f, 0.06f, 1.2f), Shape = new Vector3(1f, 1f, 1.15f),   // fitted in game
         };
-        private static readonly Worn[] WornRelics = { Pearl, Rune };
+        // Njord's Regalia (roadmap #24): a crown (22 cm across, build_cleaning_table.py) sitting round the brow, moving with
+        // the head. Fitted in game.
+        private static readonly Worn Regalia = new Worn
+        {
+            Item = Endgame.Regalia, Model = "buff_regalia_njord", Label = "Regalia crown", Helmet = true,
+            Anchor = new[] { "Head" }, Parent = "Head", Bones = new[] { "Head" },
+            Fit = new Vector4(0f, 0.13f, 0.01f, 1f),
+        };
+        private static readonly Worn[] WornRelics = { Pearl, Rune, Regalia };
 
         private static readonly System.Reflection.FieldInfo? UtilityHash = AccessTools.Field(typeof(VisEquipment), "m_currentUtilityItemHash");
+        private static readonly System.Reflection.FieldInfo? HelmetHash = AccessTools.Field(typeof(VisEquipment), "m_currentHelmetItemHash");
+        private static readonly System.Reflection.FieldInfo? HelmetInstance = AccessTools.Field(typeof(VisEquipment), "m_helmetItemInstance");
 
         [HarmonyPatch(typeof(VisEquipment), "UpdateEquipmentVisuals")]
         private static class UpdatePatch
@@ -152,9 +164,10 @@ namespace ValheimDeepWaters
             {
                 if (UtilityHash == null || __instance.m_bodyModel == null) return;
                 int worn = UtilityHash.GetValue(__instance) is int h ? h : 0;
+                int head = HelmetHash?.GetValue(__instance) is int hh ? hh : 0;
                 foreach (var spec in WornRelics)
                 {
-                    bool wearing = worn == spec.Hash;
+                    bool wearing = (spec.Helmet ? head : worn) == spec.Hash;
                     var have = __instance.GetComponents<WornRelic>().FirstOrDefault(w => w.Spec == spec);
                     if (wearing && have == null) (have = __instance.gameObject.AddComponent<WornRelic>()).Attach(__instance, spec);
                     else if (!wearing && have != null) { have.Remove(); have = null; }
@@ -170,9 +183,16 @@ namespace ValheimDeepWaters
             private GameObject? _hiddenBelt;
             private VisEquipment? _vis;
 
-            /// <summary>Hides the worn vanilla belt once per belt instance Valheim spawns.</summary>
+            /// <summary>Hides the worn vanilla belt (or helmet) once per instance Valheim spawns.</summary>
             public void HideBelt(VisEquipment vis)
             {
+                if (Spec != null && Spec.Helmet)
+                {
+                    if (!(HelmetInstance?.GetValue(vis) is GameObject helmet) || helmet == _hiddenBelt) return;
+                    foreach (var r in helmet.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                    _hiddenBelt = helmet;
+                    return;
+                }
                 if (!(UtilityInstances?.GetValue(vis) is System.Collections.Generic.List<GameObject> list) || list.Count == 0) return;
                 if (list[0] == _hiddenBelt) return;
                 HideWornInstances(vis);

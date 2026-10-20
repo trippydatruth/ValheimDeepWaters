@@ -102,12 +102,24 @@ namespace ValheimDeepWaters
 
         public static void Cast(Player player) => Play(() => _cast, player.transform.position + Vector3.up * 1.5f);
         public static void Landed(Vector3 pos) => Play(() => _landSplash, pos, 0.6f);
-        public static void Nibble(Vector3 pos) => Play(() => _nibble, pos);
-        public static void Bite(Vector3 pos) { Play(() => _nibble, pos); Play(() => _landSplash, pos, 0.8f); }
-        public static void HookSet(Vector3 pos) => Play(() => _jump, pos, 0.8f);
-        public static void FishSplash(Vector3 pos, float size) => Play(() => _jump, pos, Mathf.Clamp(size, 0.4f, 1.6f));
-        public static void LineSnap(Vector3 pos) => Play(() => _lineBreak, pos);
-        public static void Landing(Vector3 pos) => Play(() => _jump, pos, 1f);
+        // The local angler's are shared (share: true) so players nearby see and hear them at that line too; a watcher's
+        // copies (RemoteAnglers) play with share: false.
+        private static void Share(bool share, FishFx kind, float arg = 0f) { if (share) AnglerSync.Fx(Player.m_localPlayer, kind, arg); }
+
+        public static void Nibble(Vector3 pos, bool share = true) { Play(() => _nibble, pos); Share(share, FishFx.Nibble); }
+        public static void Bite(Vector3 pos, bool share = true) { Play(() => _nibble, pos); Play(() => _landSplash, pos, 0.8f); Share(share, FishFx.Bite); }
+        public static void HookSet(Vector3 pos, bool share = true) { Play(() => _jump, pos, 0.8f); Share(share, FishFx.HookSet); }
+        public static void FishSplash(Vector3 pos, float size, bool share = true) { Play(() => _jump, pos, Mathf.Clamp(size, 0.4f, 1.6f)); Share(share, FishFx.Splash, size); }
+        public static void LineSnap(Vector3 pos, bool share = true) { Play(() => _lineBreak, pos); Share(share, FishFx.Snap); }
+        public static void Landing(Vector3 pos, bool share = true) { Play(() => _jump, pos, 1f); Share(share, FishFx.Landing); }
+
+        /// <summary>A looping reel sound for another angler (RemoteAnglers): its own source, so it doesn't fight the local reel.</summary>
+        public static AudioSource? MakeRemoteReel()
+        {
+            Resolve();
+            FindReelSounds();
+            return _reelClip != null ? MakeLoop("VDW_RemoteReel", _reelClip) : null;
+        }
 
         private static AudioSource? _drag;
         private static AudioClip? _dragClip;

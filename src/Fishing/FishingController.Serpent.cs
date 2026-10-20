@@ -14,7 +14,7 @@ namespace ValheimDeepWaters
         private const float SerpentMaxAngle = 110f;    // how far round the angler it can circle (other fish: MaxLineAngle)
         private const float ChargeSpeed = 5.5f;        // m/s it closes in on a charge
         private const float ChargeNearest = 7f;        // it never charges closer than this
-        private const float RearRise = 0.6f, RearHold = 1.4f, RearFall = 0.45f;
+        internal const float RearRise = 0.6f, RearHold = 1.4f, RearFall = 0.45f;   // RemoteAnglers rears a watcher's copy the same
         private const float RearPullTire = 3f;         // pulling back on a reared serpent tires it this many times faster
 
         private static bool IsSerpent(FishingSession s) => s.Boss != null && s.Boss.Serpent;
@@ -63,6 +63,7 @@ namespace ValheimDeepWaters
                         s.NextHump = now + Random.Range(1.3f, 2.0f);
                         s.HookedFish?.Surface(0.35f * scale, 1.4f);
                         FishingFx.FishSplash(at, 0.7f * scale);
+                        AnglerSync.Fx(player, FishFx.Hump, 0.35f * scale);   // after the splash: watchers get the hump (and its splash)
                     }
                     if (now >= s.SerpentUntil)
                     {
@@ -92,6 +93,7 @@ namespace ValheimDeepWaters
                         s.RearCrashed = false;
                         s.HookedFish?.Rear(player.transform.position, 0.6f * scale, RearRise, RearHold, RearFall);
                         FishingFx.FishSplash(at, 1.2f * scale);
+                        AnglerSync.Fx(player, FishFx.Rear, 0.6f * scale);
                         GameCamera.instance?.AddShake(player.transform.position, 30f, 1.5f, false);
                         MessageHud.instance?.ShowBiomeFoundMsg($"{name} rears out of the water!", false);
                     }
@@ -129,6 +131,7 @@ namespace ValheimDeepWaters
             s.RearCrashed = true;
             FishingFx.FishSplash(at, 2.2f * scale);
             FishingFx.FishSplash(at + (player.transform.position - at).normalized * 2f, 1.4f * scale);
+            AnglerSync.Fx(player, FishFx.Crash, scale);
             GameCamera.instance?.AddShake(player.transform.position, 30f, 2.2f, false);
             s.Tension += 20f;
         }
@@ -138,6 +141,7 @@ namespace ValheimDeepWaters
         {
             s.HookedFish?.Surface(0.25f * scale, 0.6f);
             FishingFx.FishSplash(at, 1.8f * scale);
+            AnglerSync.Fx(player, FishFx.TailSlap, 0.25f * scale);
             GameCamera.instance?.AddShake(player.transform.position, 30f, 1f, false);
             s.Tension += 12f;
             s.NextSerpentMove = now + Random.Range(1.5f, 3f);

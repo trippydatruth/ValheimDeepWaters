@@ -116,7 +116,7 @@ namespace ValheimDeepWaters
                 FloatPos = spot,
                 Biome = biome
             };
-            SetBiterFish(s, fish, RollWeight(fish));
+            SetBiterFish(s, fish, RollWeight(fish), standIn: true);
 
             s.Drag = _dragLevel;
             s.Bobber = BobberVisual.Create(spot, hidden: lure != null);   // no float on a lure
@@ -204,12 +204,16 @@ namespace ValheimDeepWaters
             return Mathf.Clamp(chance, 0.1f, 0.95f);
         }
 
-        private static void SetBiterFish(FishingSession s, FishDefinition fish, float weightKg)
+        /// <param name="standIn">The placeholder set at the cast, before anything bites: no variant rolled (nor the debug one used up).</param>
+        private static void SetBiterFish(FishingSession s, FishDefinition fish, float weightKg, bool standIn = false)
         {
             s.Fish = fish;
             s.FishStaminaMax = fish.Stamina * Mastery.FightFactor(fish);
             s.FishStamina = s.FishStaminaMax;
             s.FishWeight = weightKg;
+            if (standIn) { s.Variant = RareFish.Normal; return; }
+            s.Variant = DebugVariant != 0 && RareFish.Eligible(fish) ? DebugVariant : RareFish.Roll(fish);
+            if (DebugVariant != 0 && RareFish.Eligible(fish)) DebugVariant = 0;
         }
 
         /// <summary>A fish that doesn't go for the bait is this much less likely to be the one that comes...</summary>

@@ -174,6 +174,7 @@ namespace ValheimDeepWaters
         public float FishStamina;
         public float FishStaminaMax;
         public float FishWeight;
+        public int Variant;           // RareFish: 0 ordinary, 1 golden, 2 albino (rolled when it takes the bait)
 
         public float Tension;
         public float LineDistance;

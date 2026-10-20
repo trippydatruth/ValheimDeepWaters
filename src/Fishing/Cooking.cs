@@ -15,7 +15,7 @@ namespace ValheimDeepWaters
     {
         public const string FoodBasePrefab = "CookedMeat";
 
-        private static int SellValue(FishDefinition f, bool cooked)
+        internal static int SellValue(FishDefinition f, bool cooked)
         {
             if (f.SellValue > 0)
                 return Mathf.Max(1, Mathf.RoundToInt((cooked ? f.SellValue : f.SellValue / 2f)));

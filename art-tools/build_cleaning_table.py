@@ -85,6 +85,9 @@ MATS = {
     "glass":    ((0.78, 0.86, 0.80), (0.62, 0.72, 0.66), 0.05, 0.0, 0.0, "noise"),
     "gold":     ((0.88, 0.68, 0.30), (0.62, 0.44, 0.16), 0.3, 0.8, 0.0, "noise"),       # brass fittings
     "eitr":     ((0.55, 0.30, 1.0), (0.80, 0.62, 1.0), 0.2, 0.0, 1.0, "flat", (0.62, 0.42, 1.0)),
+    # Njord's Regalia (roadmap #24)
+    "pearl":    ((0.96, 0.94, 0.90), (0.82, 0.86, 0.92), 0.12, 0.3, 0.06, "noise", (0.9, 0.95, 1.0)),
+    "seascale": ((0.16, 0.48, 0.44), (0.06, 0.22, 0.24), 0.3, 0.6, 0.0, "scales_u"),
 }
 G = 8    # 8 x 8 tiles
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
@@ -701,6 +704,26 @@ elif PIECE == "prep_dried":
         n0 = mark(); roundfish(0.22, "driedfish", fat=0.6); turn(n0, (0, 0, 0), 'Y', 90)                                # lay it along X, head toward +X
         turn(n0, (0, 0, 0), 'X', 90); shift(n0, (0.0, 0.0, 0.012 + 0.007 * (k % 2))); turn(n0, (-0.19, 0, 0), 'Z', -16 + 8 * k)   # fanned out from the tied tails
     ring((-0.175, 0.0, 0.016), (1, 0, 0), 0.02, 0.003, "rope", seg=12)
+elif PIECE == "buff_regalia_njord":
+    # Njord's Regalia: a silver crown made from the four relics - a band of Jormungandr's sea-green scales between gold
+    # rims, seven points (one per boss fish) tipped with glowing gems, the Pearl of Njord at the front, a Golden Hook
+    # hanging at each side and the Horn of Aegir curled at the back. Base at z = 0, front toward -Y, ~22 cm across.
+    R, H = 0.104, 0.042
+    lathe([(R - 0.006, 0.0), (R, 0.0), (R, H), (R - 0.006, H), (R - 0.006, 0.0)], "steel", 48, cap=False)        # the silver band
+    lathe([(R + 0.0015, 0.011), (R + 0.0015, H - 0.011)], "seascale", 48, cap=False)                             # the scale band
+    for z in (0.003, H - 0.002): ring((0, 0, z), (0, 0, 1), R + 0.001, 0.0035, "gold", seg=48, mseg=6)          # gold rims
+    for k in range(7):
+        a = -math.pi / 2 + k * 2 * math.pi / 7                                    # point 0 over the front
+        tall = 0.07 if k == 0 else (0.055 if k % 2 else 0.045)
+        base = (R * math.cos(a), R * math.sin(a), H - 0.004); tip = (R * 1.02 * math.cos(a), R * 1.02 * math.sin(a), H + tall)
+        spike(base, tip, 0.012, "gold", seg=8)
+        blob(tip, 0.0075, "ice" if k else "pearl", seg=10, rings=6)                 # gems on the tips; the front one a pearl
+    blob((0, -(R + 0.012), H * 0.5), 0.017, "pearl", seg=16, rings=10)                                          # the Pearl of Njord
+    ring((0, -(R + 0.004), H * 0.5), (0, 1, 0), 0.019, 0.003, "gold", seg=20, mseg=6)                            # its gold setting
+    for sx in (-1, 1):
+        n0 = mark(); hook((0, 0, 0), 0.05, "gold", r=0.0025, tilt=90); shift(n0, (sx * (R + 0.006), 0.0, 0.006))           # the Golden Hooks
+    horn = [(0.03 * math.sin(t * 2.2) - 0.015, R + 0.008 + 0.01 * t, 0.012 + 0.03 * t) for t in np.linspace(0, 1, 10)]
+    tube(horn, list(np.linspace(0.009, 0.003, 10)), "gold", seg=10)                                            # the Horn of Aegir
 elif PIECE == "piece_plaque":
     # The Gold Trophy Plaque (roadmap #22): a dark board with notched corners, a raised lighter panel, a gold rim, a brass
     # nameplate and studs. A wall piece: its back is flat on Y = 0 and everything stands out toward -Y, centred on the

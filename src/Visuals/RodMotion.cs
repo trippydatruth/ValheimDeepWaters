@@ -145,6 +145,16 @@ namespace ValheimDeepWaters
             _charging = false;
         }
 
+        /// <summary>Any angler's rod tip, as their rod is posed this frame (for drawing their line).</summary>
+        public static bool TryGetTip(Player p, out Vector3 tip)
+        {
+            Anglers.TryGetValue(p.GetInstanceID(), out var a);
+            if (a?.Rod != null && a.Rig != null && a.Rig.Tip != null) { tip = a.Rig.Tip.position; return true; }
+            if (a?.Rod != null && a.HasTip) { tip = a.Rod.TransformPoint(a.TipLocal); return true; }
+            tip = Vector3.zero;
+            return false;
+        }
+
         public static bool TryGetTip(out Vector3 tip)
         {
             var a = Local;
@@ -171,6 +181,9 @@ namespace ValheimDeepWaters
                 if (end.HasValue) st.Target = end.Value;
             }
             AnglerSync.Write(player, st);
+            bool hooked = s != null && s.Phase == FishingPhase.Fighting;
+            AnglerSync.SetLook(player, FishingBuffs.ActiveFloat(player)?.Id ?? "", hooked ? s!.Fish.Id + (s.Variant != 0 ? "#" + s.Variant : "") : "",
+                               hooked ? BossFish.ScaleFor(s!.Fish.Id) * FishSize.ModelScale(s.Fish, s.FishWeight) : 1f);
             Animate(player, st, RodEvent.None);
         }
 

@@ -67,7 +67,8 @@ namespace ValheimDeepWaters
             if (Hidden) RodMotion.Tap(Mathf.Clamp01(depth / 0.12f));
         }
 
-        public static BobberVisual Create(Vector3 startPosition, bool hidden = false)
+        /// <param name="remoteFloat">For another angler's line (RemoteAnglers): the float buff they have on, instead of the local player's.</param>
+        public static BobberVisual Create(Vector3 startPosition, bool hidden = false, bool remote = false, BuffDefinition? remoteFloat = null)
         {
             var go = new GameObject("VDW_Bobber");
             var bobber = go.AddComponent<BobberVisual>();
@@ -77,7 +78,7 @@ namespace ValheimDeepWaters
 
             GameObject ballGo;
             // a float buff (the Lantern Float...) puts its own float on the line while it lasts
-            var floatDef = FishingBuffs.ActiveFloat(Player.m_localPlayer);
+            var floatDef = remote ? remoteFloat : FishingBuffs.ActiveFloat(Player.m_localPlayer);
             string model = floatDef != null && CustomModels.TryGetCustom(floatDef.FloatModel, out _, out _) ? floatDef.FloatModel : "bobber";
             if (CustomModels.TryGetCustom(model, out var bobberMesh, out var bobberMat))
             {
@@ -149,9 +150,11 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>Called from Plugin.LateUpdate, after the rod has been animated for this frame.</summary>
-        public void Refresh(Player p)
+        public void Refresh(Player p, Vector3? tipAt = null)
         {
-            if (!RodMotion.TryGetTip(out var tip))
+            Vector3 tip;
+            if (tipAt.HasValue) tip = tipAt.Value;
+            else if (!RodMotion.TryGetTip(out tip))
             {
                 Vector3 eye = p.m_eye != null ? p.m_eye.position : p.transform.position + Vector3.up * 1.6f;
                 tip = eye + p.transform.forward * 0.6f + Vector3.down * 0.35f;

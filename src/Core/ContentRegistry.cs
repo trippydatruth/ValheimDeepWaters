@@ -60,6 +60,7 @@ namespace ValheimDeepWaters
                 RemoveVanillaFishingGear();
                 BaitSources.Register();
                 try { FishSize.RegisterTrophyMount(); } catch (Exception ex) { Plugin.Log.LogError($"Trophy mount failed: {ex.Message}"); }
+                try { RareFish.RegisterIcons(); } catch (Exception ex) { Plugin.Log.LogError($"Rare fish icons failed: {ex}"); }
                 try { Relics.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Relics failed: {ex}"); }
                 try { Mastery.RegisterPlaques(); } catch (Exception ex) { Plugin.Log.LogError($"Gold plaques failed: {ex}"); }
                 try { FishingBoat.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fishing Boat failed: {ex}"); }
@@ -120,6 +121,8 @@ namespace ValheimDeepWaters
         /// </summary>
         private static readonly (string kind, string id, string oldRecipe)[] UpdatedRecipes =
         {
+            // the Leviathan needs two of every boss fish's material, the Fimbul Salmon's too (0.15.0, roadmap #24)
+            ("Rods", "leviathan", "VDW_BossMat_eikthyr_elver:1,VDW_BossMat_elder_bass:1,VDW_BossMat_bonemass_catfish:1,VDW_BossMat_moder_scale:1,VDW_BossMat_yagluthgill:1,VDW_BossMat_queen_eel:1,YggdrasilWood:10,FlametalNew:6"),
             // boss lures: the boss's own drops where it gives several, crafted at the biome's station (0.14.0)
             ("Baits", "lure_antler", "TrophyEikthyr:1,HardAntler:1"),
             ("Baits", "lure_root", "TrophyTheElder:1,Root:1"),

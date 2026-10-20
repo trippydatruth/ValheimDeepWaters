@@ -3,7 +3,7 @@
 # X), fore-grip, a tapered blank, five guides getting smaller toward the tip, a tip-top and a modelled line.
 # Every part is UV-mapped into a tile of one texture atlas, painted procedurally per theme (albedo, ORM, normal,
 # emission). Writes an OBJ in centimetres for rig_rod2.py, the maps, and the reel's bounding box (for the turning part).
-# env: VDW_THEME (blackmetal | yggdrasil | ashwood | haldor | leviathan | frostwood), VDW_OUT (folder), VDW_NAME
+# env: VDW_THEME (blackmetal | yggdrasil | ashwood | haldor | leviathan | frostwood | allfather), VDW_OUT (folder), VDW_NAME
 import bpy, bmesh, json, math, os
 import numpy as np
 from mathutils import Matrix, Vector
@@ -106,6 +106,8 @@ cfg = {
     "haldor":     dict(grip_r=0.022, cap="accent", seat="accent", fore="grip", reel="accent", rim="accent", knob="accent", guide="accent", wrap="accent", extra=["bands", "horn", "gem"], reel_type="conventional"),
     "leviathan":  dict(grip_r=0.023, cap="bone", seat="bone", fore="grip", reel="metal", rim="bone", knob="core", guide="bone", wrap="bone", extra=["sinews", "fang", "teeth"], reel_type="spinning", grip_z=45),
     "frostwood":  dict(grip_r=0.022, cap="metal", seat="metal", fore="grip", reel="metal", rim="accent", knob="core", guide="metal", wrap="grip", extra=["inlay", "core", "icicles"]),
+    # the endgame rod (roadmap #24): dark ash and gold, seven sinews (one per boss fish), Odin's eye glowing on the reel
+    "allfather":  dict(grip_r=0.023, cap="accent", seat="accent", fore="grip", reel="metal", rim="accent", knob="core", guide="accent", wrap="grip", extra=["inlay", "bands", "sinews", "core"], sinews=7),
 }[THEME]
 REEL_TYPE = cfg.get("reel_type", "centrepin")
 # Parts whose name starts with "turn_" are the reel's turning part (rigged to Reel.Spool, about X through PIVOT).
@@ -260,8 +262,9 @@ if "horn" in cfg["extra"]:             # Haldor's little mead horn on a cord bel
     tube(hp, [0.0008] * 3, "grip", seg=5, name="cord")
     horn = [(0.01 + 0.012 * math.sin(t * 1.4), 0.055 + 0.02 * t, 0.345 - 0.06 * t + 0.02 * t * t) for t in np.linspace(0, 1, 10)]
     tube(horn, list(np.linspace(0.009, 0.002, 10)), "accent", seg=10, name="horn")
-if "sinews" in cfg["extra"]:           # six sinew bands, one per great fish, glowing in its colour
-    for k, z in enumerate((0.78, 1.12, 1.46, 1.8, 2.14, 2.48)):
+if "sinews" in cfg["extra"]:           # a sinew band per great fish (six, or seven with the Fimbul Salmon), glowing in its colour
+    NSIN = cfg.get("sinews", 6)
+    for k, z in enumerate(np.linspace(0.78, 2.48 + (0.2 if NSIN > 6 else 0.0), NSIN)):
         rb = R_BLANK0 + (R_BLANK1 - R_BLANK0) * ((z - Z_BLANK) / (L - Z_BLANK))
         torus((0, 0, z), (0, 0, 1), rb * 1.18, rb * 0.42, "glowtrim", seg=16, mseg=6, name=f"sinew{k}")
 if "fang" in cfg["extra"]:             # a fang past the tip
@@ -395,6 +398,22 @@ elif THEME == "leviathan":
     flat("core", (0.4, 0.9, 1.0), 0.2, 0.0, e=(0.35, 0.85, 1.0)); flat("line", (0.6, 0.95, 1.0), 0.4)
     metal_tile("accent", (0.82, 0.84, 0.86), 0.25, 0.9, 0.08); flat("tendril", (0.1, 0.15, 0.2))   # silver-bone trim
 
+elif THEME == "allfather":
+    wood("blank", (0.2, 0.16, 0.13), (0.08, 0.06, 0.05), 55)                    # dark ash
+    ys, xs, u, v = uvgrid("blank")                         # Odin's runes down the front, glowing blue
+    rune = ((np.abs(u - 0.25) < 0.045) & ((v * 22) % 1 < 0.5) & (N3[ys, xs] > 0.4)) | ((np.abs(u - 0.75) < 0.04) & ((v * 16 + 0.3) % 1 < 0.38) & (N3[ys, xs] > 0.45))
+    alb[ys, xs][rune] = (0.6, 0.78, 1.0); emi[ys, xs] = np.where(rune[..., None], np.array([0.35, 0.55, 1.0]), 0)
+    wrap("grip", (0.16, 0.09, 0.06), (0.95, 0.75, 0.3))                           # dark leather wound with gold thread
+    metal_tile("metal", (0.17, 0.18, 0.21), 0.25, 1.0, 0.2)                       # blackened silver reel
+    metal_tile("accent", (0.98, 0.76, 0.32), 0.22, 1.0, 0.08)                     # gold fittings and guides
+    # seven sinews: the six great fish of the Leviathan, and the Fimbul Salmon's icy white-blue
+    ys, xs, u, v = uvgrid("glowtrim")
+    cols = np.array([(0.35, 0.75, 1.0), (0.45, 1.0, 0.3), (0.4, 0.95, 1.0), (0.75, 0.95, 0.25), (1.0, 0.3, 0.25), (0.85, 0.35, 1.0), (0.85, 0.95, 1.0)])
+    band = np.clip((u * 7).astype(int), 0, 6); c7 = cols[band] * (0.7 + 0.3 * np.sin(v * 40)[..., None])
+    alb[ys, xs] = c7; emi[ys, xs] = c7 * 0.9; rough[ys, xs] = 0.4
+    flat("core", (0.55, 0.75, 1.0), 0.1, 0.0, e=(0.45, 0.7, 1.0))                # Odin's eye
+    flat("line", (0.95, 0.88, 0.6), 0.5); flat("tendril", (0.2, 0.15, 0.1)); flat("bone", (0.9, 0.86, 0.75))
+
 elif THEME == "frostwood":
     wood("blank", (0.74, 0.77, 0.8), (0.46, 0.52, 0.6), 45)                     # pale, frost-grey Timberwood
     ys, xs, u, v = uvgrid("blank"); vein = np.abs(noise(24)[ys, xs] - 0.5) < 0.012   # faint glowing frost veins
@@ -405,8 +424,8 @@ elif THEME == "frostwood":
     flat("core", (0.55, 0.85, 1.0), 0.15, 0.0, e=(0.45, 0.8, 1.0)); flat("glowtrim", (0.7, 0.9, 1.0), 0.05, 0.0, e=(0.35, 0.7, 1.0))
     flat("line", (0.85, 0.92, 0.98), 0.5); flat("tendril", (0.4, 0.45, 0.5)); flat("bone", (0.85, 0.88, 0.9))
 
-# the sinew rings take one fish's colour each: put each ring's UVs into its own sixth of the glowtrim tile
-if THEME == "leviathan":
+# the sinew rings take one fish's colour each: put each ring's UVs into its own band of the glowtrim tile
+if "sinews" in cfg["extra"]:
     me2 = ob.data; uvd = me2.uv_layers[0].data
     import collections
     # find which loose part each vertex belongs to (creation order == part order)
@@ -429,7 +448,7 @@ if THEME == "leviathan":
             j = sinews.index(pidx)
             for li in poly.loop_indices:
                 uu, vv2 = uvd[li].uv
-                fu = (uu - a) / (c - a); uvd[li].uv = (a + (c - a) * ((j + 0.15 + 0.7 * fu) / 6), vv2)
+                fu = (uu - a) / (c - a); uvd[li].uv = (a + (c - a) * ((j + 0.15 + 0.7 * fu) / len(sinews)), vv2)
 
 # normal map from the height field (OpenGL / +Y up), soft
 gy, gx = np.gradient(hgt * 2.0)

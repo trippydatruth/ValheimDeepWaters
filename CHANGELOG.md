@@ -19,6 +19,17 @@
 - Rod tooltips show the stats for the rod's level.
 - A warning in the log names any recipe item the game doesn't have (a typo in a data file).
 
+- **Endgame**: boss lures cost more each time you land their boss (and the Bog Witch charges more); the Leviathan needs
+  two materials from each of the seven boss fish; the Allfather's Rod (every boss landed) and Njord's Regalia, a crown
+  made from the four relics (every boss landed three times), worn on the head. The Allfather's Rod is a hand-made model:
+  red wood, gold guards and reel, glowing runes, Mistwalker mist, snowflakes and ribbon lightning.
+- **Rod effects follow the bend**: the top rods carry their effects along the rod as it bends. The Ashwood Rod now has
+  Dyrnwyn's flames, the Frostwood Rod snowflakes and a frost cloud.
+- **Rare variants**: golden (1 in 300) and albino (1 in 150) versions of every ordinary species, with tinted icons and
+  models; they don't stack with ordinary fish, give rank points, sell for more and are tracked in the catch log.
+- **Fights everyone can see**: players nearby see your line, float or lure and the fish on your hook (its own model,
+  running, leaping, thrashing; a boss at its size, the Queen Eel circling, rearing and lashing its tail), with the splashes, bites and line snaps, and hear your reel; landing a fish tells the
+  players around you.
 - **Rewards rework**: catch log rewards every five species, biome sets (catch every fish of a biome in that biome for
   its bait, coins and rank points), the odd valuable inside a catch (amber, rubies, silver necklaces by where you fish), rank points for a
   personal best, a gift at each angler rank, and Hildir's bounty prizes are now a Yule Hat, Thunder Stone, the Horn of

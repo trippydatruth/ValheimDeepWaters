@@ -130,6 +130,8 @@ namespace ValheimDeepWaters
                 if (item?.m_customData == null || !item.m_customData.TryGetValue("vdw_weight_kg", out var raw)) return;
                 if (!float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var kg)) return;
 
+                if (item.m_variant != RareFish.Normal && RareFish.IsFishItem(item))
+                    __result = $"<color={(item.m_variant == RareFish.Golden ? "#FFD25A" : "#F2DCDC")}><b>{RareFish.Name(item.m_variant)}</b> - a rare variant</color>\n" + __result;
                 string size = NameOf(item.m_quality);
                 string color = item.m_quality >= MaxClass ? "#FFC34D" : "orange";
                 __result += $"\n\nSize: <color={color}>{size}</color>  ({kg:0.0} kg)";

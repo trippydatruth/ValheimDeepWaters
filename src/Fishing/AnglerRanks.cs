@@ -126,7 +126,8 @@ namespace ValheimDeepWaters
         public static bool Locked(Player? player, Recipe? recipe)
         {
             if (player == null || recipe == null || recipe.m_item == null) return false;
-            return LockedBy.TryGetValue(recipe.m_item.gameObject.name, out int need) && RankIndex(player) < need;
+            string prefab = recipe.m_item.gameObject.name;
+            return (LockedBy.TryGetValue(prefab, out int need) && RankIndex(player) < need) || Endgame.Locked(player, prefab);
         }
 
         /// <summary>Locked recipes aren't discovered (no "new recipe" popup) until you have the rank.</summary>
@@ -147,9 +148,7 @@ namespace ValheimDeepWaters
         {
             private static void Postfix(Player __instance, ref List<Recipe> available)
             {
-                if (LockedBy.Count == 0) return;
-                int rank = RankIndex(__instance);
-                available.RemoveAll(r => r != null && r.m_item != null && LockedBy.TryGetValue(r.m_item.gameObject.name, out int need) && rank < need);
+                available.RemoveAll(r => Locked(__instance, r));   // rank-locked, and the endgame's (Endgame)
             }
         }
     }

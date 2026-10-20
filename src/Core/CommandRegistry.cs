@@ -76,7 +76,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -128,12 +128,29 @@ namespace ValheimDeepWaters
                     int count = args.Length > 2 && int.TryParse(args[2], out var c) ? c : 50;
                     int before = Mastery.Count(p, fish.Id);
                     CatchLog.SetCount(p, fish.Id, count);
+                    Endgame.RefreshLureCosts(p);   // a boss fish's count is its landings: its lure's cost follows
                     string msg = Mastery.OnCatch(fish, before, count);
                     foreach (var reward in CatchLog.ClaimRewards(p)) msg += " " + reward;   // as a real catch would
                     var here = Heightmap.FindBiome(p.transform.position);                    // ...made where you stand
                     Rewards.RecordCaughtIn(p, fish.Id, here, here == Heightmap.Biome.Ocean, false);
                     msg += Rewards.ClaimBiomeSets(p);
                     Console.instance.Print($"{fish.Name}: {count} caught, mastery {(Mastery.Tier(p, fish) == 0 ? "none" : Mastery.TierNames[Mastery.Tier(p, fish)])}.{msg.Replace("\n", " ")}");
+                }
+                else if (args[0].Equals("variant", StringComparison.OrdinalIgnoreCase))
+                {
+                    int v = args.Length > 1 && args[1].StartsWith("a", StringComparison.OrdinalIgnoreCase) ? RareFish.Albino : RareFish.Golden;
+                    FishingController.DebugVariant = v;
+                    Console.instance.Print($"The next ordinary fish to bite comes up {RareFish.Name(v).ToLowerInvariant()}.");
+                }
+                else if (args[0].Equals("rarefish", StringComparison.OrdinalIgnoreCase))
+                {
+                    var p = Player.m_localPlayer;
+                    if (p == null || args.Length < 2 || !ContentRegistry.Fish.TryGetValue(args[1], out var fish) || !ContentRegistry.FishItems.TryGetValue(fish.Id, out var prefab))
+                    { Console.instance.Print("Usage: vdw_debug rarefish <fish id> [golden|albino]"); return; }
+                    int v = args.Length > 2 && args[2].StartsWith("a", StringComparison.OrdinalIgnoreCase) ? RareFish.Albino : RareFish.Golden;
+                    var added = p.GetInventory().AddItem(prefab.name, 1, 2, v, 0L, "", false);
+                    if (added != null) { added.m_customData["vdw_weight_kg"] = ((fish.MinWeightKg + fish.MaxWeightKg) / 2f).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture); }
+                    Console.instance.Print(added != null ? $"Gave you a {RareFish.Name(v).ToLowerInvariant()} {fish.Name}." : "No room.");
                 }
                 else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))
                 {

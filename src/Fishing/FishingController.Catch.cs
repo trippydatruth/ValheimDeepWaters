@@ -53,6 +53,7 @@ namespace ValheimDeepWaters
                 // Size class as the item's quality: shown on the icon, sizes don't stack together (so a
                 // trophy keeps its weight), and item stands show bigger classes bigger.
                 data.m_quality = FishSize.ClassFor(rank);
+                data.m_variant = s.Variant;   // golden / albino: picks its tinted icon, and it never stacks with ordinary ones
 
                 Vector3 dropPos = Drops.CatchPos(player);
                 Drops.Give(player, drop, data, 1, dropPos);
@@ -105,6 +106,21 @@ namespace ValheimDeepWaters
             text += AnglerRanks.OnCatch(player, s.FishWeight, rank >= TrophyThreshold && !baitfish, pointsBefore);
 
             if (s.Fish.Legendary) text = "LEGENDARY!\n" + text;
+            if (s.Variant != RareFish.Normal)
+            {
+                bool first = RareFish.Record(player, s.Fish.Id, s.Variant);
+                int pts = s.Variant == RareFish.Golden ? RareFish.GoldenPoints : RareFish.AlbinoPoints;
+                Rewards.AddBonusPoints(player, pts);
+                text = $"A {RareFish.Name(s.Variant).ToLowerInvariant()} {s.Fish.Name}!" + (first ? " (new in your catch log)" : "") + $" +{pts} rank points\n" + text;
+                FishingFx.FishSplash(FishPos(player, s), 1.4f);
+            }
+            CatchNews.Send(player, s.Fish, s.FishWeight, s.Variant);
+            if (BossFish.IsBoss(s.Fish.Id))
+            {
+                Endgame.RefreshLureCosts(player);   // its lure costs a little more next time
+                string next = Endgame.NextStep(player);
+                if (next.Length > 0) text += "\n" + next;
+            }   // players nearby hear of it (a boss: the whole server, in BossFish)
             RodMotion.Trigger(RodEvent.CatchLift);
             FishingFx.Landing(FishPos(player, s));
             Msg(text);

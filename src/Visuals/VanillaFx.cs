@@ -24,6 +24,10 @@ namespace ValheimDeepWaters
             public float Size = 1f;         // extra particle size multiplier
             public float Orbit;             // >0: particles circle the body along its length at this speed
             public bool AlongBody;          // emit from a thin box down the body's length (not the mesh surface), no throw, little jitter
+            public bool Ribbon;             // keep the vanilla ribbon trails (lightning joined point to point) instead of per-particle sparks
+            public float Life = 1f;         // particle lifetime multiplier (shorter flames)
+            public string[] Skip = Array.Empty<string>();   // child objects of the effect left out (e.g. a big glow sprite)
+            public bool Vary;               // on a rod's bones: each copy a different size and height (patchy, not an even line)
             public Fx(string prefab, string path, bool light = false, Color? tint = null, float rate = 1f, float size = 1f) { Prefab = prefab; Path = path; Light = light; Tint = tint; Rate = rate; Size = size; }
         }
 
@@ -49,9 +53,12 @@ namespace ValheimDeepWaters
         private static readonly Dictionary<string, Fx[]> RodFx = new()
         {
             ["yggdrasil"] = new[] { new Fx("SwordNiedhoggNature", "attach/default/glow/Spores") },
-            ["ashwood"] = new[] { new Fx("StaffFireball", "attach/equiped/embers") },
-            ["frostwood"] = new[] { new Fx("MaceSilver", "attach/effects/vfx_BloodHit 1") },
+            ["ashwood"] = new[] { new Fx("SwordDyrnwyn", "attach/Burny vfx", false, null, 0.18f, 0.36f) { Life = 0.42f, Skip = new[] { "flare" }, Vary = true }, new Fx("SwordDyrnwyn", "attach/Point Light", true) },
+            ["frostwood"] = new[] { new Fx("MaceSilver", "attach/effects/vfx_BloodHit 1", false, null, 0.5f, 0.6f), new Fx("MaceSilver", "attach/effects/soft cloud", false, FrostCloud, 0.35f, 0.15f) { Life = 0.5f } },   // the Allfather's snowfall (a little more) in Frostner's frost cloud
             ["leviathan"] = new[] { new Fx("SwordMistwalker", "attach/Mistwalker/Particle System") },
+            // Mistwalker's mist, Frostner's snowflakes and the gem sword's ribbon lightning (bolts joined point to point), one light
+            ["allfather"] = new[] { new Fx("SwordMistwalker", "attach/Mistwalker/Particle System", false, null, 0.5f, 0.55f), new Fx("MaceSilver", "attach/effects/vfx_BloodHit 1", false, null, 0.4f, 0.6f),
+                                    new Fx("SwordNiedhoggLightning", "attach/default/glow/Lightning", false, null, 0.55f, 0.65f) { Ribbon = true }, new Fx("SwordMistwalker", "attach/Mistwalker/Point light", true, SkyBolt) },
         };
 
         private static readonly HashSet<string> Warned = new();
@@ -71,7 +78,101 @@ namespace ValheimDeepWaters
             if (!RodFx.TryGetValue(rodId, out var list)) return;
             var attach = itemPrefab.transform.Find("attach") ?? itemPrefab.transform;
             if (attach.Find("vdw_fx") != null) return;
-            Attach(attach, list, Emitter(attach), "rod_" + rodId);
+            if (!AttachAlongBones(attach, list, "rod_" + rodId)) Attach(attach, list, Emitter(attach), "rod_" + rodId);
+        }
+
+        /// <summary>
+        /// A rigged rod's effects follow it as it bends: each blank bone (Rod.1, Rod.2, ...) carries its own copy, emitting
+        /// from a thin box along its segment and simulating in that bone's space, so the sparks ride the curve instead of
+        /// the straight rod at rest (or streaking off behind in the world). Ribbon lightning then joins points within each
+        /// segment: a chain of bolts up the rod. The one light sits on the middle bone. False if the rod has no such bones.
+        /// </summary>
+        private const float BoneRate = 0.5f;   // eight copies up a rod added up to too much: every copy at half rate
+        private static readonly float[] VaryPattern = { 0.55f, 1.15f, 0.8f, 1.35f, 0.65f, 1.0f, 0.5f, 1.25f };
+
+        private static bool AttachAlongBones(Transform attach, Fx[] list, string what)
+        {
+            var bones = new List<Transform>();
+            for (int i = 1; ; i++)
+            {
+                var b = attach.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Rod." + i);
+                if (b == null) break;
+                bones.Add(b);
+            }
+            var tip = attach.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Rod.Tip");
+            if (bones.Count < 2) return false;
+            var holder = new GameObject("vdw_fx"); holder.transform.SetParent(attach, false);
+            int made = 0;
+            foreach (var fx in list)
+            {
+                var src = Source(fx);
+                if (src == null) continue;
+                for (int i = 0; i < bones.Count; i++)
+                {
+                    var bone = bones[i];
+                    var next = i + 1 < bones.Count ? bones[i + 1] : tip;
+                    if (next == null) continue;
+                    bool lightHere = i == bones.Count / 2;
+                    float vary = fx.Vary ? VaryPattern[i % VaryPattern.Length] : 1f;
+                    if (fx.Light && !lightHere && src.GetComponentsInChildren<ParticleSystem>(true).Length == 0) continue;   // a light-only effect: one copy
+                    var go = UnityEngine.Object.Instantiate(src.gameObject, bone, false);
+                    go.name = "vdw_fx_" + src.name;
+                    go.SetActive(true);
+                    go.transform.localPosition = Vector3.zero; go.transform.localRotation = Quaternion.identity; go.transform.localScale = Vector3.one;
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                        if (r is MeshRenderer || r is SkinnedMeshRenderer) r.enabled = false;
+                    foreach (var c in go.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
+                    foreach (var t in go.GetComponentsInChildren<Transform>(true).Where(t => fx.Skip.Contains(t.name)).ToArray())
+                        if (t != null && t != go.transform) UnityEngine.Object.DestroyImmediate(t.gameObject);
+                    // the segment in the bone's own space: from the bone to the next one
+                    Vector3 seg = bone.InverseTransformPoint(next.position);
+                    float segLen = seg.magnitude * bone.lossyScale.x;                   // metres
+                    foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
+                    {
+                        var main = ps.main;
+                        main.simulationSpace = ParticleSystemSimulationSpace.Local;      // ride the bone
+                        main.scalingMode = ParticleSystemScalingMode.Shape;
+                        if (fx.Tint is Color tint) main.startColor = tint;
+                        main.startSizeMultiplier *= fx.Size * vary;
+                        main.startSpeedMultiplier *= 0.15f;
+                        main.startLifetimeMultiplier *= fx.Life * vary;
+                        var noise = ps.noise; if (noise.enabled) noise.strengthMultiplier *= fx.Size;
+                        var trails = ps.trails;
+                        if (trails.enabled)
+                        {
+                            if (trails.mode == ParticleSystemTrailMode.Ribbon && !fx.Ribbon) { trails.mode = ParticleSystemTrailMode.PerParticle; trails.lifetimeMultiplier = 0.35f; }
+                            trails.widthOverTrailMultiplier *= Mathf.Max(fx.Size, 0.5f);
+                        }
+                        var vel = ps.velocityOverLifetime;
+                        if (vel.enabled) { vel.orbitalXMultiplier = 0f; vel.orbitalYMultiplier = 0f; vel.orbitalZMultiplier = 0f; vel.radialMultiplier = 0f; }
+                        var sh = ps.shape;
+                        sh.enabled = true; sh.shapeType = ParticleSystemShapeType.Box; sh.boxThickness = Vector3.zero;
+                        sh.position = seg * 0.5f;
+                        sh.rotation = Quaternion.FromToRotation(Vector3.up, seg).eulerAngles;
+                        float thick = 0.04f / Mathf.Max(bone.lossyScale.x, 1e-4f);
+                        sh.scale = new Vector3(thick, seg.magnitude, thick);
+                        var em = ps.emission;
+                        float rateK = fx.Rate * Mathf.Clamp(segLen, 0.1f, 1f) * BoneRate * vary;
+                        em.rateOverTimeMultiplier *= rateK;                                 // sized for a 1 m blade: a segment's share, thinned
+                        em.rateOverDistanceMultiplier *= rateK;                             // Dyrnwyn's flames and the frost staff's flakes mostly come from moving
+                        var bursts = new ParticleSystem.Burst[em.burstCount]; em.GetBursts(bursts);
+                        for (int bi = 0; bi < bursts.Length; bi++) bursts[bi].count = new ParticleSystem.MinMaxCurve(Mathf.Max(1f, bursts[bi].count.constant * fx.Rate * BoneRate));
+                        em.SetBursts(bursts);
+                        ps.Play(true);
+                    }
+                    var lights = go.GetComponentsInChildren<Light>(true);
+                    for (int l = 0; l < lights.Length; l++)
+                    {
+                        if (!fx.Light || !lightHere || l > 0) { UnityEngine.Object.DestroyImmediate(lights[l]); continue; }
+                        lights[l].range = Mathf.Max(lights[l].range, 2f) * 1.5f;
+                        lights[l].transform.localPosition = seg * 0.5f;
+                        if (fx.Tint is Color c) lights[l].color = c;
+                    }
+                    made++;
+                }
+            }
+            if (made > 0) Plugin.Log.LogDebug($"Effects: '{what}' carries {made} vanilla effect copies along its bones.");
+            return made > 0;
         }
 
         /// <summary>The biggest visible model renderer under a transform (the rigged one first).</summary>

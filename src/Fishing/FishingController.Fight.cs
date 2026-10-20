@@ -329,6 +329,7 @@ namespace ValheimDeepWaters
                 {
                     s.HookedFish = HookedFishVisual.Create(fishPrefab, ContentRegistry.ModelKeyFor(s.Fish), BossFish.ScaleFor(s.Fish.Id) * FishSize.ModelScale(s.Fish, s.FishWeight));
                     if (s.HookedFish != null) s.HookedFish.StayUnder = 0.05f;
+                    RareFish.TintModel(s.HookedFish?.gameObject, s.Variant);   // a golden or albino one shows as it is
                 }
 
                 if (s.BaitVisual != null)
@@ -472,6 +473,7 @@ namespace ValheimDeepWaters
                 s.HookedFish?.Leap(height, duration);
                 s.Tension += 8f; // head shake at the top of the leap
                 FishingFx.FishSplash(FishPos(player, s), 0.5f + s.FishWeight / 20f);
+                AnglerSync.Fx(player, FishFx.Leap, height);   // last, so watchers get the leap (it splashes there too)
             }
         }
 

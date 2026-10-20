@@ -56,6 +56,7 @@ public static class VdwModelImporter
         new Entry("rod_haldor", "rod", Kind.Rigged, 1f),
         new Entry("rod_leviathan", "rod", Kind.Rigged, 1.5f),
         new Entry("rod_frostwood", "rod", Kind.Rigged, 1.5f),   // the Deep North (build_rod_model.py frostwood)
+        new Entry("rod_allfather", "rod", Kind.Rigged, 1.5f),   // the endgame rod (roadmap #24, build_rod_model.py allfather)
         new Entry("bobber", "rod", Kind.Static, 1.5f),
         new Entry("float_lantern", "rod", Kind.Static, 1.5f),   // the Lantern Float on the line (a float buff; build_cleaning_table.py float_lantern)
         new Entry("hook_tiny", "hooks", Kind.Static, 0f),
@@ -160,6 +161,7 @@ public static class VdwModelImporter
         new Entry("buff_chum_seaweed", "buffs", Kind.Static),
         new Entry("buff_spawning_musk", "buffs", Kind.Static, 1.5f),
         new Entry("buff_lantern_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_regalia_njord", "buffs", Kind.Static, 1.5f),   // Njord's Regalia crown (roadmap #24, build_cleaning_table.py)
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
         // Hildir's lost tackle boxes (roadmap #20, build_cleaning_table.py)
         new Entry("tacklebox_swamp", "buffs", Kind.Static),

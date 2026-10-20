@@ -97,6 +97,7 @@ namespace ValheimDeepWaters
                 s.StateTimer = Random.Range(1.5f, 2.5f);
                 FishingFx.FishSplash(FishPos(player, s), 1.4f);
                 s.HookedFish?.Leap(2f, 1.1f);
+                AnglerSync.Fx(player, FishFx.Leap, 2f);
                 s.Tension += 10f;
                 if (target == 2) s.NextDive = Time.time + Random.Range(2f, 4f);
                 if (s.Boss != null)

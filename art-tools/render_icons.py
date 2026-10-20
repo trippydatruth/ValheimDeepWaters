@@ -13,7 +13,7 @@ UPRIGHT = {"buff_totem_fisher", "buff_totem_njord", "buff_relic_pearl", "buff_ch
 # upright ones seen from a little above (degrees), to show what's inside
 LOOK_DOWN = {"buff_relic_pearl": 20, "buff_chum_basic": 38, "buff_chum_blood": 38, "buff_chum_abyssal": 38} | {f"buff_{f}_{t}": 12 for f in ("angler", "steady", "grip") for t in ("minor", "medium", "major")}
 # Deep North items (2026-10-11)
-GLOW.update({"bait_lure_crown": 1.2, "bait_lure_ice_spoon": 0.6, "bait_lure_frostcore_jig": 1.0, "rod_frostwood": 1.5, "hook_fimbul": 1.0, "buff_angler_north": 1.0,
+GLOW.update({"rod_allfather": 1.5, "buff_regalia_njord": 1.2, "bait_lure_crown": 1.2, "bait_lure_ice_spoon": 0.6, "bait_lure_frostcore_jig": 1.0, "rod_frostwood": 1.5, "hook_fimbul": 1.0, "buff_angler_north": 1.0,
              "fish_rimejaw_cod": 0.6, "fish_glacier_grayling": 1.0, "fish_frost_sculpin": 0.8, "fish_fimbul_salmon": 1.5}, **{f"bossmat_{b}": 1.2 for b in ("eikthyr_elver", "elder_bass", "bonemass_catfish", "moder_scale", "yagluthgill", "queen_eel", "fimbul_salmon")})
 GLOW["buff_rune_njord"] = 1.2
 GLOW.update({"mat_ink": 1.0, "mat_cinder": 1.5, "mat_rime": 1.0, "mat_legend": 1.2})   # fish materials
@@ -23,6 +23,7 @@ GLOW.update({"tacklebox_mistlands": 1.0}); UPRIGHT |= {"tacklebox_swamp", "tackl
 GLOW.update({"buff_spawning_musk": 1.0, "buff_lantern_float": 1.2, "float_lantern": 1.2}); UPRIGHT |= {"buff_spawning_musk", "buff_chum_seaweed", "buff_lantern_float", "float_lantern"} | {f"piece_feast_{f}" for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}; LOOK_DOWN.update({f"piece_feast_{f}": 42 for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}); LOOK_DOWN.update({"buff_chum_seaweed": 38, "buff_spawning_musk": 12})   # the Bog Witch brews
 GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
 UPRIGHT |= {"piece_plaque"}; LOOK_DOWN.update({"piece_plaque": 0})   # the Gold Trophy Plaque board
+UPRIGHT |= {"buff_regalia_njord"}; LOOK_DOWN.update({"buff_regalia_njord": 28})   # Njord's Regalia crown
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,

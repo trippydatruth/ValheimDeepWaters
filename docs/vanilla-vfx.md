@@ -96,6 +96,11 @@ and on the rod in hand. Particles emit from our own model's surface; at most one
 | Thor's Hammerhead | Lightning gem arcs and clouds, light |
 | Fenringfin | Blood gem swirls and drips |
 | Yggdrasil Rod | nature spores |
-| Ashwood Rod | Staff of Embers embers |
-| Frostwood Rod | Frostner's snowflakes |
+| Ashwood Rod | Dyrnwyn's flames, a different size on each bone, orange light |
+| Frostwood Rod | Frostner's snowflakes (as on the Allfather, a little more) and frost cloud |
 | Leviathan Rod | Mistwalker's mist motes |
+| Allfather's Rod | Mistwalker's mist, Frostner's snowflakes, the gem sword's ribbon lightning, soft blue light |
+
+Rigged rods carry a copy of each effect on every blank bone (Rod.1, Rod.2, ...), simulating in that bone's space, so the effects follow the rod as it bends.
+
+Note: Dyrnwyn's `Burny vfx` and the frost staff's `embers (1)` emit mostly by distance moved (rateOverDistance 10 and 5), so thinning them means scaling that rate too, not only rateOverTime.

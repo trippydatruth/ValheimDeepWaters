@@ -43,16 +43,20 @@ namespace ValheimDeepWaters
         /// <summary>What this trader pays for one of our items (0: they don't buy it).</summary>
         public static int PriceEach(string trader, ItemDrop.ItemData item)
         {
-            if (!IsOurs(item)) return 0;
+            // a golden or albino fish sells too (even one of vanilla's species, which vanilla won't buy)
+            FishDefinition? fish = RareFish.FishOf(item);
+            int variant = fish != null ? item.m_variant : 0;
+            if (!IsOurs(item) && variant == 0) return 0;
             string prefab = item.m_dropPrefab!.name;
-            FishDefinition? fish = prefab.StartsWith("VDW_Fish_") && ContentRegistry.Fish.TryGetValue(prefab.Substring(9), out var f) ? f : null;
             bool cooked = prefab.StartsWith("VDW_CookedFish_");
             int value = item.m_shared.m_value;
+            if (variant != 0 && value <= 0) value = Cooking.SellValue(fish!, false);
             switch (trader)
             {
                 case "Hildir":
                     if (prefab.StartsWith("VDW_Buff_relic_") || prefab == "VDW_Hook_golden") return RelicPrice;
                     if (fish == null || value <= 0) return 0;
+                    if (variant != 0) return Mathf.RoundToInt(value * (variant == RareFish.Golden ? RareFish.HildirGolden : RareFish.HildirAlbino));
                     if (item.m_quality >= FishSize.MaxClass) return Mathf.RoundToInt(value * TrophyPremium);
                     return fish.Legendary ? Mathf.RoundToInt(value * LegendaryPremium) : 0;
                 case "BogWitch":
@@ -61,6 +65,7 @@ namespace ValheimDeepWaters
                     bool murky = fish.Biomes.Any(b => b.Equals("Swamp", StringComparison.OrdinalIgnoreCase) || b.Equals("Mistlands", StringComparison.OrdinalIgnoreCase));
                     return murky || EelLike.Contains(fish.Id) ? Mathf.RoundToInt(value * WitchPremium) : 0;
                 default:   // Haldor
+                    if (variant != 0) return Mathf.RoundToInt(value * (variant == RareFish.Golden ? RareFish.GoldenPrice : RareFish.AlbinoPrice));
                     return (fish != null || cooked) && value > 0 ? value : 0;
             }
         }

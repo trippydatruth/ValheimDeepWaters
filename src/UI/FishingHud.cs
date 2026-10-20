@@ -345,7 +345,18 @@ namespace ValheimDeepWaters
             float y = r.y;
             Label(new Rect(r.x, y, r.width, 32f), "Catch Log", _big, Gold, TextAnchor.MiddleLeft); y += 32f;
             int found = all.Count(f => entries.ContainsKey(f.Id));
-            Label(new Rect(r.x, y, r.width, 22f), $"{found} of {all.Count} species logged", _small, Dim, TextAnchor.MiddleLeft); y += 32f;
+            Label(new Rect(r.x, y, r.width, 22f), $"{found} of {all.Count} species logged", _small, Dim, TextAnchor.MiddleLeft); y += 20f;
+            int variants = RareFish.Caught(player).Values.Sum(v => v.Count);
+            Label(new Rect(r.x, y, r.width, 22f), $"Rare variants: {variants} of {RareFish.EligibleCount() * 2}", _small, Dim, TextAnchor.MiddleLeft); y += 20f;
+            // the endgame: bosses landed, and what the next unlock (the Allfather's Rod, then Njord's Regalia) needs
+            Label(new Rect(r.x, y, r.width, 22f), $"Boss fish landed: {Endgame.BossesAtLeast(player, 1)} of {Endgame.BossCount}", _small, Dim, TextAnchor.MiddleLeft); y += 20f;
+            string step = Endgame.NextStep(player);
+            if (step.Length > 0)
+            {
+                float sh2 = _smallWrap.CalcHeight(new GUIContent(step), r.width);
+                Label(new Rect(r.x, y, r.width, sh2), step, _smallWrap, new Color(0.85f, 0.7f, 0.45f), TextAnchor.UpperLeft); y += sh2;
+            }
+            y += 10f;
 
             // the angler rank, its bar, and what the next rank unlocks
             int points = AnglerRanks.Points(player);
@@ -495,14 +506,24 @@ namespace ValheimDeepWaters
             var pip = new Rect(inner.x, inner.y + 5f, 12f, 12f);
             Fill(pip, tier == Mastery.None ? new Color(0f, 0f, 0f, 0.4f) : TierColors[tier]);
             if (tier == Mastery.None) Fill(new Rect(pip.x + 2f, pip.y + 2f, 8f, 8f), Wood);
-            Label(new Rect(inner.x + 18f, inner.y, inner.width - 18f, 22f), f.Name, _textClip, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
+            Label(new Rect(inner.x + 18f, inner.y, inner.width - 44f, 22f), f.Name, _textClip, f.Legendary ? Gold : Cream, TextAnchor.MiddleLeft);
+            // the rare variants: a gold and a pale mark, lit once you've caught that one
+            if (RareFish.Eligible(f))
+            {
+                RareFish.Caught(player).TryGetValue(f.Id, out var got);
+                var gold = new Rect(inner.xMax - 22f, inner.y + 6f, 9f, 9f);
+                var pale = new Rect(inner.xMax - 9f, inner.y + 6f, 9f, 9f);
+                Fill(gold, got != null && got.Contains(RareFish.Golden) ? new Color(1f, 0.82f, 0.3f) : new Color(0f, 0f, 0f, 0.45f));
+                Fill(pale, got != null && got.Contains(RareFish.Albino) ? new Color(0.96f, 0.9f, 0.9f) : new Color(0f, 0f, 0f, 0.45f));
+            }
 
             string bait = BaitTargets.BaitsFor(f);
             if (Mastery.IsBaitfish(f)) bait = (bait.Length > 0 ? bait + " · " : "") + "baitfish";
             Label(new Rect(inner.x, inner.y + 22f, inner.width, 16f), bait, _smallClip, Dim, TextAnchor.MiddleLeft);
 
             // the count to the next tier, or the top tier with the count (baitfish stop at Bronze)
-            string progress = tier < t.Length - 1
+            string progress = BossFish.IsBoss(f.Id) ? $"Landed x{e.Count}" + (tier < t.Length - 1 ? $" · {t[tier + 1]} for {Mastery.TierNames[tier + 1]}" : $" · {Mastery.TierNames[tier]}")
+                : tier < t.Length - 1
                 ? $"{e.Count} / {t[tier + 1]} to {Mastery.TierNames[tier + 1]}"
                 : $"{e.Count} caught · {Mastery.TierNames[tier]} ({(Mastery.IsBaitfish(f) ? "top for baitfish" : "top")})";
             Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), progress, _smallClip, Dim, TextAnchor.MiddleLeft);

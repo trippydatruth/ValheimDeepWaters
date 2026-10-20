@@ -17,6 +17,10 @@ namespace ValheimDeepWaters
         public Vector3 Target;         // where the line goes into the water
     }
 
+    /// <summary>What happens at the end of an angler's line that others see and hear too.</summary>
+    /// (Hump, Rear, TailSlap, Crash: a sea serpent boss's moves; the arg is its height / size.)
+    internal enum FishFx { None, Bite, Nibble, HookSet, Splash, Leap, Snap, Landing, Hump, Rear, TailSlap, Crash }
+
     /// <summary>
     /// Shares each angler's state through their player ZDO so every client can pose them: a bit field, a few floats
     /// (sent at most ten times a second, and only when they change), and a counter for one-off moments (cast, hook set,
@@ -70,6 +74,61 @@ namespace ValheimDeepWaters
             if (zdo == null || !zdo.IsOwner()) return;
             _eventCount = (_eventCount + 1) & 0x0FFFFFFF;
             zdo.Set(KeyEvent, (_eventCount << 4) | ((int)e & 15));
+        }
+
+        // ------------------------------------------------------------------ what others see of the line (roadmap #29)
+
+        private static readonly int KeyFx = "vdw_ang_fx".GetStableHashCode();
+        private static readonly int KeyFxArg = "vdw_ang_fxarg".GetStableHashCode();
+        private static readonly int KeyFloat = "vdw_ang_float".GetStableHashCode();
+        private static readonly int KeyFish = "vdw_ang_fish".GetStableHashCode();
+        private static readonly int KeyFishScale = "vdw_ang_fscale".GetStableHashCode();
+        private static int _fxCount;
+        private static string _sentFloat = "", _sentFish = "";
+        private static float _sentScale = -1f;
+        private static readonly Dictionary<int, int> SeenFx = new();
+
+        /// <summary>A splash, bite or leap at the local angler's line, for everyone else to see and hear (arg: its size).</summary>
+        public static void Fx(Player? p, FishFx kind, float arg = 0f)
+        {
+            if (p == null) return;
+            var zdo = Zdo(p);
+            if (zdo == null || !zdo.IsOwner()) return;
+            _fxCount = (_fxCount + 1) & 0x0FFFFFFF;
+            zdo.Set(KeyFxArg, arg);
+            zdo.Set(KeyFx, (_fxCount << 4) | ((int)kind & 15));
+        }
+
+        /// <summary>What the local angler's line shows: the float buff on it (its id), and the fish on the hook (id, size).</summary>
+        public static void SetLook(Player p, string floatId, string fishId, float fishScale)
+        {
+            var zdo = Zdo(p);
+            if (zdo == null || !zdo.IsOwner()) return;
+            if (floatId != _sentFloat) { zdo.Set(KeyFloat, floatId); _sentFloat = floatId; }
+            if (fishId != _sentFish) { zdo.Set(KeyFish, fishId); _sentFish = fishId; }
+            if (Mathf.Abs(fishScale - _sentScale) > 0.01f) { zdo.Set(KeyFishScale, fishScale); _sentScale = fishScale; }
+        }
+
+        public static (string floatId, string fishId, float fishScale) ReadLook(Player p)
+        {
+            var zdo = Zdo(p);
+            if (zdo == null) return ("", "", 1f);
+            return (zdo.GetString(KeyFloat), zdo.GetString(KeyFish), zdo.GetFloat(KeyFishScale, 1f));
+        }
+
+        /// <summary>Another angler's newest splash / bite / leap since this was last read (None if nothing new).</summary>
+        public static FishFx ReadFx(Player p, out float arg)
+        {
+            arg = 0f;
+            var zdo = Zdo(p);
+            if (zdo == null) return FishFx.None;
+            int fx = zdo.GetInt(KeyFx);
+            int id = p.GetInstanceID();
+            if (!SeenFx.TryGetValue(id, out int seen)) { SeenFx[id] = fx; return FishFx.None; }
+            if (fx == seen) return FishFx.None;
+            SeenFx[id] = fx;
+            arg = zdo.GetFloat(KeyFxArg);
+            return (FishFx)(fx & 15);
         }
 
         /// <summary>Another angler's state, and any moment they've had since this was last read.</summary>

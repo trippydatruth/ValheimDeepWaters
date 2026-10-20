@@ -64,7 +64,8 @@ strength, reel speed, power, hook bonus, stamina use and durability.
 | Yggdrasil | Black forge 1 | Yggdrasil wood 10, Carapace 4, Eitr 2 |
 | Ashwood | Black forge 2 | Blackwood 10, Flametal 4, Asksvin hide 2 |
 | Frostwood | Black forge 3 | Timberwood 10, Frostcore 3, Moose sinew 4 |
-| Leviathan | Black forge 2 | One material from each of the six boss fish, Yggdrasil wood 10, Flametal 6 |
+| Leviathan | Black forge 2 | Two materials from each of the seven boss fish, Yggdrasil wood 10, Flametal 6 |
+| Allfather's Rod | Black forge 3 | The Leviathan Rod and three materials from each boss fish; shows once you've landed every boss fish |
 | Haldor's Gilded Rod | Haldor only | 6000 coins |
 
 Rods wear while a fish is on the line, faster with heavy fish and high tension. A broken rod loses the fish
@@ -248,8 +249,17 @@ The fight brings up a **boss bar** with its name - its stamina, which drains fas
 (tight drag, high tension) and recovers if you give it slack, so no two fights are alike. It plays its boss's
 **music** and goes through **phases**: at two thirds it's enraged (pulls harder, leaps more), at one third
 desperate (dives that tear line off the reel). An empty bar means it's beaten; then reel it in. Landing one
-drops its **trophy** the first time and a **boss material** every time, and tells the whole server. One material
-from each of the six strings the **Leviathan Rod** (black forge), the best rod there is.
+drops its **trophy** the first time and a **boss material** every time, and tells the whole server. Two materials
+from each of the seven string the **Leviathan Rod** (black forge).
+
+**The endgame:**
+- **Boss lures cost more each time** you land their boss: every ingredient but the boss part needs one more per
+  landing, up to three times the first cost, and the Bog Witch's price rises the same way. It's per character.
+- **Allfather's Rod:** once you've landed every boss fish, remake the Leviathan Rod with three materials from each -
+  the best rod there is.
+- **Njord's Regalia:** once you've landed every boss fish three times, set the Pearl, the Scale, the Horn and the
+  Golden Hook in one crown (they're used up), with two materials from each boss: every relic's blessing in one helm.
+- The catch log's sidebar shows how many boss fish you've landed and what the next unlock needs.
 
 Fenringfin, Thor's Hammerhead and Odin's Eye are **mini-bosses**: they still bite by luck and fight the same
 way (phases and all), with no bar, music or messages, and drop their trophy the first time.
@@ -430,6 +440,9 @@ and makes reeling cheaper and the hookset window longer.
 ## Your catch
 
 - **Size class:** each fish is Small, Medium, Large or Trophy, with its weight and catcher in the tooltip.
+- **Rare variants:** any ordinary species can come up **golden** (about 1 in 300) or **albino** (about 1 in 150), its
+  icon and model tinted to match. They never stack with ordinary fish, earn rank points (+10 golden, +5 albino), sell
+  for more (Haldor 5x / 3x, Hildir 6x / 4x) and each species' card in the catch log marks which you've caught.
 - **Trophy Mount** (hammer: fine wood, resin): hang a fish on the wall.
 - **Cook and sell:** cook fish on a cooking station, and sell your catch to the traders. Each buys their own kind:
 
@@ -510,6 +523,8 @@ For testing and server admins. These need `devcommands`.
 - `vdw_debug horn`: rests the Horn of Ægir so it can be blown again straight away.
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug master <fish> [count]`: sets how many of a species you've caught (default 50), for the mastery tiers.
+- `vdw_debug variant <golden|albino>`: the next ordinary fish to bite comes up golden or albino.
+- `vdw_debug rarefish <fish> <golden|albino>`: gives you a golden or albino fish of that species.
 - `vdw_debug rank <points>`: adds angler rank points (default 100); `vdw_debug resetrank` clears the trophies and weight counted.
 - `vdw_debug tokens`: exports the text for translating.
 
@@ -594,7 +609,10 @@ Every player needs the mod, the same version as the server (the game checks when
 - **Server rules:** the gameplay settings (marked "Set by the server" in the config) come from the server, so
   everyone plays by the same rules. HUD, sound and keys stay each player's own.
 - **Shared:** caught fish, worm mounds, totems and trophy mounts are normal world objects that everyone sees.
-- **Per player:** the fight, the bobber, flies and rain worms only show for the player who has them.
+- **Watching others fish:** players within 90 m see your line, float or lure, the fish on your hook (running, leaping,
+  thrashing - a boss too, the Queen Eel's humps, rearing and tail slaps included), the splashes and bites, and hear your reel. A fish you land is news for players within 50 m; a boss fish
+  is announced to the whole server.
+- **Per player:** the fight HUD, flies and rain worms only show for the player who has them.
 
 ## Troubleshooting
 

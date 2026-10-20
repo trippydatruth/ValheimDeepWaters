@@ -92,6 +92,9 @@ namespace ValheimDeepWaters
         private static float _reelSpeed = 0.6f;
 
         // Charge-cast state, live only while _session == null.
+        /// <summary>vdw_debug variant: the next ordinary fish to bite comes up golden (1) or albino (2).</summary>
+        internal static int DebugVariant;
+
         private static bool _charging;
         /// <summary>Set when a cast ends while Attack is held (pulling on the fish as it lands): no new charge until it's let go.</summary>
         internal static bool _waitAttackRelease;
@@ -144,6 +147,7 @@ namespace ValheimDeepWaters
             bool rodActive = _rodEquipped && !player.IsDead();
             RodMotion.Apply(player, _session, rodActive, _reelingNow);
             RodMotion.ApplyOthers(player);           // everyone else fishing nearby, from what they share
+            RemoteAnglers.Update(player);            // ...and their lines, floats and hooked fish
             BossWeather.Share(player);               // a boss encounter's weather and music, for everyone near it
             FishingFx.UpdateReel(player, rodActive && _reelingNow, _session != null ? _session.Tension / Mathf.Max(1f, _session.Rod.BreakTension) : 0f,
                 rodActive && _session != null ? _session.DragSlip : 0f);
