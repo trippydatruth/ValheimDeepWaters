@@ -1,8 +1,8 @@
 # Valheim: Deep Waters
 
-A fishing overhaul for Valheim. Fish swim up to your bait, nibble and then bite, and you play the fight with
-line tension, drag and stamina. There are rods for every era, hook sizes, bait you gather from the world,
-buffs, trophies and a catch log.
+A fishing overhaul for Valheim. Fish swim up to your bait, nibble, and then bite, just like vanilla, but now you play the fight with
+line tension, drag, and stamina. There are rods for every era, hook sizes, bait you gather from the world,
+buffs, trophies, and a catch log.
 
 Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 
@@ -651,10 +651,6 @@ Other models used:
 | Chum buckets | [Bucket](https://sketchfab.com/3d-models/bucket-0be255e1fefe489ab07ec468adafb82e) | dmitryartist | CC BY |
 | Horn of Ægir | [Viking Horns](https://sketchfab.com/3d-models/viking-horns-95d68ebbdb374613955c2575e33c83a4) | Vetech82 | CC BY |
 | Allfather's Rod textures | Metal007, Wood018, Fabric022, Rope001 | [ambientCG](https://ambientcg.com) | CC0 |
-
-Several fish (Catfish, Fenringfin, Glacier Grayling, Lingcod, Mistfin, Rimejaw Cod) and the Njord's Regalia crown were
-started from models generated with [Tripo](https://www.tripo3d.ai) and finished by hand. The glowing effects on the top
-rods and on the legendary and boss fish are Valheim's own weapon effects, borrowed from the game while it runs.
 
 The models were rigged, retextured and restyled for Valheim. Licences:
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/),
