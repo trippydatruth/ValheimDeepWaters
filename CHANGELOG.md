@@ -21,7 +21,8 @@
 
 - **Endgame**: boss lures cost more each time you land their boss (and the Bog Witch charges more); the Leviathan needs
   two materials from each of the seven boss fish; the Allfather's Rod (every boss landed) and Njord's Regalia, a crown
-  made from the four relics (every boss landed three times), worn on the head. The Allfather's Rod is a hand-made model:
+  made from the four relics (every boss landed three times): a runed bronze crown set with green and blue stones, worn on
+  the head. The Allfather's Rod is a hand-made model:
   red wood, gold guards and reel, glowing runes, Mistwalker mist, snowflakes and ribbon lightning.
 - **Rod effects follow the bend**: the top rods carry their effects along the rod as it bends. The Ashwood Rod now has
   Dyrnwyn's flames, the Frostwood Rod snowflakes and a frost cloud.

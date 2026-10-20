@@ -76,7 +76,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -152,7 +152,19 @@ namespace ValheimDeepWaters
                     if (added != null) { added.m_customData["vdw_weight_kg"] = ((fish.MinWeightKg + fish.MaxWeightKg) / 2f).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture); }
                     Console.instance.Print(added != null ? $"Gave you a {RareFish.Name(v).ToLowerInvariant()} {fish.Name}." : "No room.");
                 }
-                else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))
+                else if (args[0].Equals("wear", StringComparison.OrdinalIgnoreCase))
+                {
+                    // vdw_debug wear crown                 -> its placement now
+                    // vdw_debug wear crown y 0.12          -> set it
+                    // vdw_debug wear crown y +0.01         -> nudge it (a leading + or - nudges; "=-0.02" sets a negative value)
+                    var p = Player.m_localPlayer;
+                    if (p == null || args.Length < 2) { Console.instance.Print($"Usage: vdw_debug wear <{RelicVisuals.WornNames}> [x|y|z|scale|sx|sy|sz|pitch|yaw|roll] [value | +step | -step | =value]"); return; }
+                    if (args.Length < 4) { Console.instance.Print(RelicVisuals.Describe(args[1])); return; }
+                    string raw = args[3]; bool nudge = raw.StartsWith("+") || raw.StartsWith("-");
+                    if (raw.StartsWith("=")) raw = raw.Substring(1);
+                    if (!float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float val)) { Console.instance.Print("Value: a number, +step, -step or =value"); return; }
+                    Console.instance.Print(RelicVisuals.Tune(p, args[1], args[2], val, nudge));
+                }                else if (args[0].Equals("resetrank", StringComparison.OrdinalIgnoreCase))
                 {
                     if (Player.m_localPlayer != null) AnglerRanks.Reset(Player.m_localPlayer);
                     Console.instance.Print("Rank trophies and weight landed cleared (species and catches still count; resetlog clears those).");

@@ -43,7 +43,7 @@ once they work.
     and the blank when it bends against a fish, the crank on the other side, effects: Mistwalker mist, snowflakes and ribbon lightning joined point to point, all following the rod as it bends (no streaks across the sky), brighter gold,
     and bolder runes you can read.
   - Njord's Regalia isn't in the list until every boss is at 3; then it takes the Pearl, Scale, Horn and Golden Hook
-    (gone after) + 2 of each material. Its own model and icon (a silver crown, gold points, the pearl at the front).
+    (gone after) + 2 of each material. Its own model and icon (the bronze runed crown).
     Worn, it sits round the brow in place of the circlet (no circlet showing) and moves with the head; the front
     pearl faces forward. If it floats, sinks into the head or sits backwards, tell me which and I'll refit it.
     It shows the same on a friend. All its effects are in the tooltip.
@@ -54,3 +54,8 @@ once they work.
       Thinned since the first try: half as much on every rod, Allfather's lightning bigger (confirmed good). Ashwood's flames now patchy
       (a different size on each segment) and much lighter; Frostwood uses the Allfather's snowfall, slightly more,
       plus Frostner's frost cloud; Ashwood's flames turned up a little.
+- [ ] **Njord's Regalia, new crown model** (your edited crown, finished by art-tools/finish_crown.py): your row of four gems
+      copied to all four sections (16, green and blue), clean unwrap, painted bronze with copper edges, crisp runes round
+      the rim, on the shield and on each diamond point, scaled fish. Check it on the ground, in the icon and worn: it should
+      sit round the brow - placement tuned in game and now built in (a fresh install, like your friend's,
+      should show it the same way).

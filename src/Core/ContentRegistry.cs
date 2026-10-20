@@ -178,6 +178,13 @@ namespace ValheimDeepWaters
         /// Default numbers that changed: a file entry still on the old value (the player never changed it) gets the new
         /// default. (file, id, field, old value)
         /// </summary>
+        /// <summary>Text fields changed in the defaults: replaced only where a data file still has the old wording.</summary>
+        private static readonly (string kind, string id, string field, string oldText)[] UpdatedText =
+        {
+            // Njord's Regalia got its own crown model: bronze, runes and stones, not silver (0.15.0)
+            ("Buffs", "regalia_njord", "Description", "The four relics of the sea - the Pearl, the Scale, the Horn and the Golden Hook - set in one silver crown. Whoever wears it is the sea god's own angler."),
+        };
+
         private static readonly (string kind, string id, string field, double oldValue)[] UpdatedStats =
         {
             // more line on every rod past the first, the most on the best (0.14.0)
@@ -303,6 +310,15 @@ namespace ValheimDeepWaters
                 {
                     if (k != kind || !byId.TryGetValue(id, out var entry) || entry[field] == null) continue;
                     if (Math.Abs((double)entry[field]! - oldValue) > 1e-6) continue;
+                    var d = defaults.OfType<JObject>().FirstOrDefault(o => (string?)o["Id"] == id);
+                    if (d?[field] == null) continue;
+                    entry[field] = d[field]!.DeepClone();
+                    changed = true;
+                }
+
+                foreach (var (k, id, field, oldText) in UpdatedText)
+                {
+                    if (k != kind || !byId.TryGetValue(id, out var entry) || (string?)entry[field] != oldText) continue;
                     var d = defaults.OfType<JObject>().FirstOrDefault(o => (string?)o["Id"] == id);
                     if (d?[field] == null) continue;
                     entry[field] = d[field]!.DeepClone();
