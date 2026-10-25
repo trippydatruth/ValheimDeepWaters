@@ -93,9 +93,41 @@ namespace ValheimDeepWaters
             var model = CustomModels.LoadBundleAsset<GameObject>(p.Model);
             if (model == null) Plugin.Log.LogWarning($"Fisherman's gear: no '{p.Model}' model in the bundles; '{p.Name}' keeps the vanilla look.");
             else if (body != null) Dress(item.ItemPrefab, model, body, p);
+            // painted onto the body instead of a separate mesh (the vanilla way - it bends with the skin, so it can't clip)
+            if (body != null && PaintedTextures.TryGetValue(p.Model, out var paint)) Paint(item.ItemPrefab, shared, body, paint.tex, paint.chest);
 
             ItemManager.Instance.AddItem(item);
             ItemIcons.ApplyHandMadeOnly(item.ItemPrefab, p.Model);
+        }
+
+        /// <summary>
+        /// Gear painted onto the player's body (art-tools/bake_shirt_paint.py): the texture in the bundles by name, and
+        /// whether it's the chest layer (else legs). The legs layer draws over the chest layer.
+        /// </summary>
+        private static readonly Dictionary<string, (string tex, bool chest)> PaintedTextures = new()
+        {
+            ["fisher_chest"] = ("fisher_shirt_paint_v2", true),
+        };
+
+        /// <summary>
+        /// Worn, the item paints its texture onto the body (VisEquipment sets the body's _ChestTex / _LegsTex from the
+        /// item's armour material) and puts no mesh on it: the worn "attach_skin" goes, the dropped model stays.
+        /// False (the mesh kept) if the texture isn't in the bundles.
+        /// </summary>
+        private static bool Paint(GameObject prefab, ItemDrop.ItemData.SharedData shared, SkinnedMeshRenderer body, string texName, bool chest)
+        {
+            var tex = CustomModels.LoadBundleAsset<Texture2D>(texName);
+            var baseMat = body.sharedMaterial;
+            if (tex == null || baseMat == null) { Plugin.Log.LogWarning($"Fisherman's gear: no '{texName}' texture in the bundles; the worn model is used."); return false; }
+            string layer = chest ? "_Chest" : "_Legs";
+            var m = new Material(baseMat) { name = "vdw_" + texName };
+            m.SetTexture(layer + "Tex", tex);
+            m.SetTexture(layer + "BumpMap", baseMat.GetTexture(layer + "BumpMap"));   // the body's own (empty) one: no folds of another armour
+            m.SetTexture(layer + "Metal", null);
+            shared.m_armorMaterial = m;
+            foreach (Transform child in prefab.transform.Cast<Transform>().ToList())
+                if (child.name == "attach_skin") UnityEngine.Object.DestroyImmediate(child.gameObject);
+            return true;
         }
 
         /// <summary>Puts the gear's skinned meshes in the item's "attach_skin" (what Valheim puts on the body when it's worn).</summary>

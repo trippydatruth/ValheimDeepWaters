@@ -307,11 +307,14 @@ public static class VdwModelImporter
                 if (AssetImporter.GetAtPath(path) is TextureImporter ti)
                 {
                     bool normal = path.Contains("_Normal"), linear = normal || path.Contains("_MetallicSmoothness");
+                    // *_paint_*: gear painted onto the player body (_ChestTex / _LegsTex), kept at 1024 with a clean alpha
+                    bool paint = path.Contains("_paint");
+                    int max = paint ? 1024 : 512;
                     var type = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-                    var comp = normal || linear ? TextureImporterCompression.CompressedHQ : TextureImporterCompression.Compressed;
-                    if (ti.textureType != type || ti.sRGBTexture == linear || ti.maxTextureSize != 512 || ti.textureCompression != comp)
+                    var comp = normal || linear || paint ? TextureImporterCompression.CompressedHQ : TextureImporterCompression.Compressed;
+                    if (ti.textureType != type || ti.sRGBTexture == linear || ti.maxTextureSize != max || ti.textureCompression != comp)
                     {
-                        ti.textureType = type; ti.sRGBTexture = !linear; ti.maxTextureSize = 512; ti.textureCompression = comp;
+                        ti.textureType = type; ti.sRGBTexture = !linear; ti.maxTextureSize = max; ti.textureCompression = comp;
                         ti.SaveAndReimport();
                     }
                 }

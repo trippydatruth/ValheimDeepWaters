@@ -80,7 +80,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | catch <fish> | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | catch <fish> | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | paint <chest|legs|both|alpha|off|dump> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -113,6 +113,11 @@ namespace ValheimDeepWaters
                     }
                     FishingController.DebugCatch = args[1];
                     Console.instance.Print($"Next cast: a {args[1]} comes straight to the bait and bites.");
+                }
+                else if (args[0].Equals("paint", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Player.m_localPlayer == null) return;
+                    Console.instance.Print(ArmorPaintTest.Run(Player.m_localPlayer, args.Length > 1 ? args[1].ToLowerInvariant() : ""));
                 }
                 else if (args[0].Equals("worms", StringComparison.OrdinalIgnoreCase))
                 {
