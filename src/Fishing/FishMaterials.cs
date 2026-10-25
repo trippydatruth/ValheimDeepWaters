@@ -133,6 +133,17 @@ namespace ValheimDeepWaters
                 Requirements = reqs
             });
             if (CustomModels.ApplyToPrefab(ext.PiecePrefab, "piece_cleaning_ext" + n)) PieceDressing.Dress(ext.PiecePrefab);
+            if (n == 1)
+            {
+                // the knife rack can hang on a wall (above the table) as well as stand on the floor
+                var p = ext.Piece;
+                p.m_groundOnly = false;
+                p.m_groundPiece = false;
+                p.m_cultivatedGroundOnly = false;
+                p.m_notOnTiltingSurface = false;
+                p.m_notOnFloor = false;
+                p.m_clipGround = false;
+            }
             PieceManager.Instance.AddPiece(ext);
         }
 
