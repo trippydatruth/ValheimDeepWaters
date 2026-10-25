@@ -15,7 +15,11 @@ Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 - A real fight: line tension, drag on the mouse wheel, sideways runs, leaps and snapped lines
 - Twelve rods, one for each era plus special ones, that wear out with use and upgrade to level 4, and hooks in eight kinds
 - Bait from the world: worms, grubs, flies, leeches and baitfish
-- Tackle slots for your bait and hook under the inventory
+- A tackle panel under the inventory (drag it anywhere) with slots for your rod, bait, hook, weight and leader;
+  the rod in its slot takes no inventory space
+- Weights and leaders: every fish feeds at its own depth, so set your leader to fish the depth you want, or fish the
+  bottom with a weight, a Texas rig or a Carolina rig. Light weights get dragged about by waves and storms
+- Tackle boxes in four tiers: carry your tackle in your hand, open it anywhere, set it down as a chest
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
@@ -327,23 +331,23 @@ The right retrieve brings the fish it draws more often and makes them likelier t
 follow the lure and turn away. **Alt + mouse wheel** sets the reel speed (also in a fight, where a slower reel
 strains the line less); Shift reels at full speed.
 
-| Lure | Kind | Fish | Made at |
+| Lure | Kind | Fish | Made at, with |
 |---|---|---|---|
-| Feather Fly | Fly | Trout, char, grayling (0.05–3 kg) | Workbench |
-| Flint Spinner | Spinner, takes a trailer | Perch, trout, pike (0.1–4 kg) | Workbench |
-| Leather Grub | Soft bait | Perch, trout, gobies (0.1–5 kg) | Workbench 2 |
-| Bronze Spoon | Spoon | Pike, trout, salmon, mackerel (0.3–10 kg) | Forge |
-| Finewood Crankbait | Crankbait | Pike, perch, trollfish (0.5–12 kg) | Workbench 3 |
-| Guck Crawler | Texas rig | Trollfish, pike, mistfin (0.5–15 kg) | Workbench 3 |
-| Bone Jig | Jig, takes a trailer | Lingcod, halibut, grouper (1–30 kg) | Forge 2 |
-| Silver Swimbait | Swimbait | Big pike, tuna, grouper, halibut (2–40 kg) | Forge 3 |
-| Linen Popper | Topwater | Pike, trollfish, mackerel (0.5–20 kg) | Workbench 4 |
-| Ice Spoon | Spoon | Salmon, grayling, char (0.5–20 kg) | Forge 4 |
-| Frostcore Jig | Jig, takes a trailer | Rimejaw cod, sculpin (1–60 kg) | Black forge 2 |
+| Feather Fly | Fly | Trout, char, grayling (0.05–3 kg) | Forge 2, Small Hook |
+| Flint Spinner | Spinner, takes a trailer | Perch, trout, pike (0.1–4 kg) | Forge 2, Large Hook |
+| Leather Grub | Soft bait | Perch, trout, gobies (0.1–5 kg) | Forge 2, Large Hook |
+| Bronze Spoon | Spoon | Pike, trout, salmon, mackerel (0.3–10 kg) | Forge 2, Large Hook |
+| Finewood Crankbait | Crankbait | Pike, perch, trollfish (0.5–12 kg) | Forge 3, Large Hook |
+| Guck Crawler | Texas rig | Trollfish, pike, mistfin (0.5–15 kg) | Forge 3, Large Hook |
+| Bone Jig | Jig, takes a trailer | Lingcod, halibut, grouper (1–30 kg) | Forge 3, Large Hook |
+| Silver Swimbait | Swimbait | Big pike, tuna, grouper, halibut (2–40 kg) | Forge 4, Heavy Hook |
+| Linen Popper | Topwater | Pike, trollfish, mackerel (0.5–20 kg) | Forge 4, Heavy Hook |
+| Ice Spoon | Spoon | Salmon, grayling, char (0.5–20 kg) | Forge 4, Heavy Hook |
+| Frostcore Jig | Jig, takes a trailer | Rimejaw cod, sculpin (1–60 kg) | Black forge 2, Giant Hook |
 
 A **trailer** (Curly Tail, Boar Rind, Feather Skirt) brings fish of its own and makes the lure's fish keener.
-Lures and trailers are only used up when a fish is hooked. The boss lures work the same way, but only their boss
-answers them.
+Lures are mid-game tackle: each is made at the forge with a hook in the recipe. Lures and trailers are only used
+up when a fish is hooked. The boss lures work the same way (they need a hook too), but only their boss answers them.
 
 ## Fishing Boat
 
@@ -354,10 +358,53 @@ land while aboard any ship go straight into your inventory.
 
 ## Tackle slots
 
-Two slots under your inventory hold your bait and hook. To fill them, drag items in, or right-click or Ctrl+click them in your
-inventory (Ctrl+click a slot to take it back out). While holding the rod, `B` / `H` swaps in the next bait or hook you're carrying. A slot
-refills from your inventory when it runs out. Tackle is saved with your character and goes into your
-tombstone when you die.
+The tackle panel under your inventory has five slots: **Rod, Bait, Hook, Weight and Leader**. To fill them, drag
+items in, or right-click or Ctrl+click them in your inventory (Ctrl+click a slot to take it back out). Drag the panel
+by its wood to put it anywhere on the screen; double-click it to put it back.
+
+- **Rod:** a rod in the rod slot takes no inventory space. Right-click the slot, or press `Alt+F`, to take it in hand
+  or put it away. It repairs and upgrades from the slot (upgrading moves it into your inventory first). The panel
+  shows its level, line, cast and wear.
+- **Bait and hook:** while holding the rod, `B` / `H` swaps in the next bait or hook you're carrying. A slot refills
+  from your inventory, then from the tackle box you're wearing, when it runs out.
+- **Weight and leader:** see Weights, leaders and depth below.
+
+Tackle is saved with your character and goes into your tombstone when you die.
+
+## Weights, leaders and depth
+
+Every fish feeds at its own depth (near the surface, mid-water, or on the bottom), and a fish is about twice as
+likely to take a bait at its depth - much less far from it. Your rig decides how deep the bait sits:
+
+| Rig | On the line | The bait sits |
+|---|---|---|
+| Float | bait + hook | about 1 m down (in shallow water that reaches the bottom) |
+| Float and leader | + Leader Line | as deep as your leader (0.5-40 m, set with - and + on the tackle panel) |
+| Bottom rig | + any weight, no float | on the bottom; the cast goes further |
+| Carolina rig | Egg Sinker + Leader Line | just off the bottom; fish take it more readily |
+| Texas rig | Bullet Weight + a soft lure | the lure works along the bottom |
+
+With a weight there's no float: nibbles show as taps on the rod tip. Weights: Split Shot (tin), Bullet Weight
+(copper), Egg Sinker (bronze) and Pyramid Sinker (iron); the Leader Line is made at the workbench. They're only lost
+when the line snaps. The water moves a weight that's too light for it: waves, wind and storms drag it along the
+bottom, and nothing bites while it's dragged - only a Pyramid Sinker holds at sea, and only a storm shifts that.
+
+## Tackle boxes
+
+A tackle box holds tackle - bait, lures, hooks, weights, leaders and floats - and keeps it inside wherever the box
+goes: your inventory, a chest, your grave. It weighs what's in it.
+
+| Box | Made at | Slots |
+|---|---|---|
+| Tackle Box | Workbench 2 | 8 |
+| Iron-Bound Tackle Box | Forge 2 | 12 |
+| Silver Tackle Box | Forge 4 | 16 |
+| Dvergr Tackle Box | Black Forge | 24 |
+
+Wear it in the utility slot: it's carried by its handle in your right hand when that hand is free, at your hip
+otherwise. Press `K` to open it, and `Shift+K` to set it down as a chest whose lid opens for anyone using it; `E`
+opens a set-down box and `Shift+E` picks it up with everything inside. Your tackle slots refill from the box you're
+wearing.
 
 ## Fishing buffs
 
@@ -513,14 +560,19 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Rain Worms | on | |
 | Spawn Flies | on | |
 | Cycle Bait / Cycle Hook / Catch Log keys | B / H / J | |
+| Rod Key | Alt + F | Takes the rod in your rod slot in hand, or puts it away |
+| Tackle Box Key / Set Down Key | K / Shift + K | Opens the tackle box you're wearing / sets it down as a chest |
+| Tackle Panel Position | (under the inventory) | Set by dragging the panel; empty puts it back |
 | Drag Control / Reel Speed Control | Mouse Wheel / Alt + Mouse Wheel | Either can be the mouse wheel, Alt + mouse wheel or the mouse side buttons (Mouse 5 up, Mouse 4 down) |
 
 ## Console commands (server admins)
 
 These need `devcommands`, like Valheim's own spawn command.
 
-- `vdw_give <item> [amount]`: gives an item, for example `rod_copper`, `hook_small`, `buff_angler_minor`,
-  `worm` or a fish id.
+- `vdw_give <item> [amount]`: gives an item, for example `rod_copper`, `hook_small`, `tackle_egg_sinker`,
+  `tacklebox_t2`, `buff_angler_minor`, `worm` or a fish id.
+- `vdw_debug catch <fish id>`: the next cast brings that fish straight to the bait (for trying a fish out).
+- `vdw_debug bite`: the next cast gets a bite straight away.
 - `vdw_debug listrods | listhooks | listbait | listfish | listbuffs`: lists the item ids.
 - `vdw_debug resetlog`: clears your catch log.
 - `vdw_debug tokens`: exports the mod's text for translating (see Translations below).

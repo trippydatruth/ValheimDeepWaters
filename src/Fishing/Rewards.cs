@@ -166,7 +166,7 @@ namespace ValheimDeepWaters
             {
                 if (done.Contains(s.Key) || !s.Fish.All(f => LoggedIn(player, f, s.Key, log))) continue;
                 done.Add(s.Key);
-                // plus the biome's pennant, once it's modelled (docs/CUSTOM_REWARDS.md)
+                // plus the biome's pennant, once it's modelled
                 string got = GiveAll(player, new[] { ("VDW_Bait_" + s.Bait, 10), ("Coins", s.Coins), ("VDW_Pennant_" + s.Key, 1) });
                 AddBonusPoints(player, BiomeSetPoints);
                 text += $"\n{s.Name} set complete! {got}, +{BiomeSetPoints} rank points.";
@@ -241,7 +241,7 @@ namespace ValheimDeepWaters
         {
             if (rankIndex <= 0 || rankIndex >= RankGifts.Length) return "";
             var items = RankGifts[rankIndex].Concat(new[] { ("Coins", 50 * (rankIndex + 1)) });
-            // an angler's cap at three of the ranks, once they're modelled (docs/CUSTOM_REWARDS.md)
+            // an angler's cap at three of the ranks, once they're modelled
             if (CapRanks.Contains(rankIndex)) items = items.Concat(new[] { ("VDW_AnglerCap_" + (rankIndex + 1), 1) });
             return GiveAll(player, items);
         }

@@ -344,8 +344,8 @@ namespace ValheimDeepWaters
             int total = list.Sum(i => TraderSales.PriceEach(key, i) * i.m_stack);
             SetRect(_sell!, Pad, y, inner * 0.42f, 32f);
             SetRect(_sellAll!, Pad + inner * 0.46f, y, inner * 0.54f, 32f);
-            _sell.interactable = list.Count > 0;
-            _sellAll.interactable = list.Count > 1;
+            _sell!.interactable = list.Count > 0;
+            _sellAll!.interactable = list.Count > 1;
             _sellAll.GetComponentInChildren<Text>().text = list.Count > 1 ? $"Sell all ({total:N0})" : "Sell all";
             y -= 40f;
 

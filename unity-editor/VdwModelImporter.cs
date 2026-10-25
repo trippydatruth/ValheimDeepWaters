@@ -97,10 +97,10 @@ public static class VdwModelImporter
         new Entry("tackle_leader", "tackle", Kind.Static) { Scale = 1.5f },
         // the tackle boxes (TackleBoxes.cs): the user's box, rigged (the mod turns its "lid" bone), baked per tier
         // (rig_tacklebox.py, unwrap_tacklebox.py, bake_tacklebox.py); 0.6 m long, the mod scales it per use
-        new Entry("tacklebox_t1", "tacklebox", Kind.Rigged, 0f, 1024),
-        new Entry("tacklebox_t2", "tacklebox", Kind.Rigged, 0f, 1024),
-        new Entry("tacklebox_t3", "tacklebox", Kind.Rigged, 0f, 1024),
-        new Entry("tacklebox_t4", "tacklebox", Kind.Rigged, 1.5f, 1024),
+        new Entry("tacklebox_t1", "tacklebox", Kind.Rigged, 0f),
+        new Entry("tacklebox_t2", "tacklebox", Kind.Rigged, 0f),
+        new Entry("tacklebox_t3", "tacklebox", Kind.Rigged, 0f),
+        new Entry("tacklebox_t4", "tacklebox", Kind.Rigged, 1.5f),
         new Entry("hook_fimbul", "hooks", Kind.Static, 1.2f),   // rime metal, frost glow (build_hooks.py fimbul)
         new Entry("bait_worm", "bait", Kind.Animated) { Scale = BaitScale },
         new Entry("bait_grub", "bait", Kind.Animated) { Scale = BaitScale },

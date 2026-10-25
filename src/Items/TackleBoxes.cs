@@ -322,7 +322,6 @@ namespace ValheimDeepWaters
         }
 
         internal static Tier? TierByItemHash(int hash) => ByItemHash.TryGetValue(hash, out var t) ? t : null;
-        internal static bool IsViewing(ItemDrop.ItemData? box) => box != null && _viewing == box && InventoryGui.IsVisible();
     }
 
     /// <summary>Turns a box model's "lid" bone open or shut, easing.</summary>
@@ -406,7 +405,7 @@ namespace ValheimDeepWaters
             if (inHand)
             {
                 float s = TackleBoxesScale.Held;
-                var hand = _vis.m_rightHand;
+                var hand = _vis.m_rightHand!;   // (inHand already checked it)
                 _model.transform.localScale = Vector3.one * s;
                 // hanging straight down by the handle...
                 var rot = face * _turn; var pos = hand.position - Vector3.up * (_top * s - 0.03f);

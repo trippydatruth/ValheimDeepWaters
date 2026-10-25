@@ -301,7 +301,7 @@ namespace ValheimDeepWaters
             text.text = name;
             text.alignment = TextAlignmentOptions.Center;
             text.enableAutoSizing = true; text.fontSizeMin = 0.05f; text.fontSizeMax = 2f;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.color = new Color(0.13f, 0.07f, 0.02f);
             text.fontStyle = FontStyles.Bold;
             text.rectTransform.sizeDelta = new Vector2(PlateW * 0.92f, PlateH * 0.9f) * s;
