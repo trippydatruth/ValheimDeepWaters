@@ -68,7 +68,8 @@ if R.determinant() < 0: piece.data.flip_normals()
 bpy.data.objects.remove(fit)
 
 # emission materials: the piece shows its colour map (for the colour bake) or plain white (for the coverage mask)
-img = bpy.data.images.load(ALBEDO)
+# VDW_ALBEDO is one colour map, or "material=path;material=path" for a piece with several (the overalls and boots)
+albedo = dict(kv.split("=", 1) for kv in ALBEDO.split(";")) if "=" in ALBEDO else None
 def emit_mat(name, image=None):
     m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
     o = nt.nodes.new("ShaderNodeOutputMaterial"); e = nt.nodes.new("ShaderNodeEmission")
@@ -76,7 +77,13 @@ def emit_mat(name, image=None):
         tx = nt.nodes.new("ShaderNodeTexImage"); tx.image = image; nt.links.new(tx.outputs["Color"], e.inputs["Color"])
     else: e.inputs["Color"].default_value = (1, 1, 1, 1)
     nt.links.new(e.outputs["Emission"], o.inputs["Surface"]); return m
-m_col, m_white = emit_mat("bake_colour", img), emit_mat("bake_white")
+slots = [m.name if m else "" for m in piece.data.materials]
+if albedo is None: col_mats = [emit_mat("bake_colour", bpy.data.images.load(ALBEDO))] * max(1, len(slots))
+else:
+    missing = [s for s in slots if s not in albedo]
+    if missing: raise SystemExit(f"no colour map for material(s) {missing} (have {list(albedo)})")
+    col_mats = [emit_mat("bake_" + s, bpy.data.images.load(albedo[s])) for s in slots]
+m_white = emit_mat("bake_white")
 
 # the body gets a target image node (active) in its material
 def target(name, fill):
@@ -89,30 +96,74 @@ bme.materials.clear(); bme.materials.append(bm_mat)
 
 sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 4
 bk = sc.render.bake; bk.use_selected_to_active = True; bk.use_cage = False
-bk.cage_extrusion = 0.025 * s           # rays start 2.5 cm out from the body...
-bk.max_ray_distance = 0.05 * s          # ...and reach 5 cm: the cloth sits 0.1-1 cm off the skin
+# rays start half the reach out from the body and look the whole reach (VDW_REACH, metres): the shirt sits 0.1-1 cm off
+# the skin (5 cm is plenty); the baggy overalls' seat hangs further
+reach = float(os.environ.get("VDW_REACH", "0.05"))
+bk.cage_extrusion = reach / 2 * s
+bk.max_ray_distance = reach * s
 bk.target = 'IMAGE_TEXTURES'
-def bake(mat, image, margin):
-    piece.data.materials.clear(); piece.data.materials.append(mat)
+# one object per material: the bake read every face of a two-material piece with the first material (the overalls
+# came out in the boots' colours), so each material's faces become their own object, all baked from at once
+parts = []
+for mi in range(max(1, len(slots))):
+    me = piece.data.copy(); bmp = bmesh.new(); bmp.from_mesh(me)
+    bmesh.ops.delete(bmp, geom=[f for f in bmp.faces if f.material_index != mi], context='FACES')
+    bmesh.ops.delete(bmp, geom=[v for v in bmp.verts if not v.link_faces], context='VERTS')
+    bmp.to_mesh(me); bmp.free()
+    if not me.polygons: continue
+    ob = bpy.data.objects.new(f"{PIECE}_part{mi}", me); sc.collection.objects.link(ob); parts.append((mi, ob))
+piece.hide_render = True
+def bake(mats, image, margin):
+    for mi, ob in parts:
+        ob.data.materials.clear(); ob.data.materials.append(mats[mi])
+        for p in ob.data.polygons: p.material_index = 0
     tn.image = image; bm_mat.node_tree.nodes.active = tn
     for o in bpy.data.objects: o.select_set(False)
-    piece.select_set(True); body.select_set(True); bpy.context.view_layer.objects.active = body
+    for mi, ob in parts: ob.select_set(True)
+    body.select_set(True); bpy.context.view_layer.objects.active = body
     bk.margin = margin
     bpy.ops.object.bake(type='EMIT', margin=margin, use_selected_to_active=True, cage_extrusion=bk.cage_extrusion, max_ray_distance=bk.max_ray_distance)
-bake(m_white, mask_img, 0)
-bake(m_col, col_img, 8)
+# The game blends neighbouring pixels (and smaller mip levels), so a mask that stops dead at a UV island's edge goes
+# part see-through along the body's UV seams - dark rings at the waist and thighs (fisher_overalls_paint_v1). The mask
+# is grown outward into the texture's unused space below (not with the bake's own margin: that also filled the gaps
+# inside the islands where no cloth was hit). The colour gets the bake's margin.
+MARGIN = int(os.environ.get("VDW_MARGIN", "16"))
+bake([m_white] * max(1, len(slots)), mask_img, 0)
+bake(col_mats, col_img, MARGIN)
 
 # --- combine: colour with the mask as alpha (grown a pixel so seams don't show a hairline of skin)
+import numpy as np
 n = SIZE
 mpx = list(mask_img.pixels); cpx = list(col_img.pixels)
-cov = [mpx[i * 4] for i in range(n * n)]
-grown = cov[:]
-for y in range(n):
-    for x in range(n):
-        if cov[y * n + x] >= 0.5: continue
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            xx, yy = x + dx, y + dy
-            if 0 <= xx < n and 0 <= yy < n and cov[yy * n + xx] >= 0.5: grown[y * n + x] = 1.0; break
+cov = np.array(mpx, dtype=np.float32).reshape(n, n, 4)[:, :, 0] >= 0.5
+# where the body's UV islands are (its triangles drawn into the texture)
+occ = np.zeros((n, n), bool)
+uvl = bme.uv_layers.active.data
+for poly in bme.polygons:
+    pts = [uvl[li].uv * n for li in poly.loop_indices]
+    for k in range(1, len(pts) - 1):
+        a, b, c = pts[0], pts[k], pts[k + 1]
+        x0, x1 = int(max(0, min(a.x, b.x, c.x) - 1)), int(min(n - 1, max(a.x, b.x, c.x) + 1))
+        y0, y1 = int(max(0, min(a.y, b.y, c.y) - 1)), int(min(n - 1, max(a.y, b.y, c.y) + 1))
+        if x1 < x0 or y1 < y0: continue
+        X, Y = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        d = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
+        if abs(d) < 1e-9: continue
+        l1 = ((b.y - c.y) * (X - c.x) + (c.x - b.x) * (Y - c.y)) / d
+        l2 = ((c.y - a.y) * (X - c.x) + (a.x - c.x) * (Y - c.y)) / d
+        inside = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
+        occ[y0:y1 + 1, x0:x1 + 1] |= inside
+# a pixel's grow everywhere first (rays along a seam, like the spine's, can miss: a hairline of skin), then MARGIN
+# pixels more, but only into pixels no island uses
+g = cov.copy()
+g[1:, :] |= cov[:-1, :]; g[:-1, :] |= cov[1:, :]; g[:, 1:] |= cov[:, :-1]; g[:, :-1] |= cov[:, 1:]
+cov = g.copy()
+for _ in range(MARGIN):
+    s = g.copy()
+    s[1:, :] |= g[:-1, :]; s[:-1, :] |= g[1:, :]; s[:, 1:] |= g[:, :-1]; s[:, :-1] |= g[:, 1:]
+    g = np.where(occ, cov, s)
+grown = g.ravel().astype(np.float32).tolist()
+print(f"MASK islands use {occ.mean() * 100:.1f}% of the texture; covered {cov.mean() * 100:.2f}% -> {g.mean() * 100:.2f}% with the margin")
 # the bake comes out linear (a float image); the PNG is an ordinary sRGB image, so the colour is converted on the way
 # (written as is, every mid-tone came out darker - fisher_shirt_paint_v1)
 def to_srgb(c): return c * 12.92 if c <= 0.0031308 else 1.055 * (c ** (1 / 2.4)) - 0.055
@@ -142,14 +193,15 @@ for o in bpy.data.objects:
 sc.render.engine = 'BLENDER_WORKBENCH'; sh = sc.display.shading; sh.light = 'STUDIO'; sh.color_type = 'TEXTURE'
 sc.render.resolution_x = 600; sc.render.resolution_y = 800
 cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); sc.collection.objects.link(cam); sc.camera = cam
-cam.data.type = 'ORTHO'; cam.data.ortho_scale = max(bsize) * 1.05
-up = Vector((0, 0, 1)) if bsize.z == max(bsize) else Vector((0, 1, 0))
-depth = [i for i in range(3) if i != (2 if up.z else 1)]
-thin = min(depth, key=lambda i: bsize[i])                       # front-to-back is the body's thinnest side
+big = max(bsize)
+cam.data.type = 'ORTHO'; cam.data.ortho_scale = big * 1.05
+cam.data.clip_start = big * 0.01; cam.data.clip_end = big * 20  # the game body is tiny in its own units
+upax = max(range(3), key=lambda i: bsize[i])                   # the body's height
+thin = min([i for i in range(3) if i != upax], key=lambda i: bsize[i])   # front-to-back is its thinnest side
 for label, sign in (("front", -1), ("back", 1)):
     d = Vector((0, 0, 0)); d[thin] = sign
-    cam.location = bc + d * max(bsize) * 3
-    cam.rotation_euler = (-d).to_track_quat('-Z', 'Z' if up.z else 'Y').to_euler()
+    cam.location = bc + d * big * 3
+    cam.rotation_euler = (-d).to_track_quat('-Z', 'Y' if upax == 1 else 'Z').to_euler()
     sc.render.filepath = os.path.join(OUT, f"preview_{label}.png"); bpy.ops.render.render(write_still=True)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, NAME + "_bake.blend"))
 print("DONE")

@@ -70,6 +70,7 @@ public static class VdwModelImporter
         new Entry("fisher_chest", "armor", Kind.Rigged),        // the striped shirt (tunic)
         new Entry("fisher_coat", "armor", Kind.Rigged),         // the oilskin coat (cape)
         new Entry("fisher_legs", "armor", Kind.Rigged),
+        new Entry("fisher_boot_rims", "armor", Kind.Rigged),    // the boots' rims, worn with the overalls painted on (build_boot_rims.py)
         new Entry("fisher_hat", "armor", Kind.Rigged),
         // Boss trophies: the material each great fish drops (build_bossmats.py).
         new Entry("bossmat_eikthyr_elver", "bossmats", Kind.Static, 1.5f),

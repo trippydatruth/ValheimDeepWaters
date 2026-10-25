@@ -11,7 +11,7 @@ namespace ValheimDeepWaters
 {
     /// <summary>
     /// The Fisherman's gear, an armour set: a sou'wester (helmet), an oilskin coat over a striped shirt (chest - the body
-    /// slot, so a cape such as Jörmungandr's Scale still goes over it) and bib overalls with rubber boots (legs).
+    /// slot, so a cape such as JÃ¶rmungandr's Scale still goes over it) and bib overalls with rubber boots (legs).
     /// Their models (fisher_hat / fisher_chest / fisher_legs, build_fisher_gear.py) are made round the player's body in
     /// its rest pose, and each carries a copy of that body ("fitref"): it shows how the model lines up with the game's
     /// body mesh whatever the importer did, so every vertex can take its bone weights from the body under it - the gear
@@ -94,7 +94,14 @@ namespace ValheimDeepWaters
             if (model == null) Plugin.Log.LogWarning($"Fisherman's gear: no '{p.Model}' model in the bundles; '{p.Name}' keeps the vanilla look.");
             else if (body != null) Dress(item.ItemPrefab, model, body, p);
             // painted onto the body instead of a separate mesh (the vanilla way - it bends with the skin, so it can't clip)
-            if (body != null && PaintedTextures.TryGetValue(p.Model, out var paint)) Paint(item.ItemPrefab, shared, body, paint.tex, paint.chest);
+            if (body != null && PaintedTextures.TryGetValue(p.Model, out var paint) && Paint(item.ItemPrefab, shared, body, paint.tex, paint.chest) && paint.extra != null)
+            {
+                // the bits that stand off the body (the boots' rims), worn as a model with the paint
+                var extra = CustomModels.LoadBundleAsset<GameObject>(paint.extra);
+                var parts = extra != null ? Build(extra, body, new Piece { Model = paint.extra, Rigid = p.Rigid }) : null;
+                if (parts != null && parts.Count > 0) AttachSkin(item.ItemPrefab, parts.Select(x => (x.Item1, x.Item2.Select(Matte).ToArray())).ToList(), p);
+                else Plugin.Log.LogWarning($"Fisherman's gear: no '{paint.extra}' model in the bundles; '{p.Name}' is worn painted on only.");
+            }
 
             ItemManager.Instance.AddItem(item);
             ItemIcons.ApplyHandMadeOnly(item.ItemPrefab, p.Model);
@@ -104,9 +111,11 @@ namespace ValheimDeepWaters
         /// Gear painted onto the player's body (art-tools/bake_shirt_paint.py): the texture in the bundles by name, and
         /// whether it's the chest layer (else legs). The legs layer draws over the chest layer.
         /// </summary>
-        private static readonly Dictionary<string, (string tex, bool chest)> PaintedTextures = new()
+        private static readonly Dictionary<string, (string tex, bool chest, string? extra)> PaintedTextures = new()
         {
-            ["fisher_chest"] = ("fisher_shirt_paint_v2", true),
+            ["fisher_chest"] = ("fisher_shirt_paint_v3", true, null),
+            // the overalls and boots on the legs layer (drawn over the shirt), with the boots' rims as a small model
+            ["fisher_legs"] = ("fisher_overalls_paint_v2", false, "fisher_boot_rims"),
         };
 
         /// <summary>
@@ -122,7 +131,10 @@ namespace ValheimDeepWaters
             string layer = chest ? "_Chest" : "_Legs";
             var m = new Material(baseMat) { name = "vdw_" + texName };
             m.SetTexture(layer + "Tex", tex);
-            m.SetTexture(layer + "BumpMap", baseMat.GetTexture(layer + "BumpMap"));   // the body's own (empty) one: no folds of another armour
+            // no folds of another armour: the chest takes the body's own empty one; the legs none at all, as Valheim leaves
+            // it with no legs armour on - the body's own legs normal map is the underwear's, whose waistband and leg holes
+            // showed through the painted overalls as dark rings
+            m.SetTexture(layer + "BumpMap", chest ? baseMat.GetTexture(layer + "BumpMap") : null);
             m.SetTexture(layer + "Metal", null);
             shared.m_armorMaterial = m;
             foreach (Transform child in prefab.transform.Cast<Transform>().ToList())
@@ -182,6 +194,29 @@ namespace ValheimDeepWaters
             }
             }
 
+            AttachSkin(prefab, parts, p);
+        }
+
+        /// <summary>
+        /// A copy of a material made matte: no metallic/smoothness map, low smoothness. The boots' rims took the rubber
+        /// boots' glossy map and caught the sky as a white band.
+        /// </summary>
+        private static Material Matte(Material m)
+        {
+            if (m == null) return m!;
+            var c = new Material(m) { name = m.name + "_matte" };
+            if (c.HasProperty("_MetallicGlossMap")) c.SetTexture("_MetallicGlossMap", null);
+            c.DisableKeyword("_METALLICGLOSSMAP");
+            if (c.HasProperty("_Metallic")) c.SetFloat("_Metallic", 0f);
+            if (c.HasProperty("_Glossiness")) c.SetFloat("_Glossiness", 0.12f);
+            return c;
+        }
+
+        /// <summary>The skinned meshes as the item's "attach_skin", skinned to the wearer's skeleton.</summary>
+        private static void AttachSkin(GameObject prefab, List<(Mesh mesh, Material[] mats)> parts, Piece p)
+        {
+            var body = PrefabManager.Instance.GetPrefab("Player")?.GetComponent<VisEquipment>()?.m_bodyModel;
+            if (body == null) return;
             var go = new GameObject("attach_skin");
             go.SetActive(false);
             go.transform.SetParent(prefab.transform, false);
