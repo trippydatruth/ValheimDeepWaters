@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.0.1
+Fixes from playtesting, mostly multiplayer, and a rod slot.
+
+### Added
+- **Rod slot**: the tackle panel now has Rod, Bait and Hook slots. A rod in the rod slot takes no inventory space;
+  right-click it or press Alt+F (Rod Key in the config) to take it in hand or put it away. Right-clicking a rod in
+  the inventory moves it into the slot and takes it in hand. It repairs at its station from the slot, and moves into
+  the inventory by itself when you upgrade it. The panel shows the rod's level, line, cast and wear.
+- **Weights and leaders** (Tackle.json, two new tackle slots): fish now bite best at the depth they feed at, and the
+  rig decides how deep your bait sits.
+  - **Leader Line**: with a float, the bait hangs at the leader's length - set it with - and + on the tackle panel.
+    Without one it hangs about a metre down.
+  - **Weights** take the bait to the bottom with no float, and cast further: Split Shot, Bullet Weight (the Texas rig:
+    on a soft lure it works the bottom), Egg Sinker (the Carolina rig: with a leader the bait drifts just off the
+    bottom and fish take it more readily) and Pyramid Sinker.
+  - Bottom feeders (catfish, cod, halibut, lingcod, grouper, gobies, sculpin and more) want bait on or near the bottom.
+  - Water moves a weight that's too light for it: waves, wind and storms drag it along the bottom, and nothing takes a
+    bait that's being dragged. Heavy weights hold.
+  - Weights and leaders are lost only when the line snaps. Each has its own model and icon.
+- **Tackle boxes** in four tiers: Tackle Box (workbench, 8 slots), Iron-Bound (forge, 12), Silver (forge, 16) and
+  Dvergr (black forge, 24). They hold tackle only (bait, hooks, lures, weights, leaders, floats) and keep it inside
+  wherever the box goes.
+  - Wear one in the utility slot: it's carried by the handle in your right hand when that hand's free, at your hip
+    otherwise. K opens it; Shift+K sets it down as a chest whose lid opens for anyone using it; Shift+E picks it up.
+  - Your bait, hook, weight and leader slots refill from the box you're wearing, and B / H cycle through it too.
+  - A box weighs what's in it.- **Move the tackle panel**: drag it by its wood to wherever you like in the inventory screen; it stays there.
+  Double-click it to put it back under the inventory.
+### Fixed
+- **Other players' fishing shows again**: their line, float or lure, the fish on their hook and their rod's bend
+  (the game doesn't load other players' inventories, so the mod now goes by the rod they're holding).
+- **Rowing for other players**: the rower stays on the bench and their arms follow the oars on everyone's screen.
+- **Flies are the same for everyone**: nearby players see the same swarms, and a fly someone catches or spooks is gone
+  for everyone.
+- The Fishing Boat no longer takes damage when you cast from it in deep water; only a storm's big waves wear it.
+- Logging out while seated in the Fishing Boat no longer drops you into the water under it when you log back in.
+- A rod you didn't craft yourself (bought, given or found) now shows in its station's Upgrade tab.
+- `defaults_offered.json` is now `defaults_offered.dat`, so mod managers' config pages list only the files you edit (it moves over by itself).
+- Boss fish no longer swim about on their own: they only come when their lure summons them.
+- Bluegill bait (on the hook and swimming) uses the bluegill's own model.
+- The pufferfish no longer looks like a different fish in the water.
+- The Fish Cleaning Table has its icon in the crafting panel.
+- The Fisherman's Hat hides your hair (no more hair poking through it).
+- The tackle panel (bait and hook slots) is no longer hidden behind the inventory when another mod makes the inventory bigger.
+- Mod managers' config pages show only the settings: the models now install beside the mod in `BepInEx/plugins`
+  (your own models still go in `BepInEx/config/ValheimDeepWaters/Models` and win over the shipped ones).
+
+### Changed
+- **Lures are mid-game**: made at the forge, each with a hook (a Large Hook for most, Heavy or Giant for the late ones, a Small Hook for the Feather Fly), and fewer at a time.
+  Boss lures need a hook too. Your Baits.json updates unless you changed a lure's recipe yourself.
+- **Worm mounds can be cleared**: one hit from any weapon or tool breaks one up, and hoeing or digging the ground
+  under it does too.
 ## 1.0.0
 The first public release. Everything from the development builds below is in it; these are the changes since 0.14.0.
 

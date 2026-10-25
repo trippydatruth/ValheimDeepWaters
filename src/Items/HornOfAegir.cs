@@ -112,8 +112,8 @@ namespace ValheimDeepWaters
                 _clip = CustomModels.LoadBundleAsset<AudioClip>("horn_of_aegir");
                 if (_clip == null)
                 {
-                    string wav = Path.Combine(CustomModels.ModelsFolder, "horn_of_aegir.wav");
-                    if (File.Exists(wav)) _clip = Wav.Load(wav);
+                    string? wav = CustomModels.FindFile("horn_of_aegir.wav");
+                    if (wav != null) _clip = Wav.Load(wav);
                 }
                 if (_clip == null) Plugin.Log.LogWarning("Horn of Ægir: no horn sound found (an AudioClip 'horn_of_aegir' in a bundle, or horn_of_aegir.wav in the Models folder); it's blown silently.");
                 return _clip;

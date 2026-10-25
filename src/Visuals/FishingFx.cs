@@ -143,8 +143,8 @@ namespace ValheimDeepWaters
         {
             var clip = CustomModels.LoadBundleAsset<AudioClip>(name);
             if (clip != null) return clip;
-            string wav = System.IO.Path.Combine(CustomModels.ModelsFolder, name + ".wav");
-            return System.IO.File.Exists(wav) ? Wav.Load(wav) : null;
+            string? wav = CustomModels.FindFile(name + ".wav");
+            return wav != null ? Wav.Load(wav) : null;
         }
 
         private static AudioSource MakeLoop(string name, AudioClip clip)

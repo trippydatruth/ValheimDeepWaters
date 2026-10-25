@@ -151,6 +151,11 @@ namespace ValheimDeepWaters
             ship.m_hasSail = false;
             ship.m_sailForceFactor = 0f;      // no sail, so no wind (it only rows at Slow/Back anyway: RowingOnly)
             ship.m_rudderObject = null;
+            // Valheim damages a ship whose hull slams down on a wave with someone aboard (the raft: 10 at 3 m/s). This
+            // light little hull rides even ordinary ocean swell that hard, so it was worn down just sitting fishing; now
+            // only a storm's big drops hurt it, and less.
+            ship.m_minWaterImpactForce = 6.5f;
+            ship.m_waterImpactDamage = 5f;
             foreach (var trig in prefab.GetComponentsInChildren<Collider>(true).Where(c => c.isTrigger && c is BoxCollider && c != ship.m_floatCollider))
             {
                 // the onboard trigger: covers the hull and a body's height above it
@@ -407,6 +412,27 @@ namespace ValheimDeepWaters
             }
         }
 
+        /// <summary>
+        /// Logging out seated in the boat saved where the seated body is, which is down inside the hull's floor: logging
+        /// back in put you under the boat in the water. Seated anywhere in it, you're saved standing on its floor.
+        /// </summary>
+        [HarmonyPatch(typeof(PlayerProfile), nameof(PlayerProfile.SetLogoutPoint))]
+        private static class LogoutStandingInBoat
+        {
+            private static readonly System.Reflection.FieldInfo? AttachPoint = AccessTools.Field(typeof(Player), "m_attachPoint");
+            internal static readonly Vector3 StandSpot = new Vector3(0f, 0.4f, -0.7f);   // on the floor between the bench and the stern seat
+
+            private static void Prefix(ref Vector3 point)
+            {
+                var p = Player.m_localPlayer;
+                if (p == null || p.IsDead() || !p.IsAttached()) return;
+                if (!(AttachPoint?.GetValue(p) is Transform seat) || seat == null) return;
+                var boat = seat.GetComponentInParent<FishingBoatOars>();
+                if (boat == null) return;
+                point = boat.transform.TransformPoint(StandSpot);
+            }
+        }
+
         /// <summary>No sail to raise: Forward stops at rowing speed.</summary>
         [HarmonyPatch(typeof(Ship), nameof(Ship.Forward))]
         private static class RowingOnly
@@ -486,7 +512,18 @@ namespace ValheimDeepWaters
                 if (!(AttachPointField?.GetValue(p) is Transform seat) || seat == null || !seat.IsChildOf(transform)) continue;
                 p.transform.SetPositionAndRotation(seat.position, seat.rotation);
             }
+            // Another player rowing: on this game they aren't seated (only their own game knows), and their position
+            // arrives a few times a second, so they slid about on the bench and their arms missed the oars. They're held on
+            // the rowing seat here too.
+            var rower = _ship != null ? Rower() : null;
+            var bench = _ship?.m_shipControlls?.m_attachPoint;
+            if (rower != null && rower != Player.m_localPlayer && bench != null)
+                rower.transform.SetPositionAndRotation(bench.position, bench.rotation);
         }
+
+        /// <summary>Whether another player is at a seat (their synced position can lag it by a little).</summary>
+        private static bool NearSeat(Player p, Transform? seat) =>
+            seat != null && Vector3.Distance(p.transform.position, seat.position) < 1.2f;
 
         // Snapped in Update as well, before the camera and the animator run (whose LateUpdates may come before this
         // one's): the camera then follows the rower where they're drawn, not where the last physics step left them.
@@ -541,7 +578,7 @@ namespace ValheimDeepWaters
         {
             if (_holdfast == null) return;
             var p = Player.GetClosestPlayer(_holdfast.position, 0.3f);
-            if (p == null || !p.IsAttached()) return;
+            if (p == null || (p == Player.m_localPlayer && !p.IsAttached())) return;   // others: only their own game knows they're seated
             BeginPose(p);
             try { PoseHoldfastArms(p); }
             finally { EndPose(p); }
@@ -730,8 +767,11 @@ namespace ValheimDeepWaters
             var controls = _ship!.m_shipControlls;
             if (controls == null || !controls.HaveValidUser()) return null;
             long user = controls.GetUser();
+            // Only the rower's own game knows they're seated (IsAttached); everyone else goes by the boat's shared user,
+            // as long as that player is at the bench.
             foreach (var p in Player.GetAllPlayers())
-                if (p != null && p.GetPlayerID() == user && p.IsAttached()) return p;
+                if (p != null && p.GetPlayerID() == user &&
+                    (p == Player.m_localPlayer ? p.IsAttached() : NearSeat(p, controls.m_attachPoint))) return p;
             return null;
         }
 

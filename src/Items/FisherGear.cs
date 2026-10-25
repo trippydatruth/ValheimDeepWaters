@@ -88,7 +88,7 @@ namespace ValheimDeepWaters
             shared.m_setName = "vdw_fisherman";
             shared.m_setSize = Pieces.Length;
             shared.m_setStatusEffect = _setEffect;
-            if (p.Rigid == "Head") { shared.m_helmetHideHair = ItemDrop.ItemData.HelmetHairType.HiddenHat; shared.m_helmetHideBeard = ItemDrop.ItemData.HelmetHairType.Default; }
+            if (p.Rigid == "Head") { shared.m_helmetHideHair = ItemDrop.ItemData.HelmetHairType.Hidden; shared.m_helmetHideBeard = ItemDrop.ItemData.HelmetHairType.Default; }   // all hair hidden: the short "hat hair" still poked through the sou'wester
 
             var model = CustomModels.LoadBundleAsset<GameObject>(p.Model);
             if (model == null) Plugin.Log.LogWarning($"Fisherman's gear: no '{p.Model}' model in the bundles; '{p.Name}' keeps the vanilla look.");

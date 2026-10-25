@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
@@ -78,6 +78,8 @@ namespace ValheimDeepWaters
                 }
             }
 
+            MakeBreakable(prefab, pickable);
+
             // The game has to know the prefab to rebuild placed mounds from the save (and for other players).
             PrefabManager.Instance.AddPrefab(prefab);
 
@@ -90,6 +92,51 @@ namespace ValheimDeepWaters
         }
 
         private static GameObject? _wormMound;
+
+        /// <summary>
+        /// A mound in the way can be got rid of: one hit from any weapon or tool breaks it up (the pickable sits on the item
+        /// layer, which swings don't hit, so it gets a hitbox they do, which nobody bumps into), and so does hoeing or
+        /// digging the ground under it (TerrainClearsMounds).
+        /// </summary>
+        private static void MakeBreakable(GameObject prefab, Pickable pickable)
+        {
+            var hitbox = new GameObject("vdw_hitbox");
+            hitbox.transform.SetParent(prefab.transform, false);
+            int layer = LayerMask.NameToLayer("piece_nonsolid");
+            if (layer >= 0) hitbox.layer = layer;
+            var box = hitbox.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, 0.15f, 0f);
+            box.size = new Vector3(0.6f, 0.3f, 0.6f);
+
+            var d = prefab.AddComponent<Destructible>();
+            d.m_health = 1f;
+            d.m_minToolTier = 0;
+            d.m_destructibleType = DestructibleType.Default;
+            d.m_destroyedEffect = pickable.m_pickEffector ?? new EffectList();
+            d.m_hitEffect = pickable.m_pickEffector ?? new EffectList();
+        }
+
+        /// <summary>Hoeing, levelling or digging the ground breaks up any worm mound on it.</summary>
+        [HarmonyPatch(typeof(TerrainOp), "Awake")]
+        private static class TerrainClearsMounds
+        {
+            private static void Prefix(TerrainOp __instance)
+            {
+                if (TerrainOp.m_forceDisableTerrainOps || ZNetScene.instance == null) return;
+                Vector3 at = __instance.transform.position;
+                float r = Mathf.Max(0.5f, __instance.GetRadius());
+                foreach (var c in Physics.OverlapSphere(at, r + 0.3f))
+                {
+                    var pick = c.GetComponentInParent<Pickable>();
+                    if (pick == null || !pick.name.StartsWith(WormMoundName)) continue;
+                    var nview = pick.GetComponent<ZNetView>();
+                    if (nview == null || !nview.IsValid()) continue;
+                    pick.m_pickEffector?.Create(pick.transform.position, Quaternion.identity);
+                    nview.ClaimOwnership();
+                    ZNetScene.instance.Destroy(pick.gameObject);
+                }
+            }
+        }
 
         private static void OnServerSettings(object sender, Jotunn.Utils.ConfigurationSynchronizationEventArgs e) => AddWormMoundsLikeMushrooms();
 
@@ -277,15 +324,19 @@ namespace ValheimDeepWaters
     }
 
     /// <summary>
-    /// Flies along the shore near the local player on dry days. Each player gets their own (nothing is
-    /// networked); walk up and press the use key to catch one as fly bait.
+    /// Flies along the shore on dry days, the same for everyone nearby. The shore is split into 16 m squares, and
+    /// whether a square has a swarm, where, and how many flies, comes from the square and the shared world clock (a new
+    /// roll every two and a half minutes, staggered per square), so every player's game makes the same swarms without
+    /// sending them. Catching or spooking a fly is sent to everyone, so it's gone (or flees) for all of them.
+    /// Walk up and press the use key to catch one as fly bait.
     /// </summary>
     internal static class FlySwarm
     {
-        private const int MaxFlies = 8;
+        private const float Cell = 16f, Window = 150f, Reach = 25f, SwarmChance = 0.3f;
+        private const string Rpc = "VDW_Fly";
         private static readonly List<FlyCritter> Flies = new();
-        private static float _nextSpawn;
-        private static float _waterLevel = 30f;
+        private static readonly HashSet<string> Spawned = new(), Gone = new();
+        private static float _nextCheck;
 
         public static int Count => Flies.Count(f => f != null);
 
@@ -296,48 +347,100 @@ namespace ValheimDeepWaters
         {
             Flies.RemoveAll(f => f == null);
             var player = Player.m_localPlayer;
-            if (player == null || !VdwConfig.Enabled.Value || !VdwConfig.SpawnFlies.Value)
+            if (player == null || ZNet.instance == null || !VdwConfig.Enabled.Value || !VdwConfig.SpawnFlies.Value)
             {
                 Clear();
                 return;
             }
-            if (Time.time < _nextSpawn || Flies.Count >= MaxFlies) return;
-            _nextSpawn = Time.time + UnityEngine.Random.Range(5f, 10f);
-
+            if (Time.time < _nextCheck) return;
+            _nextCheck = Time.time + 1f;
             if (EnvMan.instance == null || EnvMan.IsWet() || WorldGenerator.instance == null || ZoneSystem.instance == null) return;
-            if ((WorldGenerator.instance.GetBiome(player.transform.position) & FlyBiomes) == 0) return;
 
-            _waterLevel = ZoneSystem.instance.m_waterLevel;
-            for (int tries = 0; tries < 24; tries++)
+            double now = ZNet.instance.GetTimeSeconds();
+            float water = ZoneSystem.instance.m_waterLevel;
+            var pos = player.transform.position;
+            int x0 = Mathf.FloorToInt((pos.x - Reach) / Cell), x1 = Mathf.FloorToInt((pos.x + Reach) / Cell);
+            int z0 = Mathf.FloorToInt((pos.z - Reach) / Cell), z1 = Mathf.FloorToInt((pos.z + Reach) / Cell);
+            for (int cx = x0; cx <= x1; cx++)
+                for (int cz = z0; cz <= z1; cz++)
+                    TrySwarm(cx, cz, now, water, pos);
+
+            // forget swarms from windows long past
+            if (Spawned.Count > 400) { Spawned.Clear(); Gone.Clear(); }
+        }
+
+        private static int Hash(int a, int b, int c)
+        {
+            unchecked
             {
-                Vector2 r = UnityEngine.Random.insideUnitCircle.normalized * UnityEngine.Random.Range(5f, 25f);
-                var p = player.transform.position + new Vector3(r.x, 0f, r.y);
-                float ground = ZoneSystem.instance.GetGroundHeight(p);
-                // Shoreline only: ground from just under the water to a few metres above it.
-                if (ground < _waterLevel - 0.5f || ground > _waterLevel + 3f) continue;
-
-                // A little cloud of them, so there's something to spot. Without a fly model it's Valheim's own
-                // flies effect (fireflies at night), with the catchable flies inside it.
-                float baseY = Mathf.Max(ground, _waterLevel) + UnityEngine.Random.Range(0.6f, 1.3f);
-                var center = new Vector3(p.x, baseY, p.z);
-                var cloud = FlyCritter.HasCustomModel ? null : FlyCloud.Create(center, night: !EnvMan.IsDay());
-                int count = Mathf.Min(UnityEngine.Random.Range(2, 5), MaxFlies - Flies.Count);
-                for (int i = 0; i < count; i++)
-                {
-                    var offset = UnityEngine.Random.insideUnitSphere * 0.6f;
-                    Flies.Add(FlyCritter.Create(center + new Vector3(offset.x, offset.y * 0.5f, offset.z), cloud));
-                }
-                break;
+                uint h = 2166136261u;
+                h = (h ^ (uint)a) * 16777619u; h = (h ^ (uint)b) * 16777619u; h = (h ^ (uint)c) * 16777619u;
+                h ^= h >> 13; h *= 0x5bd1e995u; h ^= h >> 15;
+                return (int)(h & 0x7fffffff);
             }
+        }
+
+        private static void TrySwarm(int cx, int cz, double now, float water, Vector3 playerPos)
+        {
+            float offset = Hash(cx, cz, 7) % 1000 / 1000f * Window;        // each square changes at its own time
+            long w = (long)Math.Floor((now + offset) / Window);
+            string key = $"{cx},{cz},{w}";
+            if (Spawned.Contains(key)) return;
+
+            var rng = new System.Random(Hash(cx, cz, (int)w));
+            if (rng.NextDouble() > SwarmChance) { Spawned.Add(key); return; }
+            var p = new Vector3((cx + (float)rng.NextDouble()) * Cell, 0f, (cz + (float)rng.NextDouble()) * Cell);
+            if (Vector3.Distance(new Vector3(playerPos.x, 0f, playerPos.z), p) > Reach) return;   // not near enough yet
+            Spawned.Add(key);
+
+            if ((WorldGenerator.instance.GetBiome(p) & FlyBiomes) == 0) return;
+            float ground = ZoneSystem.instance.GetGroundHeight(p);
+            // Shoreline only: ground from just under the water to a few metres above it.
+            if (ground < water - 0.5f || ground > water + 3f) return;
+
+            // A little cloud of them, so there's something to spot. Without a fly model it's Valheim's own flies
+            // effect (fireflies at night), with the catchable flies inside it.
+            var center = new Vector3(p.x, Mathf.Max(ground, water) + 0.6f + (float)rng.NextDouble() * 0.7f, p.z);
+            double endsAt = (w + 1) * Window - offset;
+            var cloud = FlyCritter.HasCustomModel ? null : FlyCloud.Create(center, night: !EnvMan.IsDay());
+            int count = 2 + rng.Next(3);
+            for (int i = 0; i < count; i++)
+            {
+                var o = new Vector3((float)rng.NextDouble() - 0.5f, ((float)rng.NextDouble() - 0.5f) * 0.5f, (float)rng.NextDouble() - 0.5f) * 1.2f;
+                string id = key + "," + i;
+                if (Gone.Contains(id)) continue;
+                Flies.Add(FlyCritter.Create(center + o, cloud, id, endsAt));
+            }
+        }
+
+        /// <summary>A fly caught (true) or spooked (false) here, for everyone else.</summary>
+        public static void Share(string id, bool caught)
+        {
+            Gone.Add(id);
+            if (ZRoutedRpc.instance != null && id.Length > 0) ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, Rpc, id, caught);
+        }
+
+        private static void OnFly(long sender, string id, bool caught)
+        {
+            if (sender == ZNet.GetUID()) return;
+            Gone.Add(id);
+            foreach (var f in Flies)
+                if (f != null && f.Id == id) { if (caught) UnityEngine.Object.Destroy(f.gameObject); else f.FlyAway(share: false); }
+        }
+
+        [HarmonyPatch(typeof(Game), "Start")]
+        private static class RegisterRpc
+        {
+            private static void Postfix() => ZRoutedRpc.instance?.Register<string, bool>(Rpc, OnFly);
         }
 
         public static void Clear()
         {
             foreach (var f in Flies) if (f != null) UnityEngine.Object.Destroy(f.gameObject);
             Flies.Clear();
+            Spawned.Clear();
         }
     }
-
     /// <summary>
     /// Valheim's own ambient flies effect (or fireflies at night) around a swarm, with its wing buzz. It thins out
     /// as flies are caught or fly off, and fades away with the last one.
@@ -491,7 +594,11 @@ namespace ValheimDeepWaters
             CustomModels.TryGetCustom("fly", out _, out _) || CustomModels.TryGetCustom("bait_fly", out _, out _);
 
         /// <param name="cloud">The vanilla flies effect this fly belongs to; the fly itself is then invisible.</param>
-        public static FlyCritter Create(Vector3 pos, FlyCloud? cloud = null)
+        /// <summary>Its swarm's shared id (FlySwarm), the same on every player's game.</summary>
+        public string Id = "";
+        private double _endsAt;
+
+        public static FlyCritter Create(Vector3 pos, FlyCloud? cloud, string id, double endsAt)
         {
             var go = new GameObject("VDW_Fly");
             go.transform.position = pos;
@@ -528,14 +635,17 @@ namespace ValheimDeepWaters
             col.radius = cloud != null ? 0.6f : 0.45f; // inside a cloud, aiming anywhere at it catches one
 
             fly._anchor = fly._target = pos;
-            fly._dieAt = Time.time + UnityEngine.Random.Range(90f, 150f);
+            fly.Id = id;
+            fly._endsAt = endsAt;
+            fly._dieAt = float.MaxValue;
             return fly;
         }
 
         private void Update()
         {
             var player = Player.m_localPlayer;
-            if (player == null || Time.time > _dieAt || Vector3.Distance(player.transform.position, transform.position) > 45f)
+            if (player == null || Time.time > _dieAt || (ZNet.instance != null && ZNet.instance.GetTimeSeconds() > _endsAt)
+                || Vector3.Distance(player.transform.position, transform.position) > 45f)
             {
                 Destroy(gameObject);
                 return;
@@ -548,7 +658,7 @@ namespace ValheimDeepWaters
                 float dist = Vector3.Distance(player.transform.position, transform.position);
                 bool loud = player.IsRunning() || player.InAttack();
                 if ((loud && dist < 3f) || (!player.IsCrouching() && dist < 1.5f && UnityEngine.Random.value < 0.05f * Time.deltaTime))
-                    FlyAway();
+                    FlyAway(share: true);
             }
 
             if (Time.time >= _nextTarget)
@@ -615,8 +725,10 @@ namespace ValheimDeepWaters
             _wingR.localRotation = Quaternion.Euler(90f, 0f, -20f - flap);
         }
 
-        private void FlyAway()
+        public void FlyAway(bool share)
         {
+            if (_fleeing) return;
+            if (share) FlySwarm.Share(Id, caught: false);
             _fleeing = true;
             _nextTarget = 0f;
             if (_anim != null) _anim.Intensity = 1f;
@@ -637,7 +749,7 @@ namespace ValheimDeepWaters
             if (UnityEngine.Random.value > 0.7f)
             {
                 player.Message(MessageHud.MessageType.Center, "Missed! It got away.");
-                FlyAway();
+                FlyAway(share: true);
                 return true;
             }
 
@@ -651,6 +763,7 @@ namespace ValheimDeepWaters
                 Drops.Spawn(bait!.GetComponent<ItemDrop>(), 1, transform.position);
 
             player.Message(MessageHud.MessageType.TopLeft, $"Caught a fly: {Loc.Text(data.m_shared.m_name)}", 1, data.GetIcon());
+            FlySwarm.Share(Id, caught: true);
             Destroy(gameObject);
             return true;
         }

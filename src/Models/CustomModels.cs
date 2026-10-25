@@ -27,12 +27,51 @@ namespace ValheimDeepWaters
         private static Shader? _shader;
 
 
-        public static string ModelsFolder => Path.Combine(Plugin.ConfigDirectory, "Models");
+        /// <summary>The models that ship with the mod: a Models folder beside the DLL in BepInEx/plugins, kept out of the
+        /// config folder so mod managers' config pages show only settings.</summary>
+        public static string ShippedFolder => Path.Combine(Path.GetDirectoryName(typeof(CustomModels).Assembly.Location) ?? "", "Models");
+
+        /// <summary>A player's own models (BepInEx/config/ValheimDeepWaters/Models), which win over the shipped ones.
+        /// Older versions installed everything here; that still loads.</summary>
+        public static string UserFolder => Path.Combine(Plugin.ConfigDirectory, "Models");
+
+        /// <summary>The folders to look in, the player's own first.</summary>
+        public static IEnumerable<string> Folders => _folders ??= FindFolders();
+        private static string[]? _folders;
+
+        private static string[] FindFolders()
+        {
+            var list = new List<string>();
+            if (Directory.Exists(UserFolder))
+            {
+                // Packed .vdwpak files only ever come from the mod's own package: a config Models folder holding them is
+                // 1.0.0's install, which would otherwise override the newer shipped models.
+                if (Directory.Exists(ShippedFolder) && Directory.GetFiles(UserFolder, "*" + PackedBundles.Extension).Length > 0)
+                    Plugin.Log.LogWarning($"Custom models: ignoring {UserFolder}, an older version's copy of the shipped models (it can be deleted).");
+                else list.Add(UserFolder);
+            }
+            if (Directory.Exists(ShippedFolder) && !list.Contains(ShippedFolder, StringComparer.OrdinalIgnoreCase)) list.Add(ShippedFolder);
+            return list.ToArray();
+        }
+
+        /// <summary>The shipped folder (or, without one, the player's), for messages.</summary>
+        public static string ModelsFolder => Directory.Exists(ShippedFolder) ? ShippedFolder : UserFolder;
+
+        /// <summary>A model file by name from the first folder that has it, or null.</summary>
+        public static string? FindFile(string fileName)
+        {
+            foreach (var dir in Folders)
+            {
+                string p = Path.Combine(dir, fileName);
+                if (File.Exists(p)) return p;
+            }
+            return null;
+        }
 
         public static void EnsureFolder()
         {
-            try { Directory.CreateDirectory(ModelsFolder); }
-            catch (Exception ex) { Plugin.Log.LogWarning($"Custom models: could not create {ModelsFolder} ({ex.Message})."); }
+            if (!Directory.Exists(ShippedFolder) && !Directory.Exists(UserFolder))
+                Plugin.Log.LogWarning($"Custom models: no Models folder found (looked in {ShippedFolder} and {UserFolder}); items keep their vanilla looks.");
         }
 
         public static bool TryGetCustom(string baseName, out Mesh mesh, out Material mat)
@@ -147,8 +186,8 @@ namespace ValheimDeepWaters
             }
 
             // 3. A plain .obj, with an optional same-named texture.
-            string objPath = Path.Combine(ModelsFolder, baseName + ".obj");
-            if (!File.Exists(objPath)) return (null, null);
+            string? objPath = FindFile(baseName + ".obj");
+            if (objPath == null) return (null, null);
 
             var mesh = ObjLoader.Load(objPath);
             if (mesh == null) return (null, null);
@@ -186,7 +225,6 @@ namespace ValheimDeepWaters
             {
                 if (_bundleIndex != null) return _bundleIndex;
                 _bundleIndex = new Dictionary<string, (AssetBundle, string, string)>();
-                if (!Directory.Exists(ModelsFolder)) return _bundleIndex;
 
                 foreach (var path in BundleFiles())
                 {
@@ -210,17 +248,18 @@ namespace ValheimDeepWaters
         /// </summary>
         private static string? BundleFile(string name)
         {
-            foreach (var ext in new[] { ".bundle", PackedBundles.Extension })
-            {
-                string path = Path.Combine(ModelsFolder, name + ext);
-                if (File.Exists(path)) return path;
-            }
+            foreach (var dir in Folders)                 // the player's own folder first, then the shipped one
+                foreach (var ext in new[] { ".bundle", PackedBundles.Extension })
+                {
+                    string path = Path.Combine(dir, name + ext);
+                    if (File.Exists(path)) return path;
+                }
             return null;
         }
 
         /// <summary>Every bundle in the Models folder, one file per name (see BundleFile).</summary>
         private static IEnumerable<string> BundleFiles() =>
-            Directory.GetFiles(ModelsFolder, "*.bundle").Concat(Directory.GetFiles(ModelsFolder, "*" + PackedBundles.Extension))
+            Folders.SelectMany(d => Directory.GetFiles(d, "*.bundle").Concat(Directory.GetFiles(d, "*" + PackedBundles.Extension)))
                 .Select(Path.GetFileNameWithoutExtension).Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(BundleFile).Where(p => p != null).Select(p => p!);
 
@@ -319,8 +358,8 @@ namespace ValheimDeepWaters
 
             foreach (var ext in new[] { ".png", ".jpg", ".jpeg" })
             {
-                string texPath = Path.Combine(ModelsFolder, baseName + ext);
-                if (!File.Exists(texPath)) continue;
+                string? texPath = FindFile(baseName + ext);
+                if (texPath == null) continue;
 
                 try
                 {

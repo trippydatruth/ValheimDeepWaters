@@ -37,7 +37,7 @@ namespace ValheimDeepWaters
                 if (p == null || p == local) continue;
                 int id = p.GetInstanceID();
                 var st = AnglerSync.Read(p, out _);
-                bool active = st.RodOut && st.Phase >= 1 && st.HasTarget && !p.IsDead() && ContentRegistry.IsRod(p.GetCurrentWeapon())
+                bool active = st.RodOut && st.Phase >= 1 && st.HasTarget && !p.IsDead() && ContentRegistry.HoldsRod(p)
                               && Vector3.Distance(p.transform.position, local.transform.position) < ShowWithin;
                 if (!active) continue;
                 Gone.Remove(id);

@@ -529,14 +529,14 @@ These need `devcommands`, like Valheim's own spawn command.
 
 ### Fish, bait, rods, hooks and buffs
 
-These are defined in `Fish.json`, `Baits.json`, `Rods.json`, `Hooks.json` and `Buffs.json` in
+These are defined in `Fish.json`, `Baits.json`, `Rods.json`, `Hooks.json`, `Tackle.json` (weights and leaders) and `Buffs.json` in
 `BepInEx/config/ValheimDeepWaters/`. They're created on first run, and your edits are never overwritten. When
 an update adds new fish, bait, rods, hooks or buffs, they're added to your files automatically (each one only
 once, so an entry you delete stays deleted). Delete a whole file to get its defaults back.
 
 ### Custom models
 
-Put model files in `BepInEx/config/ValheimDeepWaters/Models/`:
+The mod's own models ship in a `Models` folder beside its DLL in `BepInEx/plugins`. To use your own, put model files in `BepInEx/config/ValheimDeepWaters/Models/` (create the folder); a file there replaces the shipped one of the same name:
 
 | Name | Model for |
 |---|---|

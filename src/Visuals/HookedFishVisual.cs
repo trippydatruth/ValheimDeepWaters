@@ -48,18 +48,27 @@ namespace ValheimDeepWaters
                 }
                 else if (prefab != null)
                 {
-                    foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
+                    // Only what the prefab really shows: vanilla fish keep spare models switched off (the pufferfish
+                    // has a hidden one that read as an anglerfish in the water), and an "attach" copy for item stands.
+                    // Pass 0: switched on and not under "attach"; pass 1: switched on, "attach" allowed (some vanilla
+                    // fish, the pufferfish among them, keep all their looks there); pass 2: everything, as a last resort.
+                    for (int pass = 0; pass < 3 && !any; pass++)
                     {
-                        var mr = mf.GetComponent<MeshRenderer>();
-                        if (mf.sharedMesh == null || mr == null) continue;
-                        any |= CopyRenderer(go.transform, mf.transform, mf.sharedMesh, mr.sharedMaterials);
-                    }
+                        foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
+                        {
+                            var mr = mf.GetComponent<MeshRenderer>();
+                            if (mf.sharedMesh == null || mr == null) continue;
+                            if (pass < 2 && !Shown(mr, prefab.transform, allowAttach: pass == 1)) continue;
+                            any |= CopyRenderer(go.transform, mf.transform, mf.sharedMesh, mr.sharedMaterials);
+                        }
 
-                    // A rigged fish's bind-pose mesh is fine for a non-animated display.
-                    foreach (var smr in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                    {
-                        if (smr.sharedMesh == null) continue;
-                        any |= CopyRenderer(go.transform, smr.transform, smr.sharedMesh, smr.sharedMaterials);
+                        // A rigged fish's bind-pose mesh is fine for a non-animated display.
+                        foreach (var smr in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                        {
+                            if (smr.sharedMesh == null) continue;
+                            if (pass < 2 && !Shown(smr, prefab.transform, allowAttach: pass == 1)) continue;
+                            any |= CopyRenderer(go.transform, smr.transform, smr.sharedMesh, smr.sharedMaterials);
+                        }
                     }
                 }
             }
@@ -101,6 +110,16 @@ namespace ValheimDeepWaters
 
         /// <summary>source is null for a custom mesh (placed at the origin); otherwise the source's local
         /// transform is copied so multi-piece prefabs keep their layout.</summary>
+        /// <summary>Whether a prefab's renderer is one it actually shows: enabled, on objects that are all switched on,
+        /// and not under "attach" (the copy item stands use).</summary>
+        private static bool Shown(Renderer r, Transform root, bool allowAttach = false)
+        {
+            if (!r.enabled) return false;
+            for (var t = r.transform; t != null && t != root; t = t.parent)
+                if (!t.gameObject.activeSelf || (!allowAttach && t.name == "attach")) return false;
+            return true;
+        }
+
         private static bool CopyRenderer(Transform parent, Transform? source, Mesh sharedMesh, Material[] sharedMaterials)
         {
             var child = new GameObject(source != null ? source.name : "custom");

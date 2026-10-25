@@ -77,7 +77,7 @@ namespace ValheimDeepWaters
             float baitTop = 268f * _vu; // just below Valheim's minimap
             DrawBaitPanel(player, right, baitTop);
 
-            float y = baitTop + 92f;
+            float y = baitTop + 92f + BaitRigRow;
             if (s != null && s.Phase == FishingPhase.Fighting)
             {
                 DrawTension(s, right, y);
@@ -116,7 +116,7 @@ namespace ValheimDeepWaters
 
         private static void DrawBaitPanel(Player player, float right, float top)
         {
-            const float w = 320f, h = 80f;
+            const float w = 320f, h = 80f + BaitRigRow;
             var r = new Rect(right - w, top, w, h);
             Panel(r);
 
@@ -141,7 +141,13 @@ namespace ValheimDeepWaters
                 hookText = $"{Loc.Text(hook.Name)}  ·  {def.MinKg:0.#}–{def.MaxKg:0.#} kg";
             Label(line2, hookText, _text, hook == null ? Ember : Cream, TextAnchor.MiddleLeft);
             KeyPrompts(new[] { (VdwConfig.CycleHookKey.Value.ToString(), hook != null ? "x" + hook.Count : "-") }, line2.xMax, line2.y, alignRight: true);
+
+            // Row 3: the rig - float, leader, weight - and how deep it fishes.
+            string rig = FishingController.RigSummary(player);
+            Label(new Rect(r.x + 14f, r.y + 70f, w - 28f, 22f), rig.Length > 0 ? rig : "Lure", _small, rig.Contains("dragging") ? Ember : Dim, TextAnchor.MiddleLeft);
         }
+
+        private const float BaitRigRow = 22f;
 
         private static void DrawTension(FishingSession s, float right, float top)
         {

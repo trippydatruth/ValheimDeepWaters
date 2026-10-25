@@ -67,6 +67,7 @@ namespace ValheimDeepWaters
             foreach (var fish in ContentRegistry.Fish.Values)
             {
                 if (fish.IsVanilla) continue; // vanilla fish keep vanilla's spawns
+                if (BossFish.IsBoss(fish.Id)) continue; // a boss fish only ever comes when its lure summons it
                 bool baitfish = !string.IsNullOrWhiteSpace(fish.CatchBait);
                 GameObject? prefab = null;
                 if (baitfish) ContentRegistry.SwimmingBaitfish.TryGetValue(fish.Id, out prefab);

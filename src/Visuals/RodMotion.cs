@@ -173,7 +173,7 @@ namespace ValheimDeepWaters
                 st.Phase = s.Phase == FishingPhase.Waiting ? 1 : s.Phase == FishingPhase.Bite ? 2 : 3;
                 st.Pulling = s.Pulling;
                 st.Running = s.Running;
-                st.Lure = s.Lure != null;
+                st.Lure = s.Lure != null || (s.Bobber != null && s.Bobber.Hidden);   // no float: a lure or a weighted rig
                 st.Load = s.Phase == FishingPhase.Fighting ? Mathf.Clamp01(s.Tension / Mathf.Max(1f, s.Rod.BreakTension)) : 0f;
                 st.Angle = s.Angle;
                 var end = FishingController.CurrentBobberPosition();
@@ -194,7 +194,7 @@ namespace ValheimDeepWaters
             {
                 if (p == null || p == local) continue;
                 var st = AnglerSync.Read(p, out var fresh);
-                st.RodOut &= !p.IsDead() && ContentRegistry.IsRod(p.GetCurrentWeapon());
+                st.RodOut &= !p.IsDead() && ContentRegistry.HoldsRod(p);
                 Animate(p, st, fresh);
             }
             // forget anglers who've gone

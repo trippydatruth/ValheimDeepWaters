@@ -32,6 +32,7 @@ namespace ValheimDeepWaters
         /// <summary>The hook that's on the line goes with it when the line snaps, the rod breaks or the hook gives.</summary>
         private static void LoseHook(Player player, FishingSession s)
         {
+            LoseRig(player, s);
             if (s.Lure != null)
             {
                 // A lure goes with the line - unless it was already spent when the fish took it (boss lures).
@@ -195,9 +196,13 @@ namespace ValheimDeepWaters
                         UpdateOmen(player, s, bobberPos);
                         if (_session == null || s.Phase != FishingPhase.Waiting) break;
                     }
+                    // a weight too light for the water is dragged along the bottom
+                    if (!UpdateDrift(player, s)) return;
+                    bobberPos = LineEnd(player, s);
                     CheckRealNearbyFish(bobberPos, s);
                     // A lure left sitting still draws no strikes: fish follow it but only hit it while it moves.
                     bool live = s.Lure == null || s.Boss != null || Time.time - s.LastMoved < LurePause;   // (a boss comes when it comes)
+                    if (s.Dragged && s.Boss == null) live = false;   // nothing takes a bait that's being dragged about
                     var biter = FishApproach.Update(s, s.Bobber, bobberPos, waiting: live);
                     if (biter != null)
                     {

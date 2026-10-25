@@ -26,6 +26,7 @@ namespace ValheimDeepWaters
 
         // Set by the vdw_debug console command: the next cast gets a near-instant bite.
         internal static bool DebugQuickBite;
+        internal static string? DebugCatch;   // vdw_debug catch <fish>: the next cast brings that fish
 
         private static readonly float[] CoastalProbeFractions = { 0.3f, 0.6f, 1.0f };
         private const float CoastalProbeDistance = 70f;   // how far out past the landing spot to look for open ocean
@@ -169,6 +170,11 @@ namespace ValheimDeepWaters
 
             if (VdwConfig.LogKey.Value.IsDown() && !InputBlocked())
                 _logOpen = !_logOpen;
+            if (VdwConfig.RodKey.Value.IsDown() && !InputBlocked() && !player.IsDead())
+            {
+                Tackle.ToggleRod(player);
+                _rodEquipped = ContentRegistry.IsRod(player.GetCurrentWeapon());
+            }
             UpdateLogCursor(player);
 
             if (!_rodEquipped || player.IsDead() || player.IsSwimming())

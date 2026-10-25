@@ -6,10 +6,10 @@
 # The package holds:
 #   manifest.json, icon.png, README.md, CHANGELOG.md
 #   plugins\ValheimDeepWaters.dll
-#   config\ValheimDeepWaters\Models\   the custom models (bundles, bobber) and icons; r2modman / Thunderstore
-#                                      Mod Manager installs this into BepInEx\config
+#   plugins\Models\                    the custom models (bundles, bobber) and icons, installed beside the DLL;
+#                                      kept out of BepInEx\config so mod managers' config pages show only settings
 param(
-    [string]$ModelsDir = "$env:APPDATA\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Test\BepInEx\config\ValheimDeepWaters\Models"
+    [string]$ModelsDir = "$env:APPDATA\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Test\BepInEx\plugins\Trippy-Valheim_Deep_Waters\Models"
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -24,7 +24,7 @@ if ($LASTEXITCODE -ne 0) { throw "Build failed." }
 
 $stage = "$root\dist\stage"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
-New-Item -ItemType Directory -Force "$stage\plugins", "$stage\config\ValheimDeepWaters\Models" | Out-Null
+New-Item -ItemType Directory -Force "$stage\plugins\Models" | Out-Null
 
 Copy-Item "$root\thunderstore\manifest.json", "$root\thunderstore\icon.png", "$root\README.md", "$root\CHANGELOG.md" $stage
 Copy-Item "$root\bin\Release\netstandard2.1\ValheimDeepWaters.dll" "$stage\plugins\"
@@ -54,7 +54,7 @@ public static class VdwPack
 }
 '@
 if (Test-Path $ModelsDir) {
-    $dest = "$stage\config\ValheimDeepWaters\Models"
+    $dest = "$stage\plugins\Models"
     Get-ChildItem $ModelsDir -File -Filter *.bundle | ForEach-Object {
         [VdwPack]::Pack($_.FullName, (Join-Path $dest ($_.BaseName + '.vdwpak')))
     }

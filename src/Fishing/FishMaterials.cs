@@ -108,6 +108,8 @@ namespace ValheimDeepWaters
                 station.m_craftingSkill = Skills.SkillType.Fishing;
             }
             if (CustomModels.ApplyToPrefab(table.PiecePrefab, "piece_cleaning_table")) PieceDressing.Dress(table.PiecePrefab);
+            // the station's own icon (crafting panel, "station level" popup) is separate from the build menu's
+            if (station != null && table.Piece.m_icon != null) station.m_icon = table.Piece.m_icon;
             PieceManager.Instance.AddPiece(table);
 
             AddExtension(1, "Filleting Knife Rack", "Thin knives for filleting. Fish Cleaning Table level 2: cleans for Spiny Fins and Fish Roe, and cuts Fish Fillets.",
@@ -181,6 +183,7 @@ namespace ValheimDeepWaters
             var names = ContentRegistry.Rods.SelectMany(r => r.Recipe.Concat(r.Upgrade)).Select(r => r.Item)
                 .Concat(ContentRegistry.Baits.Values.SelectMany(b => b.Recipe).Select(r => r.Item))
                 .Concat(ContentRegistry.Hooks.Values.SelectMany(h => h.Recipe).Select(r => r.Item))
+                .Concat(ContentRegistry.Tackle.Values.SelectMany(g => g.Recipe).Select(r => r.Item))
                 .Concat(FishingBuffs.Buffs.Values.SelectMany(b => b.Recipe).Select(r => r.Item))
                 .Distinct();
             var missing = names.Where(n => !string.IsNullOrWhiteSpace(n) && ObjectDB.instance.GetItemPrefab(n) == null).ToList();

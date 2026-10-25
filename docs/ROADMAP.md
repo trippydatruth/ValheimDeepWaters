@@ -87,12 +87,20 @@ Improvements first, new content last, in this order:
 34. **Ice fishing.** Fishing through a hole in the ice on frozen water, with fish that only bite there.
 35. **Fly fishing.** A fly rod and flies, cast and worked on the surface for river fish.
 36. **Different hooks.** More kinds of hook with their own uses, alongside the sizes already in.
+37. **Terminal tackle and depth.** *Done 1.0.1: Tackle.json weights (split shot, bullet/Texas, egg/Carolina, pyramid) and the leader, Weight and Leader slots, leader length on the tackle panel, fish feeding depths (FeedMinDepth/FeedMaxDepth/Bottom), water dragging light weights.* Sinker weights, leaders and leader length, and a way to choose the depth you fish
+    at (float stop or sinker), with fish that hold at different depths.
+38. **Tackle inventory.** *Started 1.0.1: a rod slot (rod takes no inventory space, Alt+F to use it), rod stats on the panel, and the panel can be dragged anywhere.* A Fishing Planet-style tackle screen: the rod in the middle with a slot for each piece
+    of equipment (reel, line, leader, weight, hook, float, bait or lure) instead of the inventory bait slot.
+39. **Meads from mead bases.** The fishing meads made like vanilla meads: a mead base at the cauldron, fermented in
+    the fermenter into several meads.
+40. **Cooler box.** A box for your catch, like the tackle boxes but for fish: keeps them fresh (slower spoiling or none),
+    carried or set down. (The tackle boxes are in: 1.0.1, TackleBoxes.cs.)
 ## After the first release
 
 - **Hildir's stock in recipes** (the rest of #20). Checked in the game files: Sparkler (`Sparkler`), Basic Fireworks
   (`FireworksRocket_White`), her caps `HelmetHat1`-`10` (Brown Fur Cap = `HelmetHat3`, Grey Fur Cap = `HelmetHat8`,
   Simple Red Cap = `HelmetHat5`); vanilla has no straw hat.
-  - **Sparkler Popper** - a topwater lure (Sparkler 1, fine wood 2, fish scales 2 -> 3 at the workbench) with its own
+  - **Sparkler Popper** - a topwater lure (Sparkler 1, fine wood 2, fish scales 2, a Medium Hook -> 1 at the forge, like the other lures since 1.0.1) with its own
     model and icon: at night it lights the float like the Lantern Float and fish bite sooner (~+40%).
   - **Ice Angler's Fur Cap** (Grey Fur Cap, wolf pelt, rime scales): frost resistance and a longer hook window.
   - **Sun Angler's Cap** (Simple Red Cap, feathers, fish scales): fish bite sooner by day. Open: keep her caps' look or

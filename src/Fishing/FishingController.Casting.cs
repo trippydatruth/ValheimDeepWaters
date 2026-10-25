@@ -51,7 +51,9 @@ namespace ValheimDeepWaters
             }
 
             // A lure is heavier than a float rig and is meant to be cast far and worked back: it goes further.
-            float fullCast = Mathf.Min(rod.CastDistance * (lure != null ? LureCastFactor : 1f), rod.LineCapacity);
+            // ...and a weight carries further still
+            float weightCast = 1f + (RigWeight(player, lure)?.CastBonus ?? 0f);
+            float fullCast = Mathf.Min(rod.CastDistance * (lure != null ? LureCastFactor : 1f) * weightCast, rod.LineCapacity);
             float maxDist = fullCast * Mathf.Lerp(MinChargeCastFraction, 1f, Mathf.Clamp01(chargeFraction));
 
             if (!TryFindWater(player, maxDist, out var dir, out var spot, out var distance, out var depth))
@@ -88,6 +90,11 @@ namespace ValheimDeepWaters
                 return;
             }
 
+            // vdw_debug catch <fish>: that fish, straight to the bait (any water, any bait)
+            FishDefinition? debugFish = null;
+            if (DebugCatch != null && lureBoss == null && ContentRegistry.Fish.TryGetValue(DebugCatch, out var df)) { debugFish = fish = df; DebugQuickBite = true; }
+            DebugCatch = null;
+
             bool quick = DebugQuickBite;
             DebugQuickBite = false;
             float wait = quick ? 0f : RollWait(baitDef, spot, trailer);
@@ -104,6 +111,7 @@ namespace ValheimDeepWaters
                      : ContentRegistry.HookByItemName.TryGetValue(hookStack.Name, out var hookDef) ? hookDef : null,
                 Lure = lure,
                 Trailer = trailer,
+                ForcedFish = debugFish,
                 LastMoved = Time.time,             // a lure draws strikes as it falls, then only while it's worked
                 Phase = FishingPhase.Waiting,
                 LineDistance = distance,
@@ -117,9 +125,12 @@ namespace ValheimDeepWaters
                 Biome = biome
             };
             SetBiterFish(s, fish, RollWeight(fish), standIn: true);
+            SetUpRig(player, s, lure, depth);
+            // a weight takes a while to get the bait down: fish come once it's there
+            if (s.Weight != null && lureBoss == null && !quick) wait += Mathf.Min(5f, s.BaitDepth / Mathf.Max(0.1f, s.Weight.SinkSpeed));
 
             s.Drag = _dragLevel;
-            s.Bobber = BobberVisual.Create(spot, hidden: lure != null);   // no float on a lure
+            s.Bobber = BobberVisual.Create(spot, hidden: lure != null || s.Weight != null);   // no float on a lure or a weighted rig
             // Thrown from the rod tip along a throw's arc, longer in the air the further it goes.
             Vector3 throwFrom = RodMotion.TryGetTip(out var tipNow) ? tipNow : player.transform.position + player.transform.forward * 0.6f + Vector3.up * 1.5f;
             s.Bobber.BeginCastTravel(throwFrom, spot);
@@ -127,10 +138,10 @@ namespace ValheimDeepWaters
             // The bait on the hook, until a fish is hooked.
             if (baitDef != null && ContentRegistry.BaitItems.TryGetValue(baitDef.Id, out var baitPrefab))
             {
-                s.BaitVisual = HookedFishVisual.Create(baitPrefab, "bait_" + baitDef.Id);
+                s.BaitVisual = HookedFishVisual.Create(baitPrefab, ContentRegistry.BaitModelKey(baitDef.Id));   // the bluegill has no bait model of its own: its fish model
                 if (s.BaitVisual != null)
                 {
-                    s.BaitVisual.StayUnder = lure != null ? 0.3f : 0.05f;   // a lure swims under the surface, below where the line goes in
+                    s.BaitVisual.StayUnder = s.Weight != null ? 0.6f : lure != null ? 0.3f : 0.05f;   // a lure swims under the surface, below where the line goes in
                     s.BaitVisual.SetOnHook();
                 }
             }
@@ -148,7 +159,9 @@ namespace ValheimDeepWaters
             FishApproach.Spawn(s, spot, wait + 0.55f, quick);
 
             _session = s;
-            Msg(lure != null ? "Cast... hold right click to work the lure back." : "Cast...");
+            Msg(lure != null ? "Cast... hold right click to work the lure back."
+                : s.Weight != null ? $"Cast... the {Loc.Text(s.Weight.Name)} takes your bait down to the bottom ({s.Depth:0} m)."
+                : "Cast...");
         }
 
         /// <summary>The hook built into a lure, as the fight sees it: its weight range, or one that never gives.</summary>
@@ -181,8 +194,8 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>Rolls the species of one fish swimming around the cast.</summary>
-        internal static FishDefinition? RollSuitorFish(FishingSession s) =>
-            SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer, s.Style);
+        internal static FishDefinition? RollSuitorFish(FishingSession s) => s.ForcedFish ??
+            SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer, s.Style, baitDepth: s.BaitDepth);
 
         /// <summary>
         /// Chance a fish that comes to the bait actually wants it - vanilla's per-bait chance (TestBate). A fish
@@ -282,7 +295,7 @@ namespace ValheimDeepWaters
 
         private static FishDefinition? SelectFish(BaitDefinition? bait, bool ocean, float depth, float legendaryBoost = 1f,
             Heightmap.Biome biome = Heightmap.Biome.None, IEnumerable<string>? nearby = null, BaitDefinition? trailer = null,
-            RetrieveStyle style = RetrieveStyle.None, bool allowNone = true)
+            RetrieveStyle style = RetrieveStyle.None, bool allowNone = true, float baitDepth = -1f)
         {
             bool deep = ocean && depth >= DeepOceanDepth;
             // Boss fish are never caught by chance: only their lure brings them.
@@ -299,6 +312,7 @@ namespace ValheimDeepWaters
                 float w = Mathf.Max(0f, f.BiteWeight) * Mastery.BiteFactor(f);   // species you've mastered come more readily
                 if (near != null && near.Contains(f.Id)) w *= NearbySpeciesBoost;
                 if (f.Legendary) w *= legendaryBoost;
+                w *= DepthFactor(f, baitDepth, depth);   // fish bite best at the depth they feed at
 
                 if (EnvMan.instance != null)
                 {

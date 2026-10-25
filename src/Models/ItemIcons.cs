@@ -83,8 +83,8 @@ namespace ValheimDeepWaters
         {
             string name = modelKey + "_icon";
 
-            string png = Path.Combine(CustomModels.ModelsFolder, name + ".png");
-            if (File.Exists(png))
+            string? png = CustomModels.FindFile(name + ".png");
+            if (png != null)
             {
                 var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = name };
                 if (tex.LoadImage(File.ReadAllBytes(png)))

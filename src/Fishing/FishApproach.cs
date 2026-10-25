@@ -80,7 +80,7 @@ namespace ValheimDeepWaters
 
                 sui.WeightKg = FishingController.RollWeight(fish, heavier);
                 sui.HookTooSmall = !quick && FishingController.HookFarTooSmall(s.Hook, sui.WeightKg);
-                sui.TakesBait = quick || (!sui.HookTooSmall && UnityEngine.Random.value < FishingController.BaitInterest(fish, s.Bait, s.Trailer) + interest);
+                sui.TakesBait = quick || (!sui.HookTooSmall && UnityEngine.Random.value < FishingController.BaitInterest(fish, s.Bait, s.Trailer) + interest + s.RigInterest);
                 sui.FakeNibblesLeft = quick || s.Lure != null ? 0 : Mathf.Max(0, UnityEngine.Random.Range(MinNibbles, MaxNibbles + 1) - fewerNibbles);
 
                 // First fish commits after the configured wait (minus its swim time, so the bite still lands

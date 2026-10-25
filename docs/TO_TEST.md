@@ -3,6 +3,14 @@
 Things built and installed to the Test profile that haven't been tried in game yet. Tick them off (or delete the line)
 once they work.
 
+- [ ] **Tackle models and icons:** Split Shot, Bullet Weight, Egg Sinker, Pyramid Sinker and Leader Line show their own
+  icons in the inventory and tackle slots, and their own models when dropped on the ground (not nails / leather scraps).
+  Check their size on the ground reads well (they're shown 1.5x life size).
+- [ ] **1.0.1 multiplayer - needs a second player:**
+  - Watching your friend fish you now see their line, float, hooked fish and rod bending (this was invisible before).
+  - Your friend rowing the Fishing Boat: they sit on the bench (no sliding), their arms follow the oars as they row.
+  - Flies: stand near your friend on a shore; you both see the same fly swarms in the same places. One of you catches
+    a fly, it's gone for the other. Spook one (run at it), it flies off for both.
 - [ ] **Fights everyone can see (#29) - needs a second player.** You fish, your friend watches from nearby (then swap):
   - They see your line from your rod tip to the water, and your float on it (the Lantern Float glows at night if you
     have it on). With a lure there's no float, just the line going in.

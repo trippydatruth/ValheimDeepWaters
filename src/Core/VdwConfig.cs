@@ -22,6 +22,10 @@ namespace ValheimDeepWaters
         public static ConfigEntry<KeyboardShortcut> CycleBaitKey = null!;
         public static ConfigEntry<KeyboardShortcut> CycleHookKey = null!;
         public static ConfigEntry<KeyboardShortcut> LogKey = null!;
+        public static ConfigEntry<KeyboardShortcut> RodKey = null!;
+        public static ConfigEntry<KeyboardShortcut> TackleBoxKey = null!;
+        public static ConfigEntry<KeyboardShortcut> TackleBoxSetDownKey = null!;
+        public static ConfigEntry<string> TacklePanelPosition = null!;
         public static ConfigEntry<StepControl> DragControl = null!;
         public static ConfigEntry<StepControl> ReelSpeedControl = null!;
 
@@ -29,6 +33,7 @@ namespace ValheimDeepWaters
         public static string BaitFile => Path.Combine(Plugin.ConfigDirectory, "Baits.json");
         public static string RodsFile => Path.Combine(Plugin.ConfigDirectory, "Rods.json");
         public static string HooksFile => Path.Combine(Plugin.ConfigDirectory, "Hooks.json");
+        public static string TackleFile => Path.Combine(Plugin.ConfigDirectory, "Tackle.json");
         public static string BuffsFile => Path.Combine(Plugin.ConfigDirectory, "Buffs.json");
 
         /// <summary>
@@ -57,6 +62,10 @@ namespace ValheimDeepWaters
             CycleBaitKey = cfg.Bind("3 Controls", "Cycle Bait Key", new KeyboardShortcut(KeyCode.B), "Swaps in the next bait you're carrying.");
             CycleHookKey = cfg.Bind("3 Controls", "Cycle Hook Key", new KeyboardShortcut(KeyCode.H), "Swaps in the next hook you're carrying.");
             LogKey = cfg.Bind("3 Controls", "Catch Log Key", new KeyboardShortcut(KeyCode.J), "Opens the catch log.");
+            RodKey = cfg.Bind("3 Controls", "Rod Key", new KeyboardShortcut(KeyCode.F, KeyCode.LeftAlt), "Takes the rod in your tackle's rod slot in hand, or puts it away.");
+            TackleBoxKey = cfg.Bind("3 Controls", "Tackle Box Key", new KeyboardShortcut(KeyCode.K), "Opens (or closes) the tackle box you're wearing.");
+            TackleBoxSetDownKey = cfg.Bind("3 Controls", "Tackle Box Set Down Key", new KeyboardShortcut(KeyCode.K, KeyCode.LeftShift), "Sets the tackle box you're wearing down as a chest (Shift+E on it picks it up again).");
+            TacklePanelPosition = cfg.Bind("4 Interface", "Tackle Panel Position", "", "Where the tackle panel sits in the inventory screen, set by dragging it. Empty: under the inventory. Double-clicking the panel also resets it.");
             DragControl = cfg.Bind("3 Controls", "Drag Control", StepControl.MouseWheel, "What sets the drag while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). If drag and reel speed use the same control, drag gets it.");
             ReelSpeedControl = cfg.Bind("3 Controls", "Reel Speed Control", StepControl.AltMouseWheel, "What sets the reel speed while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). Shift always reels at full speed.");
         }

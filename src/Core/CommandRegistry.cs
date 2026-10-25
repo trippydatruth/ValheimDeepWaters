@@ -17,7 +17,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_give";
             public override bool IsCheat => true; // needs devcommands, like vanilla's spawn
-            public override string Help => "Give Deep Waters fishing content. Usage: vdw_give [rod|rod_<id>|hook_<id>|buff_<id>|bait_id|fish_id] [amount]  (ids come from vdw_debug listrods / listhooks / listbuffs / listbait / listfish)";
+            public override string Help => "Give Deep Waters fishing content. Usage: vdw_give [rod|rod_<id>|hook_<id>|tackle_<id>|tacklebox_t1..t4|buff_<id>|bait_id|fish_id] [amount]  (ids come from vdw_debug listrods / listhooks / listbuffs / listbait / listfish)";
 
             public override void Run(string[] args)
             {
@@ -46,6 +46,10 @@ namespace ValheimDeepWaters
                     prefabName = ContentRegistry.RodPrefabName(rod);
                 else if (what.StartsWith("hook_", StringComparison.OrdinalIgnoreCase) && ContentRegistry.Hooks.ContainsKey(what.Substring(5)))
                     prefabName = "VDW_Hook_" + what.Substring(5);
+                else if (what.StartsWith("tacklebox_", StringComparison.OrdinalIgnoreCase) && TackleBoxes.Tiers.Any(t => t.Id.Equals(what.Substring(10), StringComparison.OrdinalIgnoreCase)))
+                    prefabName = "VDW_TackleChest_" + what.Substring(10).ToLowerInvariant();
+                else if (what.StartsWith("tackle_", StringComparison.OrdinalIgnoreCase) && ContentRegistry.Tackle.ContainsKey(what.Substring(7)))
+                    prefabName = "VDW_Tackle_" + what.Substring(7);
                 else if (what.StartsWith("buff_", StringComparison.OrdinalIgnoreCase) && FishingBuffs.Buffs.ContainsKey(what.Substring(5)))
                     prefabName = "VDW_Buff_" + what.Substring(5);
                 else if (ContentRegistry.Baits.ContainsKey(what))
@@ -76,7 +80,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | catch <fish> | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -98,6 +102,17 @@ namespace ValheimDeepWaters
                     }
                     FishingController.DebugBoss = args[1];
                     Console.instance.Print($"Next cast summons {args[1]}, wherever you are and whatever the bait.");
+                }
+                else if (args[0].Equals("catch", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Testing: the next cast brings this fish straight to the bait, whatever the water or bait.
+                    if (args.Length < 2 || !ContentRegistry.Fish.ContainsKey(args[1]))
+                    {
+                        Console.instance.Print("Usage: vdw_debug catch <fish id>   (ids from vdw_debug listfish)");
+                        return;
+                    }
+                    FishingController.DebugCatch = args[1];
+                    Console.instance.Print($"Next cast: a {args[1]} comes straight to the bait and bites.");
                 }
                 else if (args[0].Equals("worms", StringComparison.OrdinalIgnoreCase))
                 {

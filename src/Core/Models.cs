@@ -14,6 +14,14 @@ namespace ValheimDeepWaters
         public WaterType Water = WaterType.Any;
         public float MinDepth = 0f;
         public float MaxDepth = 999f;
+        /// <summary>
+        /// How far below the surface it takes bait (m), for leaders and weights; 0/0 = anywhere. MinDepth/MaxDepth are the
+        /// water it lives in.
+        /// </summary>
+        public float FeedMinDepth = 0f;
+        public float FeedMaxDepth = 0f;
+        /// <summary>A bottom feeder: it takes bait on or near the bottom (a weighted rig, or a float in shallow water).</summary>
+        public bool Bottom = false;
         public float MinWeightKg = 0.1f;
         public float MaxWeightKg = 3f;
         public float FightStrength = 1f;
@@ -110,6 +118,27 @@ namespace ValheimDeepWaters
         public FindDefinition? Find;      // for non-craftable hooks: where they turn up
     }
 
+    /// <summary>Terminal tackle from Tackle.json: a weight (sinker) or a leader.</summary>
+    public sealed class TackleDefinition
+    {
+        public string Id = "";
+        public string Kind = "Weight";      // Weight | Leader
+        public string Name = "";
+        public string Description = "";
+        public float CastBonus = 0f;        // weight: +x of the cast distance
+        public float SinkSpeed = 1f;        // weight: m/s it takes the bait down (the wait before fish come)
+        public string Rig = "";             // weight: "Texas" (with a soft lure it fishes the bottom) | "Carolina" (with a leader)
+        public float Hold = 0.5f;           // weight: how hard the water must push to drag it (waves, wind, storms)
+        public string VanillaFallbackPrefab = "BronzeNails";
+        public string CraftingStation = "forge";
+        public int StationLevel = 1;
+        public int CraftAmount = 5;
+        public List<RequirementDefinition> Recipe = new List<RequirementDefinition>();
+
+        public bool IsWeight => string.Equals(Kind, "Weight", System.StringComparison.OrdinalIgnoreCase);
+        public bool IsLeader => string.Equals(Kind, "Leader", System.StringComparison.OrdinalIgnoreCase);
+    }
+
     public sealed class RequirementDefinition
     {
         public string Item = "";
@@ -159,6 +188,14 @@ namespace ValheimDeepWaters
         public HookDefinition? Hook;
         public BaitDefinition? Lure;      // the lure in the hook slot (it is also Bait: what the fish come to), or null
         public BaitDefinition? Trailer;   // the trailer on that lure, if any
+        public FishDefinition? ForcedFish; // vdw_debug catch: every fish that comes to this cast is this one
+        public TackleDefinition? Weight;  // the sinker on the line (no float), if it's being used
+        public bool Leader;               // a leader on the line
+        public float BaitDepth = -1f;     // how far down the bait (or a weighted lure) sits, m; -1 = depth doesn't count (a plain lure)
+        public float RigInterest;         // extra interest from the rig (a Carolina or Texas rig)
+        public string RigName = "";       // for the HUD and messages: "Float", "Carolina rig"...
+        public bool Dragged;              // the water is dragging the weight (nothing bites)
+        public float DragWarnedAt = -100f;
         public float LastMoved = -100f;    // when the line was last reeled while waiting (a lure only draws strikes while it moves)
         public float DragSlip;            // 0..1: how hard the drag is slipping (line pulled out against it, or a loose drag spinning)
         public readonly RetrieveTracker Tracker = new();   // how the lure is being worked (Retrieves.cs)

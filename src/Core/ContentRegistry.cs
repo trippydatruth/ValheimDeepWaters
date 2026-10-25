@@ -20,11 +20,28 @@ namespace ValheimDeepWaters
         public static readonly Dictionary<string, BaitDefinition> BaitByItemName = new();
         public static readonly Dictionary<string, HookDefinition> Hooks = new();
         public static readonly Dictionary<string, HookDefinition> HookByItemName = new();
+        public static readonly Dictionary<string, TackleDefinition> Tackle = new();          // weights and leaders (Tackle.json)
+        public static readonly Dictionary<string, TackleDefinition> TackleByItemName = new();
         public static readonly List<RodDefinition> Rods = new();
         public static readonly Dictionary<string, RodDefinition> RodByItemName = new();
         private static readonly Dictionary<string, ItemDrop> RodItems = new();
 
         public static bool IsRod(ItemDrop.ItemData? item) => GetRod(item) != null;
+
+        private static readonly System.Reflection.FieldInfo? VisRightHash = HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentRightItemHash");
+
+        /// <summary>
+        /// Whether a player has a Deep Waters rod in hand. Other players' inventories aren't loaded on this client (their
+        /// GetCurrentWeapon is just fists), so for them it reads the item their body shows, which the game does share.
+        /// </summary>
+        public static bool HoldsRod(Player? p)
+        {
+            if (p == null) return false;
+            if (p == Player.m_localPlayer) return IsRod(p.GetCurrentWeapon());
+            var vis = p.GetComponent<VisEquipment>();
+            if (vis == null || VisRightHash?.GetValue(vis) is not int held || held == 0) return false;
+            return RodItems.Values.Any(r => r != null && r.gameObject.name.GetStableHashCode() == held);
+        }
 
         public static RodDefinition? GetRod(ItemDrop.ItemData? item) =>
             item?.m_shared != null && RodByItemName.TryGetValue(item.m_shared.m_name, out var rod) ? rod : null;
@@ -46,6 +63,8 @@ namespace ValheimDeepWaters
                 RegisterRods();
                 SetUpHaldor();
                 RegisterHooks();
+                try { RegisterTackle(); } catch (Exception ex) { Plugin.Log.LogError($"Weights and leaders failed: {ex}"); }
+                try { TackleBoxes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Tackle boxes failed: {ex}"); }
                 FishingBuffs.Register();
                 RegisterBaits();
                 RegisterFish();
@@ -88,23 +107,41 @@ namespace ValheimDeepWaters
             if (!File.Exists(VdwConfig.BuffsFile))
                 File.WriteAllText(VdwConfig.BuffsFile, DefaultData.BuffsJson);
 
+            if (!File.Exists(VdwConfig.TackleFile))
+                File.WriteAllText(VdwConfig.TackleFile, DefaultData.TackleJson);
+
             var offered = LoadOffered();
             MergeDefaults(VdwConfig.FishFile, DefaultData.FishJson, "Fish", offered);
             MergeDefaults(VdwConfig.BaitFile, DefaultData.BaitJson, "Baits", offered);
             MergeDefaults(VdwConfig.RodsFile, DefaultData.RodsJson, "Rods", offered);
             MergeDefaults(VdwConfig.HooksFile, DefaultData.HooksJson, "Hooks", offered);
             MergeDefaults(VdwConfig.BuffsFile, DefaultData.BuffsJson, "Buffs", offered);
+            MergeDefaults(VdwConfig.TackleFile, DefaultData.TackleJson, "Tackle", offered);
             try { File.WriteAllText(OfferedFile, offered.ToString(Formatting.Indented)); }
             catch (Exception ex) { Plugin.Log.LogWarning($"Could not save {OfferedFile} ({ex.Message})."); }
         }
 
         // Which default ids each data file has already been given, so an entry a player deletes stays deleted.
-        private static string OfferedFile => Path.Combine(Plugin.ConfigDirectory, "defaults_offered.json");
+        // Not a .json, so mod managers' config pages don't list it among the files players edit.
+        private static string OfferedFile => Path.Combine(Plugin.ConfigDirectory, "defaults_offered.dat");
+        private static string OldOfferedFile => Path.Combine(Plugin.ConfigDirectory, "defaults_offered.json");   // before 1.0.1
 
         private static JObject LoadOffered()
         {
-            try { return File.Exists(OfferedFile) ? JObject.Parse(File.ReadAllText(OfferedFile)) : new JObject(); }
-            catch { return new JObject(); }
+            try
+            {
+                if (File.Exists(OfferedFile)) return JObject.Parse(File.ReadAllText(OfferedFile));
+                if (File.Exists(OldOfferedFile))
+                {
+                    // carried over from the old name; the old file goes once the new one is written
+                    var old = JObject.Parse(File.ReadAllText(OldOfferedFile));
+                    File.WriteAllText(OfferedFile, old.ToString(Formatting.Indented));
+                    File.Delete(OldOfferedFile);
+                    return old;
+                }
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"Could not read the defaults record ({ex.Message})."); }
+            return new JObject();
         }
 
         /// <summary>Default entries whose old text is replaced if the player never changed it: (file, id, old name).</summary>
@@ -172,6 +209,39 @@ namespace ValheimDeepWaters
             ("Buffs", "rune_njord", "Silver:4,Crystal:2,SerpentScale:2"),
             ("Buffs", "totem_fisher", "FineWood:10,ElderBark:4,Guck:2"),
             ("Buffs", "totem_njord", "YggdrasilWood:10,Silver:4,Eitr:4"),
+            // lures are mid-game: made at the forge with iron and a hook sized to their fish, fewer at a time; boss lures
+            // take a hook too (1.0.1)
+            ("Baits", "lure_feather_fly", "Feathers:2,Resin:1,VDW_Mat_scales:1"),
+            ("Baits", "lure_flint_spinner", "Flint:1,Feathers:1,Wood:1,VDW_Mat_scales:1"),
+            ("Baits", "lure_leather_grub", "LeatherScraps:2,Resin:1,VDW_Mat_oil:1"),
+            ("Baits", "lure_bronze_spoon", "Bronze:1,LeatherScraps:1,VDW_Mat_scales:2"),
+            ("Baits", "lure_finewood_crank", "FineWood:1,Resin:1,BronzeNails:2,VDW_Mat_scales:1,GreydwarfEye:1"),
+            ("Baits", "lure_guck_crawler", "Guck:1,Resin:2,IronNails:1,VDW_Mat_oil:1"),
+            ("Baits", "lure_bone_jig", "Iron:1,BoneFragments:2,Feathers:1,VDW_Mat_fins:1"),
+            ("Baits", "lure_silver_swimbait", "Silver:1,LeatherScraps:2,FreezeGland:1,VDW_Mat_fins:1"),
+            ("Baits", "lure_linen_popper", "FineWood:1,Feathers:2,LinenThread:1,VDW_Mat_roe:1"),
+            ("Baits", "lure_ice_spoon", "Ice:1,Silver:1,VDW_Mat_rime:1"),
+            ("Baits", "lure_frostcore_jig", "FrostCore:1,Iron:1,BarkaBranch:1,VDW_Mat_rime:1"),
+            ("Baits", "lure_antler", "HardAntler:1,LeatherScraps:2,Flint:1,VDW_Mat_scales:2"),
+            ("Baits", "lure_root", "TrophyTheElder:1,AncientSeed:1,Resin:3,VDW_Mat_scales:3"),
+            ("Baits", "lure_ooze", "TrophyBonemass:1,Ooze:3,WitheredBone:2,VDW_Mat_oil:3"),
+            ("Baits", "lure_wyrm", "DragonTear:2,Silver:1,FreezeGland:1,VDW_Mat_fins:3"),
+            ("Baits", "lure_ember", "YagluthDrop:1,BlackMetal:1,SurtlingCore:1,VDW_Mat_roe:3"),
+            ("Baits", "lure_chitin", "QueenDrop:1,Carapace:2,Eitr:1,VDW_Mat_ink:3"),
+            ("Baits", "lure_crown", "CrownJewel:1,FrostCore:2,Silver:1,VDW_Mat_rime:3"),
+            // ...then the hook brings the iron, not an ingot (test builds of 1.0.1 only)
+            ("Baits", "lure_feather_fly", "Iron:1,Feathers:3,Resin:2,VDW_Mat_scales:2,VDW_Hook_small:1"),
+            ("Baits", "lure_feather_fly", "Feathers:3,Resin:2,VDW_Mat_scales:2,VDW_Hook_large:1"),
+            ("Baits", "lure_flint_spinner", "Iron:1,Flint:2,Feathers:1,VDW_Mat_scales:2,VDW_Hook_small:1"),
+            ("Baits", "lure_leather_grub", "Iron:1,LeatherScraps:3,Guck:1,VDW_Mat_oil:2,VDW_Hook_small:1"),
+            ("Baits", "lure_bronze_spoon", "Iron:1,Bronze:2,LeatherScraps:1,VDW_Mat_scales:3,VDW_Hook_medium:1"),
+            ("Baits", "lure_finewood_crank", "FineWood:2,Resin:2,IronNails:2,GreydwarfEye:2,VDW_Mat_oil:2,VDW_Hook_medium:1"),
+            ("Baits", "lure_guck_crawler", "Guck:2,Resin:2,IronNails:2,VDW_Mat_oil:2,VDW_Hook_medium:1"),
+            ("Baits", "lure_bone_jig", "Iron:2,BoneFragments:3,Feathers:1,VDW_Mat_fins:2,VDW_Hook_large:1"),
+            ("Baits", "lure_silver_swimbait", "Silver:2,LeatherScraps:2,FreezeGland:2,VDW_Mat_fins:2,VDW_Hook_large:1"),
+            ("Baits", "lure_linen_popper", "FineWood:2,Feathers:2,LinenThread:2,VDW_Mat_roe:2,VDW_Hook_medium:1"),
+            ("Baits", "lure_ice_spoon", "Ice:1,Silver:2,VDW_Mat_rime:2,VDW_Hook_medium:1"),
+            ("Baits", "lure_frostcore_jig", "FrostCore:1,Iron:2,BarkaBranch:1,VDW_Mat_rime:2,VDW_Hook_large:1"),
         };
 
         /// <summary>
@@ -204,6 +274,9 @@ namespace ValheimDeepWaters
         private static readonly (string kind, string field)[] AddedFields =
         {
             ("Fish", "Material"),      // fish materials from cleaning (0.15.0)
+            ("Fish", "FeedMinDepth"),  // the depth each fish feeds at, for leaders and weights (1.0.1)
+            ("Fish", "FeedMaxDepth"),
+            ("Fish", "Bottom"),
             ("Rods", "Upgrade"),       // rod upgrade levels (0.15.0)
             ("Buffs", "FloatModel"),   // floats your line wears (0.15.0)
             ("Buffs", "FloatLight"),
@@ -405,6 +478,12 @@ namespace ValheimDeepWaters
 
             FishingBuffs.Load(JsonConvert.DeserializeObject<List<BuffDefinition>>(File.ReadAllText(VdwConfig.BuffsFile)) ?? new());
 
+            Tackle.Clear();
+            var tackle = JsonConvert.DeserializeObject<List<TackleDefinition>>(File.ReadAllText(VdwConfig.TackleFile)) ?? new();
+            foreach (var g in tackle)
+                if (!string.IsNullOrWhiteSpace(g.Id))
+                    Tackle[g.Id] = g;
+
             Plugin.Log.LogInfo($"Loaded {Fish.Count} fish, {Baits.Count} baits, {Hooks.Count} hooks, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
         }
 
@@ -437,7 +516,7 @@ namespace ValheimDeepWaters
         /// its bait's "bait_&lt;id&gt;" - without that, minnows swam up as the vanilla bait mesh their bait item is cloned from.
         /// </summary>
         public static string ModelKeyFor(FishDefinition fish) =>
-            string.IsNullOrWhiteSpace(fish.CatchBait) ? "fish_" + fish.Id : "bait_" + fish.CatchBait;
+            string.IsNullOrWhiteSpace(fish.CatchBait) ? "fish_" + fish.Id : BaitModelKey(fish.CatchBait);
 
         /// <summary>The item a landed fish gives: vanilla's pickup item for vanilla fish, else the fish's own item.</summary>
         public static ItemDrop? DropFor(FishDefinition fish)
@@ -449,6 +528,47 @@ namespace ValheimDeepWaters
 
         public static string HookDisplayName(HookDefinition h) => Loc.Token("vdw_hook_" + h.Id,
             (string.IsNullOrWhiteSpace(h.Name) ? h.Id : h.Name) + (string.IsNullOrWhiteSpace(h.Label) ? "" : " " + h.Label));
+
+        /// <summary>Weights and leaders (Tackle.json): crafted tackle that goes in the Weight and Leader slots.</summary>
+        private static void RegisterTackle()
+        {
+            foreach (var gear in Tackle.Values)
+            {
+                try
+                {
+                    string basePrefab = ResolveBasePrefab(gear.VanillaFallbackPrefab, "BronzeNails");
+                    string prefabName = "VDW_Tackle_" + gear.Id;
+                    var item = gear.Recipe.Count > 0
+                        ? new CustomItem(prefabName, basePrefab, new ItemConfig
+                        {
+                            Amount = Math.Max(1, gear.CraftAmount),
+                            CraftingStation = gear.CraftingStation,
+                            MinStationLevel = Math.Max(1, gear.StationLevel),
+                            Requirements = gear.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
+                        })
+                        : new CustomItem(prefabName, basePrefab);
+                    var shared = item.ItemDrop.m_itemData.m_shared;
+                    string name = Loc.Token("vdw_tackle_" + gear.Id, gear.Name);
+                    shared.m_name = name;
+                    string stats = gear.IsWeight
+                        ? $"\n\nWeight slot. No float: the bait goes to the bottom. Cast +{gear.CastBonus * 100f:0}%. " +
+                          (gear.Hold >= 1.5f ? "Holds against waves; only a storm drags it." : gear.Hold >= 0.8f ? "Holds in a lake and light seas." : "Waves and wind drag it about.")
+                        : "\n\nLeader slot. With a float, the bait hangs at the leader's length (set it with - and + on the tackle panel).";
+                    shared.m_description = Loc.Token("vdw_tackle_" + gear.Id + "_desc", gear.Description + stats + " Lost only when the line snaps.");
+                    shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
+                    shared.m_weight = 0.05f;
+                    shared.m_maxStackSize = 50;
+                    shared.m_value = 0;
+                    if (CustomModels.ApplyToPrefab(item.ItemPrefab, "tackle_" + gear.Id)) GroundPose.FitCollider(item.ItemPrefab);
+                    ItemManager.Instance.AddItem(item);
+                    TackleByItemName[name] = gear;
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogError($"Failed to register tackle '{gear.Id}': {ex.Message}");
+                }
+            }
+        }
 
         private static void RegisterHooks()
         {
@@ -600,7 +720,7 @@ namespace ValheimDeepWaters
         /// A bait's model: its own "bait_<id>", else - for a baitfish's live bait without one (the bluegill) - the model of
         /// the fish it comes from.
         /// </summary>
-        private static string BaitModelKey(string baitId)
+        public static string BaitModelKey(string baitId)
         {
             string own = "bait_" + baitId;
             if (CustomModels.HasModel(own)) return own;

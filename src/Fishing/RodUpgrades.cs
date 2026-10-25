@@ -68,6 +68,28 @@ namespace ValheimDeepWaters
             }
         }
 
+        /// <summary>
+        /// Valheim's Upgrade tab only goes through recipes the player knows, learned by picking up the materials: a rod
+        /// bought, given or found never showed for upgrading. A rod you carry (inventory or rod slot) counts as known.
+        /// </summary>
+        [HarmonyPatch(typeof(Player), nameof(Player.GetAvailableRecipes))]
+        private static class CarriedRodsKnown
+        {
+            private static readonly System.Reflection.FieldInfo? Known = AccessTools.Field(typeof(Player), "m_knownRecipes");
+
+            private static void Prefix(Player __instance)
+            {
+                if (__instance != Player.m_localPlayer || ObjectDB.instance == null || !(Known?.GetValue(__instance) is HashSet<string> known)) return;
+                var carried = __instance.GetInventory().GetAllItems().Concat(Tackle.Get(__instance).GetAllItems());
+                foreach (var item in carried)
+                {
+                    if (ContentRegistry.GetRod(item) == null || item.m_quality >= item.m_shared.m_maxQuality) continue;
+                    var recipe = ObjectDB.instance.GetRecipe(item);
+                    if (recipe != null && recipe.m_enabled) known.Add(recipe.name);
+                }
+            }
+        }
+
         private static readonly Dictionary<string, int> StationMax = new Dictionary<string, int>();
 
         /// <summary>1 + the station's distinct extensions (the highest level it can reach).</summary>
