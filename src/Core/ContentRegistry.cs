@@ -484,7 +484,8 @@ namespace ValheimDeepWaters
                 if (!string.IsNullOrWhiteSpace(g.Id))
                     Tackle[g.Id] = g;
 
-            Plugin.Log.LogInfo($"Loaded {Fish.Count} fish, {Baits.Count} baits, {Hooks.Count} hooks, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
+            Plugin.Log.LogInfo($"Loaded {Fish.Count} fish, {Baits.Count} baits, {Hooks.Count} hooks, {Tackle.Count} weights and leaders, " +
+                               $"{TackleBoxes.Tiers.Length} tackle boxes, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
         }
 
         /// <summary>

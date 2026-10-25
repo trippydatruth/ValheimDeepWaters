@@ -407,19 +407,16 @@ namespace ValheimDeepWaters
                 float s = TackleBoxesScale.Held;
                 var hand = _vis.m_rightHand!;   // (inHand already checked it)
                 _model.transform.localScale = Vector3.one * s;
-                // hanging straight down by the handle...
-                var rot = face * _turn; var pos = hand.position - Vector3.up * (_top * s - 0.03f);
-                // ...recorded once against the hand while standing still, then kept in the hand's own frame so the box
-                // turns with it (swings, tips when you jump) instead of staying level
-                if (_gripRot == null && _p == Player.m_localPlayer && Time.time > _builtAt + 0.5f && _p.IsOnGround() && !_p.IsCrouching()
-                    && !_p.InAttack() && _p.GetVelocity().magnitude < 0.15f)
-                {
-                    _gripRot = Quaternion.Inverse(hand.rotation) * rot;
-                    _gripPos = Quaternion.Inverse(hand.rotation) * (pos - hand.position);
-                }
-                if (_gripRot is Quaternion gr && _gripPos is Vector3 gp) { rot = hand.rotation * gr; pos = hand.position + hand.rotation * gp; }
-                _model.transform.rotation = rot;
-                _model.transform.position = pos;
+                // it hangs along the forearm (elbow to hand), so it swings and tips with the arm - when you run or jump -
+                // instead of staying level; facing the way you face. (A grip recorded once from the hand could catch the
+                // equip animation and stick the box on its end.)
+                var fore = FishingBoatOars.Bone(_p, "RightForeArm");
+                Vector3 up = fore != null ? (fore.position - hand.position).normalized : Vector3.up;
+                if (Vector3.Dot(up, Vector3.up) < 0.2f) up = Vector3.Slerp(Vector3.up, up, 0.5f).normalized;   // an arm raised high: don't flip it over
+                Vector3 fwd = Vector3.ProjectOnPlane(face * Vector3.forward, up);
+                if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.ProjectOnPlane(_p.transform.right, up);
+                _model.transform.rotation = Quaternion.LookRotation(fwd.normalized, up) * _turn;
+                _model.transform.position = hand.position - up * (_top * s - 0.03f);
             }
             else
             {
@@ -432,14 +429,10 @@ namespace ValheimDeepWaters
             }
         }
 
-        // the grip, recorded once (every character has the same hand), for the same box size
-        private static Quaternion? _gripRot; private static Vector3? _gripPos;
-        private float _builtAt;
-
         private void Rebuild(TackleBoxes.Tier? tier)
         {
             if (_model != null) Destroy(_model);
-            _model = null; _tier = tier; _builtAt = Time.time;
+            _model = null; _tier = tier;
             if (tier == null) return;
             var src = CustomModels.GetBundlePrefab(tier.ModelKey); if (src == null) return;
             _model = Instantiate(src); _model.name = "VDW_CarriedTackleBox";
