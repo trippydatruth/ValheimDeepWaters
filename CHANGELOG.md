@@ -1,10 +1,10 @@
 # Changelog
 
 ## 1.0.1
-Fixes from playtesting, mostly multiplayer, and a rod slot.
+Fixes from playtesting (mostly multiplayer), a rod slot, weights and leaders, and tackle boxes.
 
 ### Added
-- **Rod slot**: the tackle panel now has Rod, Bait and Hook slots. A rod in the rod slot takes no inventory space;
+- **Rod slot**: the tackle panel now has Rod, Bait, Hook, Weight and Leader slots. A rod in the rod slot takes no inventory space;
   right-click it or press Alt+F (Rod Key in the config) to take it in hand or put it away. Right-clicking a rod in
   the inventory moves it into the slot and takes it in hand. It repairs at its station from the slot, and moves into
   the inventory by itself when you upgrade it. The panel shows the rod's level, line, cast and wear.
