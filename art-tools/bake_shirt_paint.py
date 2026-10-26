@@ -59,6 +59,7 @@ for perm in itertools.permutations(range(3)):
         if best is None or err < best[0]: best = (err, R, s, off)
 err, R, s, off = best
 M = Matrix.Translation(off) @ (R.to_4x4() @ Matrix.Scale(s, 4))
+UNIT = s                                                   # body units per metre (s is reused further down)
 print(f"FIT mean error {err / s * 100:.2f} cm (body units per metre {s:.3f}, mirrored {R.determinant() < 0})")
 
 # --- the piece, in the game body's space
@@ -113,7 +114,7 @@ for mi in range(max(1, len(slots))):
     if not me.polygons: continue
     ob = bpy.data.objects.new(f"{PIECE}_part{mi}", me); sc.collection.objects.link(ob); parts.append((mi, ob))
 piece.hide_render = True
-def bake(mats, image, margin):
+def bake(mats, image, margin, btype='EMIT'):
     for mi, ob in parts:
         ob.data.materials.clear(); ob.data.materials.append(mats[mi])
         for p in ob.data.polygons: p.material_index = 0
@@ -122,7 +123,7 @@ def bake(mats, image, margin):
     for mi, ob in parts: ob.select_set(True)
     body.select_set(True); bpy.context.view_layer.objects.active = body
     bk.margin = margin
-    bpy.ops.object.bake(type='EMIT', margin=margin, use_selected_to_active=True, cage_extrusion=bk.cage_extrusion, max_ray_distance=bk.max_ray_distance)
+    bpy.ops.object.bake(type=btype, normal_space='TANGENT', margin=margin, use_selected_to_active=True, cage_extrusion=bk.cage_extrusion, max_ray_distance=bk.max_ray_distance)
 # The game blends neighbouring pixels (and smaller mip levels), so a mask that stops dead at a UV island's edge goes
 # part see-through along the body's UV seams - dark rings at the waist and thighs (fisher_overalls_paint_v1). The mask
 # is grown outward into the texture's unused space below (not with the bake's own margin: that also filled the gaps
@@ -130,6 +131,47 @@ def bake(mats, image, margin):
 MARGIN = int(os.environ.get("VDW_MARGIN", "16"))
 bake([m_white] * max(1, len(slots)), mask_img, 0)
 bake(col_mats, col_img, MARGIN)
+
+# --- volume (optional): painted cloth lies flat on the skin, so its folds are baked in instead
+#   VDW_AO        0..1: shadow in the cloth's own folds and creases (ambient occlusion of the piece alone), into the colour
+#   VDW_NORMALS   "material=path;..." the piece's own normal maps, baked to <name>_nrm.png in the body's tangent space
+#   VDW_WRINKLES  strength of soft cloth folds added to that normal map (0 = none); VDW_WRINKLE_SCALE folds per metre
+AO = float(os.environ.get("VDW_AO", "0"))
+NRM = os.environ.get("VDW_NORMALS", "")
+WRINKLE = float(os.environ.get("VDW_WRINKLES", "0"))
+ao_img = nrm_img = None
+if AO > 0:
+    def ao_mat():
+        m = bpy.data.materials.new("bake_ao"); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+        o = nt.nodes.new("ShaderNodeOutputMaterial"); e = nt.nodes.new("ShaderNodeEmission"); a = nt.nodes.new("ShaderNodeAmbientOcclusion")
+        a.only_local = True; a.samples = 32; a.inputs["Distance"].default_value = 0.12 * s   # folds within 12 cm
+        nt.links.new(a.outputs["AO"], e.inputs["Color"]); nt.links.new(e.outputs["Emission"], o.inputs["Surface"])
+        return m
+    ao_img = target("ao", (1, 1, 1, 1)); sc.cycles.samples = 64
+    bake([ao_mat()] * max(1, len(slots)), ao_img, MARGIN); sc.cycles.samples = 4
+if NRM or WRINKLE > 0:
+    if "=" in NRM: nmaps = dict(kv.split("=", 1) for kv in NRM.split(";"))
+    else: nmaps = {sl: NRM for sl in (slots or [""])} if NRM else {}
+    def nrm_mat(slot):
+        m = bpy.data.materials.new("bake_nrm_" + slot); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+        o = nt.nodes.new("ShaderNodeOutputMaterial"); bs = nt.nodes.new("ShaderNodeBsdfPrincipled")
+        nt.links.new(bs.outputs[0], o.inputs["Surface"]); nrm = None
+        if slot in nmaps:
+            tx = nt.nodes.new("ShaderNodeTexImage"); tx.image = bpy.data.images.load(nmaps[slot]); tx.image.colorspace_settings.name = 'Non-Color'
+            nm = nt.nodes.new("ShaderNodeNormalMap"); nt.links.new(tx.outputs["Color"], nm.inputs["Color"]); nrm = nm.outputs["Normal"]
+        if WRINKLE > 0:
+            tc = nt.nodes.new("ShaderNodeTexCoord"); wv = nt.nodes.new("ShaderNodeTexWave"); wv.bands_direction = 'Z'
+            wv.inputs["Scale"].default_value = float(os.environ.get("VDW_WRINKLE_SCALE", "9")) / s
+            wv.inputs["Distortion"].default_value = 7; wv.inputs["Detail"].default_value = 3; wv.inputs["Detail Roughness"].default_value = 0.4
+            nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+            bp = nt.nodes.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = WRINKLE; bp.inputs["Distance"].default_value = 0.01 * s
+            nt.links.new(wv.outputs["Fac"], bp.inputs["Height"])
+            if nrm is not None: nt.links.new(nrm, bp.inputs["Normal"])
+            nrm = bp.outputs["Normal"]
+        if nrm is not None: nt.links.new(nrm, bs.inputs["Normal"])
+        return m
+    nrm_img = target("normal", (0.5, 0.5, 1, 1))
+    bake([nrm_mat(sl) for sl in (slots or [""])], nrm_img, MARGIN, 'NORMAL')
 
 # --- combine: colour with the mask as alpha (grown a pixel so seams don't show a hairline of skin)
 import numpy as np
@@ -153,6 +195,102 @@ for poly in bme.polygons:
         l2 = ((c.y - a.y) * (X - c.x) + (a.x - c.x) * (Y - c.y)) / d
         inside = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
         occ[y0:y1 + 1, x0:x1 + 1] |= inside
+# VDW_NECKLINE=<object>: the paint ends exactly along the lower edge of that object's collar (the worn collar model),
+# going VDW_NECK_OVERLAP cm up under it - painted higher, a yellow band showed on the neck between paint and collar
+NECKLINE = os.environ.get("VDW_NECKLINE", "")
+NECK_TEX = os.environ.get("VDW_NECKLINE_TEX", "")     # or: end where this painted texture (the shirt) ends round the neck
+if (NECKLINE and NECKLINE in bpy.data.objects) or NECK_TEX:
+    import math
+    pos = np.zeros((n, n, 3), np.float32); has = np.zeros((n, n), bool)
+    for poly in bme.polygons:
+        vi = list(poly.vertices); li = list(poly.loop_indices)
+        for k in range(1, len(vi) - 1):
+            tri = (0, k, k + 1)
+            a, b, c = (uvl[li[t]].uv * n for t in tri); A, B, C = (bme.vertices[vi[t]].co for t in tri)
+            x0, x1 = int(max(0, min(a.x, b.x, c.x) - 1)), int(min(n - 1, max(a.x, b.x, c.x) + 1))
+            y0, y1 = int(max(0, min(a.y, b.y, c.y) - 1)), int(min(n - 1, max(a.y, b.y, c.y) + 1))
+            if x1 < x0 or y1 < y0: continue
+            X, Y = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            d = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
+            if abs(d) < 1e-9: continue
+            l1 = ((b.y - c.y) * (X - c.x) + (c.x - b.x) * (Y - c.y)) / d
+            l2 = ((c.y - a.y) * (X - c.x) + (a.x - c.x) * (Y - c.y)) / d
+            l3 = 1 - l1 - l2; ins = (l1 >= -0.02) & (l2 >= -0.02) & (l3 >= -0.02)
+            for j in range(3):
+                pos[y0:y1 + 1, x0:x1 + 1, j] = np.where(ins, l1 * A[j] + l2 * B[j] + l3 * C[j], pos[y0:y1 + 1, x0:x1 + 1, j])
+            has[y0:y1 + 1, x0:x1 + 1] |= ins
+    R3 = M.to_3x3(); up = (R3 @ Vector((0, 0, 1))).normalized(); ex = (R3 @ Vector((1, 0, 0))).normalized(); ey = up.cross(ex)
+    neck_w = arm.matrix_world @ arm.data.bones["Neck"].head_local
+    nc = M @ neck_w
+    shoulder_w = min((arm.matrix_world @ arm.data.bones[sd + "Arm"].head_local).z for sd in ("Left", "Right"))
+    col = bpy.data.objects[NECKLINE] if NECKLINE in bpy.data.objects else bpy.data.objects["coat_paint"]
+    cdg = col.evaluated_get(bpy.context.evaluated_depsgraph_get()); cme = cdg.to_mesh()
+    cw = [cdg.matrix_world @ v.co for v in cme.vertices]
+    cpts = [] if NECK_TEX else [M @ p for p in cw if p.z > shoulder_w - 0.02 and (Vector((p.x, p.y, 0)) - Vector((neck_w.x, neck_w.y, 0))).length < 0.16]
+    cdg.to_mesh_clear()
+    BINS = 48; low = np.full(BINS, np.inf)
+    for q in cpts:
+        r = q - nc; az = math.atan2(r.dot(ey), r.dot(ex)); bi = int((az + math.pi) / (2 * math.pi) * BINS) % BINS
+        low[bi] = min(low[bi], r.dot(up))
+    ok = np.isfinite(low)
+    if NECK_TEX:
+        ti = bpy.data.images.load(NECK_TEX); ta = np.array(ti.pixels[:], dtype=np.float32).reshape(ti.size[1], ti.size[0], 4)[:, :, 3]
+        if ta.shape != (n, n): raise SystemExit("VDW_NECKLINE_TEX must be the same size")
+        rel = pos - np.array(nc, np.float32); h = rel @ np.array(up, np.float32)
+        radial = np.linalg.norm(rel - h[..., None] * np.array(up, np.float32), axis=2)
+        zone = has & (radial < 0.14 * s) & (h > -0.10 * s)
+        cut = zone & (ta < 0.5) & cov
+        RAISE = float(os.environ.get("VDW_NECK_RAISE", "0"))     # 0 = the shirt's line, 1 = the collar's (VDW_NECKLINE)
+        if RAISE > 0:
+            # per direction round the neck: the shirt's top edge and the collar's lower edge; the line between them
+            BN = 48
+            azb = ((np.arctan2(rel @ np.array(ey, np.float32), rel @ np.array(ex, np.float32)) + np.pi) / (2 * np.pi) * BN).astype(int) % BN
+            stop = np.full(BN, np.nan)
+            for k in range(BN):
+                sel = zone & (ta >= 0.5) & (azb == k)
+                if sel.any(): stop[k] = h[sel].max()
+            col2 = bpy.data.objects[NECKLINE]; cdg2 = col2.evaluated_get(bpy.context.evaluated_depsgraph_get()); cme2 = cdg2.to_mesh()
+            clow = np.full(BN, np.inf)
+            for v in cme2.vertices:
+                pw = cdg2.matrix_world @ v.co
+                if pw.z < shoulder_w - 0.02 or (Vector((pw.x, pw.y, 0)) - Vector((neck_w.x, neck_w.y, 0))).length >= 0.16: continue
+                r = (M @ pw) - nc; kk = int((math.atan2(r.dot(ey), r.dot(ex)) + math.pi) / (2 * math.pi) * BN) % BN
+                clow[kk] = min(clow[kk], r.dot(up))
+            cdg2.to_mesh_clear()
+            ix = np.arange(BN)
+            okS = np.isfinite(stop); okC = np.isfinite(clow)
+            stop = np.interp(ix, ix[okS], stop[okS], period=BN); clow = np.interp(ix, ix[okC], clow[okC], period=BN)
+            line = stop + RAISE * (clow - stop)
+            # a clean, even line: smoothed round the neck, read between the directions (not stepped per direction)
+            SM = int(os.environ.get("VDW_NECK_SMOOTH", "5"))
+            for _ in range(SM): line = (np.roll(line, 1) + 2 * line + np.roll(line, -1)) / 4
+            azc = (np.arctan2(rel @ np.array(ey, np.float32), rel @ np.array(ex, np.float32)) + np.pi) / (2 * np.pi) * BN
+            lpx = np.interp(azc, np.arange(BN + 1), np.append(line, line[0]))
+            if os.environ.get("VDW_NECK_FLAT", "0") == "1": lpx = np.full_like(lpx, float(np.mean(line)))   # one level all round
+            cut = zone & cov & (h > lpx)
+            # and no holes under it: the skin between the coat and the line is painted too (its colour from the nearest coat)
+            band = zone & (h <= lpx) & (h > lpx - float(os.environ.get("VDW_NECK_FILL_DEPTH", "6")) / 100 * s)
+            # holes under the line are filled on the back half of the neck only (the coat is open at the front)
+            back = (M.to_3x3() @ Vector((0, 1, 0))).normalized()          # the rig's +y is the body's back
+            behind = (rel @ np.array(back, np.float32)) > 0.01 * s
+            fill = band & ~cov & behind
+            cov = cov | fill
+            print(f"NECKLINE filled {int(fill.sum())} pixels under the line")
+            print(f"NECKLINE raised {RAISE:.2f} of the way to the collar: on average {np.mean(line - stop) / s * 100:.1f} cm above the shirt's line")
+        cov = cov & ~cut
+        print(f"NECKLINE cut {int(cut.sum())} pixels round the neck where {os.path.basename(NECK_TEX)} has none")
+    elif ok.sum() >= 3:
+        idx = np.arange(BINS); low = np.interp(idx, idx[ok], low[ok], period=BINS)
+        OVER = float(os.environ.get("VDW_NECK_OVERLAP", "0.8")) / 100 * s
+        rel = pos - np.array(nc, np.float32)
+        h = rel @ np.array(up, np.float32)
+        az = np.arctan2(rel @ np.array(ey, np.float32), rel @ np.array(ex, np.float32))
+        radial = np.linalg.norm(rel - h[..., None] * np.array(up, np.float32), axis=2)
+        bi = (((az + np.pi) / (2 * np.pi)) * BINS).astype(int) % BINS
+        cut = has & (radial < 0.14 * s) & (h > low[bi] + OVER)
+        cov = cov & ~cut
+        print(f"NECKLINE cut {int(cut.sum())} pixels above the collar's lower edge ({int(ok.sum())} of {BINS} directions from the collar)")
+    else: print("NECKLINE: no collar points found, not cut")
 # a pixel's grow everywhere first (rays along a seam, like the spine's, can miss: a hairline of skin), then MARGIN
 # pixels more, but only into pixels no island uses
 g = cov.copy()
@@ -167,6 +305,34 @@ print(f"MASK islands use {occ.mean() * 100:.1f}% of the texture; covered {cov.me
 # the bake comes out linear (a float image); the PNG is an ordinary sRGB image, so the colour is converted on the way
 # (written as is, every mid-tone came out darker - fisher_shirt_paint_v1)
 def to_srgb(c): return c * 12.92 if c <= 0.0031308 else 1.055 * (c ** (1 / 2.4)) - 0.055
+# the colour at the cloth's edge and in the margin comes from the nearest cloth pixel that was really hit (edge rays that
+# missed left the black background, and the bake's margin spread it into a dark rim)
+c4 = np.array(cpx, dtype=np.float32).reshape(n, n, 4)
+core = np.array(mpx, dtype=np.float32).reshape(n, n, 4)[:, :, 0] >= 0.99
+valid = core & (c4[:, :, :3].max(axis=2) > 0.02)
+need = g & ~valid
+for _ in range(MARGIN + 4):
+    if not need.any(): break
+    acc = np.zeros_like(c4[:, :, :3]); cnt = np.zeros((n, n), np.float32)
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+        sv = np.roll(np.roll(valid, dy, 0), dx, 1); sc_ = np.roll(np.roll(c4[:, :, :3], dy, 0), dx, 1)
+        acc += sc_ * sv[:, :, None]; cnt += sv
+    fill = need & (cnt > 0)
+    c4[fill, :3] = acc[fill] / cnt[fill][:, None]
+    valid = valid | fill; need = need & ~fill
+cpx = c4.ravel().tolist()
+if ao_img is not None:                                   # the folds' shadow, into the colour
+    aop = np.array(ao_img.pixels[:], dtype=np.float32).reshape(-1, 4)[:, 0]
+    shade = 1 - AO * (1 - np.clip(aop, 0, 1))
+    shade[~cov.ravel()] = 1.0                            # past the cloth's edge the bake is black: no shadow in the margin
+    c4 = np.array(cpx, dtype=np.float32).reshape(-1, 4); c4[:, :3] *= shade[:, None]; cpx = c4.ravel().tolist()
+    print(f"AO folds shading: average {shade[g.ravel()].mean():.2f} where covered")
+if nrm_img is not None:                                  # the normal map: raw values (not colour), flat outside the cloth
+    n4 = np.array(nrm_img.pixels[:], dtype=np.float32).reshape(-1, 4)
+    flat = ~g.ravel(); n4[flat, :3] = (0.5, 0.5, 1.0); n4[:, 3] = 1.0
+    nimg = bpy.data.images.new(NAME + "_nrm", n, n, alpha=True); nimg.colorspace_settings.name = 'Non-Color'
+    nimg.pixels = n4.ravel().tolist(); nimg.filepath_raw = os.path.join(OUT, NAME + "_nrm.png"); nimg.file_format = 'PNG'; nimg.save()
+    print(f"NORMALS {nimg.filepath_raw}")
 cpx = [to_srgb(max(0.0, c)) if (i & 3) != 3 else c for i, c in enumerate(cpx)]
 out = bpy.data.images.new(NAME, n, n, alpha=True)
 px = [0.0] * (n * n * 4)
@@ -188,8 +354,14 @@ for i in range(n * n):
     pp[i * 4 + 3] = 1
 pv.pixels = pp
 tn.image = pv
+show = {body}
+if NECKLINE and NECKLINE in bpy.data.objects:             # the collar in the previews too, to check the neckline meets it
+    cr = bpy.data.objects[NECKLINE]; cr.data = cr.data.copy(); cr.data.transform(M @ cr.matrix_world); cr.matrix_world = Matrix.Identity(4)
+    cm = bpy.data.materials.new("collar_preview"); cm.diffuse_color = (0.95, 0.75, 0.1, 1); cr.data.materials.clear(); cr.data.materials.append(cm)
+    if R.determinant() < 0: cr.data.flip_normals()
+    show.add(cr)
 for o in bpy.data.objects:
-    if o.type == 'MESH': o.hide_render = o is not body
+    if o.type == 'MESH': o.hide_render = o not in show
 sc.render.engine = 'BLENDER_WORKBENCH'; sh = sc.display.shading; sh.light = 'STUDIO'; sh.color_type = 'TEXTURE'
 sc.render.resolution_x = 600; sc.render.resolution_y = 800
 cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); sc.collection.objects.link(cam); sc.camera = cam
@@ -203,5 +375,16 @@ for label, sign in (("front", -1), ("back", 1)):
     cam.location = bc + d * big * 3
     cam.rotation_euler = (-d).to_track_quat('-Z', 'Y' if upax == 1 else 'Z').to_euler()
     sc.render.filepath = os.path.join(OUT, f"preview_{label}.png"); bpy.ops.render.render(write_still=True)
+if len(show) > 1:                                          # close-ups of the neck from four sides
+    nk = M @ (arm.matrix_world @ arm.data.bones["Neck"].head_local)
+    upv = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
+    cam.data.ortho_scale = 0.35 * UNIT; sc.render.resolution_x = sc.render.resolution_y = 600
+    for label, ang in (("front", -90), ("left", 0), ("back", 90), ("right", 180)):
+        a = math.radians(ang) if 'math' in dir() else ang * 3.14159265 / 180
+        d = (M.to_3x3() @ Vector((__import__('math').cos(a), __import__('math').sin(a), 0))).normalized()
+        cam.location = nk + d * big * 3 + upv * 0.02 * UNIT
+        zf = d.normalized(); xr = upv.cross(zf).normalized(); yu = zf.cross(xr)            # looking along -d, upright
+        cam.matrix_world = Matrix((xr, yu, zf)).transposed().to_4x4() @ Matrix.Identity(4); cam.location = nk + d * big * 3 + upv * 0.02 * UNIT
+        sc.render.filepath = os.path.join(OUT, f"neck_{label}.png"); bpy.ops.render.render(write_still=True)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, NAME + "_bake.blend"))
 print("DONE")

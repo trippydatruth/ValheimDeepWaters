@@ -11,7 +11,7 @@ namespace ValheimDeepWaters
 {
     /// <summary>
     /// The Fisherman's gear, an armour set: a sou'wester (helmet), an oilskin coat over a striped shirt (chest - the body
-    /// slot, so a cape such as JÃ¶rmungandr's Scale still goes over it) and bib overalls with rubber boots (legs).
+    /// slot, so a cape such as JÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¶rmungandr's Scale still goes over it) and bib overalls with rubber boots (legs).
     /// Their models (fisher_hat / fisher_chest / fisher_legs, build_fisher_gear.py) are made round the player's body in
     /// its rest pose, and each carries a copy of that body ("fitref"): it shows how the model lines up with the game's
     /// body mesh whatever the importer did, so every vertex can take its bone weights from the body under it - the gear
@@ -103,6 +103,8 @@ namespace ValheimDeepWaters
                 else Plugin.Log.LogWarning($"Fisherman's gear: no '{paint.extra}' model in the bundles; '{p.Name}' is worn painted on only.");
             }
 
+            if (body != null && p.Model == "fisher_coat") PaintCoat(item.ItemPrefab, body, p);
+
             ItemManager.Instance.AddItem(item);
             ItemIcons.ApplyHandMadeOnly(item.ItemPrefab, p.Model);
         }
@@ -115,7 +117,7 @@ namespace ValheimDeepWaters
         {
             ["fisher_chest"] = ("fisher_shirt_paint_v3", true, null),
             // the overalls and boots on the legs layer (drawn over the shirt), with the boots' rims as a small model
-            ["fisher_legs"] = ("fisher_overalls_paint_v2", false, "fisher_boot_rims"),
+            ["fisher_legs"] = ("fisher_overalls_paint_v3", false, "fisher_boot_rims"),
         };
 
         /// <summary>
@@ -135,6 +137,9 @@ namespace ValheimDeepWaters
             // it with no legs armour on - the body's own legs normal map is the underwear's, whose waistband and leg holes
             // showed through the painted overalls as dark rings
             m.SetTexture(layer + "BumpMap", chest ? baseMat.GetTexture(layer + "BumpMap") : null);
+            // its own folds and wrinkles, where baked (texName + "_nrm")
+            var nrm = CustomModels.LoadBundleAsset<Texture2D>(texName + "_nrm");
+            if (nrm != null) m.SetTexture(layer + "BumpMap", nrm);
             m.SetTexture(layer + "Metal", null);
             shared.m_armorMaterial = m;
             foreach (Transform child in prefab.transform.Cast<Transform>().ToList())
@@ -194,7 +199,65 @@ namespace ValheimDeepWaters
             }
             }
 
+            // the hat drawn with the body's (armour) shader, to match the coat
+            if (p.Model == "fisher_hat") parts = parts.Select(x => (x.Item1, x.Item2.Select(m => BodyShaded(m, body)).ToArray())).ToList();
             AttachSkin(prefab, parts, p);
+        }
+
+        /// <summary>
+        /// The coat worn half painted on: its sleeves and upper body painted onto the body (CoatPaint), its collar and skirt
+        /// the fisher_coat_skirt model in place of the whole coat. Left as the whole coat if either is missing.
+        /// </summary>
+        private const string CoatPaintTex = "fisher_coat_paint_v9";   // + "_nrm": its folds and wrinkles
+
+        private static void PaintCoat(GameObject prefab, SkinnedMeshRenderer body, Piece p)
+        {
+            var paint = CustomModels.LoadBundleAsset<Texture2D>(CoatPaintTex);
+            var skirt = CustomModels.LoadBundleAsset<GameObject>("fisher_coat_skirt");
+            if (paint == null || skirt == null) { Plugin.Log.LogWarning("Fisherman's gear: the coat's paint or skirt isn't in the bundles; the whole coat is worn."); return; }
+            var parts = Build(skirt, body, new Piece { Model = "fisher_coat_skirt", Rigid = p.Rigid });
+            if (parts.Count == 0) return;
+            foreach (Transform child in prefab.transform.Cast<Transform>().ToList())
+                if (child.name == "attach_skin") UnityEngine.Object.DestroyImmediate(child.gameObject);
+            // drawn with the body's own shader, like the painted sleeves it meets: with the standard material the collar
+            // and skirt came out a paler, shinier yellow than the paint, with a line at the waist
+            var bodyLook = parts.Select(x => (x.Item1, x.Item2.Select(m => BodyShaded(m, body)).ToArray())).ToList();
+            AttachSkin(prefab, bodyLook, p);
+            // the belt (hiding where the paint meets the skirt), its buckle and the wrist cuffs, in the same shader
+            var trim = CustomModels.LoadBundleAsset<GameObject>("fisher_coat_trim");
+            var trimParts = trim != null ? Build(trim, body, new Piece { Model = "fisher_coat_trim", Rigid = p.Rigid }) : null;
+            if (trimParts != null && trimParts.Count > 0)
+                AttachSkin(prefab, trimParts.Select(x => (x.Item1, x.Item2.Select(m => BodyShaded(m, body)).ToArray())).ToList(), p);
+            else Plugin.Log.LogWarning("Fisherman's gear: no 'fisher_coat_trim' model in the bundles; the coat has no belt or cuffs.");
+            CoatPaint.Enable(prefab.name, paint, CustomModels.LoadBundleAsset<Texture2D>(CoatPaintTex + "_nrm"));
+        }
+
+        private static Texture2D? _clear;
+
+        /// <summary>
+        /// A material that draws this one's colour (and normal) map with the player body's shader: a copy of the body's
+        /// material with the map as its skin and its armour layers left empty (see-through), in white skin colour.
+        /// </summary>
+        private static Material BodyShaded(Material src, SkinnedMeshRenderer body)
+        {
+            var baseMat = body.sharedMaterial;
+            if (src == null || baseMat == null || !src.HasProperty("_MainTex")) return src!;
+            if (_clear == null)
+            {
+                _clear = new Texture2D(4, 4, TextureFormat.RGBA32, false) { name = "vdw_clear" };
+                _clear.SetPixels32(Enumerable.Repeat(new Color32(0, 0, 0, 0), 16).ToArray()); _clear.Apply();
+            }
+            var m = new Material(baseMat) { name = src.name + "_bodyshaded" };
+            m.SetTexture("_MainTex", src.GetTexture("_MainTex"));
+            if (m.HasProperty("_SkinBumpMap")) m.SetTexture("_SkinBumpMap", src.HasProperty("_BumpMap") ? src.GetTexture("_BumpMap") : null);
+            foreach (var layer in new[] { "_Chest", "_Legs" })
+            {
+                if (m.HasProperty(layer + "Tex")) m.SetTexture(layer + "Tex", _clear);
+                if (m.HasProperty(layer + "BumpMap")) m.SetTexture(layer + "BumpMap", null);
+                if (m.HasProperty(layer + "Metal")) m.SetTexture(layer + "Metal", null);
+            }
+            if (m.HasProperty("_SkinColor")) m.SetColor("_SkinColor", Color.white);
+            return m;
         }
 
         /// <summary>

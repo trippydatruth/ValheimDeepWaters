@@ -69,6 +69,8 @@ public static class VdwModelImporter
         // Fisherman's gear (armour) - on hold: back in when it's ready (FisherGear.cs; Mesh\Fishermen gear\README.txt).
         new Entry("fisher_chest", "armor", Kind.Rigged),        // the striped shirt (tunic)
         new Entry("fisher_coat", "armor", Kind.Rigged),         // the oilskin coat (cape)
+        new Entry("fisher_coat_skirt", "armor", Kind.Rigged),
+        new Entry("fisher_coat_trim", "armor", Kind.Rigged),    // the coat's belt, buckle and cuffs (build_coat_trim.py)   // the coat's collar and skirt, worn with its sleeves and body painted on (split_coat_paint.py)
         new Entry("fisher_legs", "armor", Kind.Rigged),
         new Entry("fisher_boot_rims", "armor", Kind.Rigged),    // the boots' rims, worn with the overalls painted on (build_boot_rims.py)
         new Entry("fisher_hat", "armor", Kind.Rigged),
@@ -307,7 +309,8 @@ public static class VdwModelImporter
                 var path = AssetDatabase.GUIDToAssetPath(g);
                 if (AssetImporter.GetAtPath(path) is TextureImporter ti)
                 {
-                    bool normal = path.Contains("_Normal"), linear = normal || path.Contains("_MetallicSmoothness");
+                    // *_paint_*_nrm: a painted piece's normal map, read raw by the mod (plain texture, linear)
+                    bool normal = path.Contains("_Normal"), linear = normal || path.Contains("_MetallicSmoothness") || path.Contains("_nrm");
                     // *_paint_*: gear painted onto the player body (_ChestTex / _LegsTex), kept at 1024 with a clean alpha
                     bool paint = path.Contains("_paint");
                     int max = paint ? 1024 : 512;

@@ -40,7 +40,10 @@ for nm_, by in INFLATE.items():
     b_.to_mesh(o_.data); b_.free()
 for name in ("shirt", "coat", "overalls", "boots", "hat"):
     ob = bpy.data.objects[name]; me = ob.data
-    for p in me.polygons: p.use_smooth = False                      # flat shading
+    # flat shading (Valheim's faceted look), except pieces named in VDW_SMOOTH (e.g. "coat": its skirt meets the coat
+    # painted on the body, which shades smoothly like skin)
+    smooth = name in os.environ.get("VDW_SMOOTH", "").split(",")
+    for p in me.polygons: p.use_smooth = smooth
     if "rigid" in me.color_attributes: me.color_attributes.remove(me.color_attributes["rigid"])
     ca = me.color_attributes.new("rigid", 'FLOAT_COLOR', 'POINT'); f = RIGID.get(name, lambda z: 0.0)
     for v in me.vertices:
