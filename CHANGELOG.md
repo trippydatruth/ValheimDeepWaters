@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.2
+The Fisherman's gear remade so it no longer clips, and the knife rack goes on walls.
+
+### Changed
+- **Fisherman's gear is painted onto the body**, the way Valheim's own armour is, so it bends with you and can't clip:
+  - **Striped Fisher's Shirt**: the stripes are painted on; no separate shirt, no gap at the armpits.
+  - **Oilskin Overalls**: overalls and rubber boots painted on, drawn over the shirt, with a short rubber cuff round
+    each boot top.
+  - **Oilskin Coat**: the sleeves and body are painted on over the shirt and overalls; the collar and the skirt are
+    the only parts left as a model, matched to the paint. A wide belt with a brass buckle sits at the waist and cuffs
+    finish the sleeves. The skirt follows your legs, swings in the wind and trails a little as you move.
+  - The coat and overalls have folds and wrinkles, so they keep their shape and volume.
+  - **Sou'wester**: smooth-shaded, and lit the same way as the coat.
+  - Dropped on the ground, each piece still shows its folded model.
+- **Filleting Knife Rack** can be hung on a wall, above the Cleaning Table.
+
 ## 1.0.1
 Fixes from playtesting (mostly multiplayer), a rod slot, weights and leaders, and tackle boxes.
 
@@ -25,7 +41,8 @@ Fixes from playtesting (mostly multiplayer), a rod slot, weights and leaders, an
   - Wear one in the utility slot: it's carried by the handle in your right hand when that hand's free, at your hip
     otherwise. K opens it; Shift+K sets it down as a chest whose lid opens for anyone using it; Shift+E picks it up.
   - Your bait, hook, weight and leader slots refill from the box you're wearing, and B / H cycle through it too.
-  - A box weighs what's in it.- **Move the tackle panel**: drag it by its wood to wherever you like in the inventory screen; it stays there.
+  - A box weighs what's in it.
+- **Move the tackle panel**: drag it by its wood to wherever you like in the inventory screen; it stays there.
   Double-click it to put it back under the inventory.
 ### Fixed
 - **Other players' fishing shows again**: their line, float or lure, the fish on their hook and their rod's bend
