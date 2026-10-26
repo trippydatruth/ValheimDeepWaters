@@ -80,7 +80,7 @@ namespace ValheimDeepWaters
 
         private void LateUpdate()
         {
-            try { FishingController.LateUpdateVisuals(); FlySwarm.Update(); RainWorms.Update(); TackleBoxes.UpdateLocal(); }
+            try { FishingController.LateUpdateVisuals(); FlySwarm.Update(); RainWorms.Update(); TackleBoxes.UpdateLocal(); Coolers.UpdateLocal(); }
             catch (Exception ex) { FishingController.ReportError(ex); }
         }
 

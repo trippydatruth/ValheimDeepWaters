@@ -65,6 +65,7 @@ namespace ValheimDeepWaters
                 RegisterHooks();
                 try { RegisterTackle(); } catch (Exception ex) { Plugin.Log.LogError($"Weights and leaders failed: {ex}"); }
                 try { TackleBoxes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Tackle boxes failed: {ex}"); }
+                try { Coolers.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Coolers failed: {ex}"); }
                 FishingBuffs.Register();
                 RegisterBaits();
                 RegisterFish();
@@ -485,7 +486,7 @@ namespace ValheimDeepWaters
                     Tackle[g.Id] = g;
 
             Plugin.Log.LogInfo($"Loaded {Fish.Count} fish, {Baits.Count} baits, {Hooks.Count} hooks, {Tackle.Count} weights and leaders, " +
-                               $"{TackleBoxes.Tiers.Length} tackle boxes, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
+                               $"{TackleBoxes.Tiers.Length} tackle boxes, {Coolers.Tiers.Length} coolers, {Rods.Count} rods and {FishingBuffs.Buffs.Count} buff items.");
         }
 
         /// <summary>

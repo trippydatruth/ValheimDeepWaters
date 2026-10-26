@@ -329,10 +329,11 @@ namespace ValheimDeepWaters
     {
         private readonly Transform? _lid; private readonly Quaternion _rest; private readonly float _sign = 1f;
         private float _angle;
-        public const float OpenDeg = 105f;
+        private readonly float OpenDeg;
 
-        public LidDriver(GameObject model)
+        public LidDriver(GameObject model, float openDeg = 105f)
         {
+            OpenDeg = openDeg;
             _lid = model.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "lid");
             if (_lid == null) return;
             _rest = _lid.localRotation;

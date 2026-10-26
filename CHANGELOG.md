@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Coolers** in three tiers, to keep your catch fresh: Wooden Cooler (workbench 2, 12 slots), Iron-Banded Cooler
+  (forge 2, 15) and Frost Cooler (forge 4, 24). They hold only your catch: fish, raw fish, fillets, roe and dried fish.
+  - Right-click one in your inventory to set it down. `E` opens it (the lid lifts, and frost curls inside while it's
+    open) and `Shift+E` picks it up with everything inside. Coolers aren't worn.
+  - Nothing spoils. Fish in a cooler, carried or set down, stay **fresh** for 10 / 20 / 45 minutes after they come
+    out. A fresh fish sells for 25% more and gives one more material at the Cleaning Table. The tooltip shows how
+    long it stays fresh.
+  - A cooler weighs what's in it, and keeps its contents wherever it goes.
+
 ## 1.0.2
 The Fisherman's gear remade so it no longer clips, and the knife rack goes on walls.
 

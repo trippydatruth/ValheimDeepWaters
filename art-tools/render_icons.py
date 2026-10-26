@@ -25,6 +25,7 @@ GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.
 UPRIGHT |= {"piece_plaque"}; LOOK_DOWN.update({"piece_plaque": 0})   # the Gold Trophy Plaque board
 UPRIGHT |= {"buff_regalia_njord"}; LOOK_DOWN.update({"buff_regalia_njord": 28})   # Njord's Regalia crown
 UPRIGHT |= {f"tacklebox_t{i}" for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 25 for i in range(1, 5)}); GLOW.update({"tacklebox_t4": 1.2})   # the tackle boxes
+UPRIGHT |= {f"cooler_c{i}" for i in range(1, 4)}; LOOK_DOWN.update({f"cooler_c{i}": 25 for i in range(1, 4)})   # the coolers
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,

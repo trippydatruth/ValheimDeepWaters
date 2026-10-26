@@ -6,6 +6,8 @@ buffs, trophies, and a catch log.
 
 Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 
+Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippydatruth/ValheimDeepWaters/wiki).
+
 ![Setting the hook: the rod bends, the tension gauge, line out and the drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/hook-set.jpg)
 
 ## Features
@@ -22,6 +24,7 @@ Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 - Weights and leaders: every fish feeds at its own depth, so set your leader to fish the depth you want, or fish the
   bottom with a weight, a Texas rig or a Carolina rig. Light weights get dragged about by waves and storms
 - Tackle boxes in four tiers: carry your tackle in your hand, open it anywhere, set it down as a chest
+- Coolers in three tiers that keep your catch fresh: fresh fish sell for more and clean into more
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
@@ -422,6 +425,24 @@ otherwise. Press `K` to open it, and `Shift+K` to set it down as a chest whose l
 opens a set-down box and `Shift+E` picks it up with everything inside. Your tackle slots refill from the box you're
 wearing.
 
+## Coolers
+
+A cooler holds your catch - fish, raw fish, fillets, roe and dried fish - and keeps it fresh. Like a tackle box it
+keeps what's inside wherever it goes, and weighs what's in it.
+
+| Cooler | Made at | Slots | Fresh for | Materials |
+|---|---|---|---|---|
+| Wooden Cooler | Workbench 2 | 12 | 10 min | Fine Wood 8, Resin 6, Leather Scraps 4 |
+| Iron-Banded Cooler | Forge 2 | 15 | 20 min | Fine Wood 10, Iron 4, Guck 4, Fish Oil 4 |
+| Frost Cooler | Forge 4 | 24 | 45 min | Fine Wood 10, Silver 4, Freeze Gland 4, Crystal 2 |
+
+Coolers aren't worn. Right-click one in your inventory to set it down; `E` opens it (frost curls inside while the lid
+is up) and `Shift+E` picks it up with everything inside.
+
+Nothing spoils. Fish in a cooler, carried or set down, stay **fresh** for the cooler's time after they come out (the
+tooltip says how long). A fresh fish sells for 25% more at the traders, and gives one more material when you clean it
+at the Cleaning Table.
+
 ## Fishing buffs
 
 Tiered items that unlock as you progress:
@@ -592,7 +613,7 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 These need `devcommands`, like Valheim's own spawn command.
 
 - `vdw_give <item> [amount]`: gives an item, for example `rod_copper`, `hook_small`, `tackle_egg_sinker`,
-  `tacklebox_t2`, `buff_angler_minor`, `worm` or a fish id.
+  `tacklebox_t2`, `cooler_c1`, `buff_angler_minor`, `worm` or a fish id.
 - `vdw_debug catch <fish id>`: the next cast brings that fish straight to the bait (for trying a fish out).
 - `vdw_debug bite`: the next cast gets a bite straight away.
 - `vdw_debug listrods | listhooks | listbait | listfish | listbuffs`: lists the item ids.

@@ -40,8 +40,14 @@ namespace ValheimDeepWaters
                  : "Haldor";
         }
 
-        /// <summary>What this trader pays for one of our items (0: they don't buy it).</summary>
+        /// <summary>What this trader pays for one of our items (0: they don't buy it); a fresh fish from a cooler sells for more.</summary>
         public static int PriceEach(string trader, ItemDrop.ItemData item)
+        {
+            int price = BasePrice(trader, item);
+            return price > 0 && Coolers.IsFresh(item) ? Mathf.RoundToInt(price * (1f + Coolers.SellBonus)) : price;
+        }
+
+        private static int BasePrice(string trader, ItemDrop.ItemData item)
         {
             // a golden or albino fish sells too (even one of vanilla's species, which vanilla won't buy)
             FishDefinition? fish = RareFish.FishOf(item);

@@ -17,7 +17,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_give";
             public override bool IsCheat => true; // needs devcommands, like vanilla's spawn
-            public override string Help => "Give Deep Waters fishing content. Usage: vdw_give [rod|rod_<id>|hook_<id>|tackle_<id>|tacklebox_t1..t4|buff_<id>|bait_id|fish_id] [amount]  (ids come from vdw_debug listrods / listhooks / listbuffs / listbait / listfish)";
+            public override string Help => "Give Deep Waters fishing content. Usage: vdw_give [rod|rod_<id>|hook_<id>|tackle_<id>|tacklebox_t1..t4|cooler_c1..c3|buff_<id>|bait_id|fish_id] [amount]  (ids come from vdw_debug listrods / listhooks / listbuffs / listbait / listfish)";
 
             public override void Run(string[] args)
             {
@@ -48,6 +48,8 @@ namespace ValheimDeepWaters
                     prefabName = "VDW_Hook_" + what.Substring(5);
                 else if (what.StartsWith("tacklebox_", StringComparison.OrdinalIgnoreCase) && TackleBoxes.Tiers.Any(t => t.Id.Equals(what.Substring(10), StringComparison.OrdinalIgnoreCase)))
                     prefabName = "VDW_TackleChest_" + what.Substring(10).ToLowerInvariant();
+                else if (what.StartsWith("cooler_", StringComparison.OrdinalIgnoreCase) && Coolers.Tiers.Any(t => t.Id.Equals(what.Substring(7), StringComparison.OrdinalIgnoreCase)))
+                    prefabName = "VDW_Cooler_" + what.Substring(7).ToLowerInvariant();
                 else if (what.StartsWith("tackle_", StringComparison.OrdinalIgnoreCase) && ContentRegistry.Tackle.ContainsKey(what.Substring(7)))
                     prefabName = "VDW_Tackle_" + what.Substring(7);
                 else if (what.StartsWith("buff_", StringComparison.OrdinalIgnoreCase) && FishingBuffs.Buffs.ContainsKey(what.Substring(5)))

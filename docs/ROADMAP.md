@@ -93,7 +93,7 @@ Improvements first, new content last, in this order:
     of equipment (reel, line, leader, weight, hook, float, bait or lure) instead of the inventory bait slot.
 39. **Meads from mead bases.** The fishing meads made like vanilla meads: a mead base at the cauldron, fermented in
     the fermenter into several meads.
-40. **Cooler box.** A box for your catch, like the tackle boxes but for fish: keeps them fresh (slower spoiling or none),
+40. **Cooler box.** *Done 2026-10-25: three coolers (Coolers.cs) on the user's ice chest model, set down not worn, no spoilage; fresh fish +25% sale and +1 when cleaned; frost effect inside while open.* A box for your catch, like the tackle boxes but for fish: keeps them fresh (slower spoiling or none),
     carried or set down. (The tackle boxes are in: 1.0.1, TackleBoxes.cs.)
 ## After the first release
 

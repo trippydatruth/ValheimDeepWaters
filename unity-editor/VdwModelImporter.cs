@@ -104,6 +104,10 @@ public static class VdwModelImporter
         new Entry("tacklebox_t2", "tacklebox", Kind.Rigged, 0f),
         new Entry("tacklebox_t3", "tacklebox", Kind.Rigged, 0f),
         new Entry("tacklebox_t4", "tacklebox", Kind.Rigged, 1.5f),
+        // Coolers: the user's ice chest, lid rigged, three tiers (build_cooler.py)
+        new Entry("cooler_c1", "cooler", Kind.Rigged, 0f),
+        new Entry("cooler_c2", "cooler", Kind.Rigged, 0f),
+        new Entry("cooler_c3", "cooler", Kind.Rigged, 0f),
         new Entry("hook_fimbul", "hooks", Kind.Static, 1.2f),   // rime metal, frost glow (build_hooks.py fimbul)
         new Entry("bait_worm", "bait", Kind.Animated) { Scale = BaitScale },
         new Entry("bait_grub", "bait", Kind.Animated) { Scale = BaitScale },
