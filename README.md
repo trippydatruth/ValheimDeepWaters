@@ -6,6 +6,8 @@ buffs, trophies, and a catch log.
 
 Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 
+![Setting the hook: the rod bends, the tension gauge, line out and the drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/hook-set.jpg)
+
 ## Features
 
 - All 12 vanilla fish plus 31 new ones, including 10 legendaries, each with its own biomes, depth,
@@ -32,6 +34,8 @@ Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 - In multiplayer, players nearby see your line, the fish you're fighting and the catch
 
 ## How to fish
+
+![Fish on! A bite on a Finewood Crankbait, with the line out and drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fish-on.jpg)
 
 1. Craft a **Wooden Fishing Rod** (workbench) and some **Tiny hooks**, and dig up worms from wriggling soil
    in the forest.
@@ -231,6 +235,12 @@ Seven legendaries are named after Valheim's bosses, and they're boss fights. The
 summon one with a **lure** carved from that boss's trophy (or, for Kall Fimbulbringer, his Crown Jewel), cast in the
 right water at the right time.
 
+![Casting the Antler Lure: lightning stirs beneath the river](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-summon.jpg)
+
+![Fighting the Eikthyr Elver, with its health bar and phases](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-fight.jpg)
+
+![The Eikthyr Elver landed](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-landed.jpg)
+
 | Boss fish | Lure | Where | When |
 |---|---|---|---|
 | Eikthyr Elver | Antler Lure (Eikthyr trophy) | Meadows river | Thunderstorm |
@@ -362,6 +372,8 @@ The tackle panel under your inventory has five slots: **Rod, Bait, Hook, Weight 
 items in, or right-click or Ctrl+click them in your inventory (Ctrl+click a slot to take it back out). Drag the panel
 by its wood to put it anywhere on the screen; double-click it to put it back.
 
+![The tackle panel: rod, bait, hook, weight and leader slots](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-panel.jpg)
+
 - **Rod:** a rod in the rod slot takes no inventory space. Right-click the slot, or press `Alt+F`, to take it in hand
   or put it away. It repairs and upgrades from the slot (upgrading moves it into your inventory first). The panel
   shows its level, line, cast and wear.
@@ -393,6 +405,10 @@ bottom, and nothing bites while it's dragged - only a Pyramid Sinker holds at se
 
 A tackle box holds tackle - bait, lures, hooks, weights, leaders and floats - and keeps it inside wherever the box
 goes: your inventory, a chest, your grave. It weighs what's in it.
+
+![A tackle box opened, holding weights, leaders and lures](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box.jpg)
+
+![A tackle box carried at the hip](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box-hip.jpg)
 
 | Box | Made at | Slots |
 |---|---|---|
@@ -489,7 +505,13 @@ A light armour set made at the workbench (level 2): the **Sou'wester**, **Oilski
 Fisher's Shirt** and **Oilskin Overalls** with rubber boots. Wearing all four keeps the rain off (you never get Wet)
 and makes reeling cheaper and the hookset window longer.
 
+![The Oilskin Coat with its belt and cuffs, over the striped shirt, with the Sou'wester](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fisherman-coat.jpg)
+
+![The Striped Fisher's Shirt and Oilskin Overalls with rubber boots, carrying a tackle box](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fisherman-overalls.jpg)
+
 ## Your catch
+
+![The catch log: species, rank, rewards and biome sets](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/catch-log.jpg)
 
 - **Size class:** each fish is Small, Medium, Large or Trophy, with its weight and catcher in the tooltip.
 - **Rare variants:** any ordinary species can come up **golden** (about 1 in 300) or **albino** (about 1 in 150), its
