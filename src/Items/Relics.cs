@@ -25,8 +25,6 @@ namespace ValheimDeepWaters
             [Scale] = "Very rarely dropped by a sea serpent.",
         };
 
-        public static bool IsRelic(string prefabName) => Sources.ContainsKey(prefabName);
-
         /// <summary>The "where it comes from" line for a relic's description, or null for anything else.</summary>
         public static string? SourceText(string prefabName) =>
             Sources.TryGetValue(prefabName, out var s) ? "\n\nCan't be crafted. " + s : null;

@@ -63,8 +63,6 @@ namespace ValheimDeepWaters
 
         private static readonly HashSet<string> Warned = new();
 
-        public static bool HasFish(string fishId) => FishFx.ContainsKey(fishId);
-
         /// <summary>The fish's effects on a fish object (item prefab or the hooked visual), emitting from its model.</summary>
         public static void AttachToFish(GameObject root, string fishId)
         {

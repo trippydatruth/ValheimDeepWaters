@@ -127,15 +127,6 @@ namespace ValheimDeepWaters
                                            claimed.Contains(m.Species.ToString(CultureInfo.InvariantCulture)))).ToList();
         }
 
-        /// <summary>"Next reward: ..." for the catch log, or null when everything's been earned.</summary>
-        public static string? NextReward(Player player)
-        {
-            var claimed = Claimed(player);
-            int logged = Load(player).Count;
-            var next = Milestones.Where(m => !claimed.Contains(m.Species.ToString(CultureInfo.InvariantCulture)))
-                                 .OrderBy(Needed).FirstOrDefault();
-            return next == null ? null : $"Next reward at {Needed(next)} species ({logged}/{Needed(next)}): {next.Label}";
-        }
 
         public static void Record(Player player, string fishId, float weightKg, out bool newSpecies, out bool newRecord)
         {
