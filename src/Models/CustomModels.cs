@@ -136,6 +136,9 @@ namespace ValheimDeepWaters
                     mf.transform.localScale = Vector3.Scale(mf.transform.localScale, unbaked);
             }
 
+            if (baseName.StartsWith("food_") || baseName.StartsWith("prep_"))
+                ShowTrueSize(prefab, baseName, unbaked == Vector3.zero ? Vector3.one : unbaked);
+
             // Vanilla fish (and other creatures) draw a rigged, animated mesh. A custom model is static, so show it
             // in place of each skinned renderer instead.
             foreach (var smr in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
@@ -152,6 +155,39 @@ namespace ValheimDeepWaters
 
             ItemIcons.Apply(prefab, baseName);
             return true;
+        }
+
+        /// <summary>
+        /// A dish swapped into a vanilla food (FishWraps, FishRaw) takes on that food's own mesh scales, which
+        /// shrink it, most of all on an item stand (the stand keeps the "attach" copy's scale). Undo them, so the
+        /// dish is as big as its model on the ground and on a stand.
+        /// </summary>
+        private static void ShowTrueSize(GameObject prefab, string baseName, Vector3 want)
+        {
+            static Vector3 Div(Vector3 a, Vector3 b) => new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+            var attach = prefab.transform.Find("attach");
+            var standRoot = attach == null ? null : (attach.Find("attachobj") ?? attach);
+            var changed = new System.Collections.Generic.List<string>();
+            foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var t = mf.transform;
+                if (t == prefab.transform) continue;   // the game ignores the root's scale
+                bool onStand = standRoot != null && (t == standRoot || IsUnder(t, prefab.transform, standRoot.name));
+                if (onStand && t == standRoot)
+                {
+                    // the stand gives its copy the attach node's scale
+                    if ((attach!.localScale - want).sqrMagnitude > 1e-6f) { changed.Add($"{t.name} {attach.localScale}"); attach.localScale = want; }
+                    continue;
+                }
+                var above = onStand ? attach!.localScale : Vector3.one;
+                var stop = onStand ? standRoot : prefab.transform;
+                for (var p = t.parent; p != null && p != stop; p = p.parent) above = Vector3.Scale(above, p.localScale);
+                if (above.x == 0f || above.y == 0f || above.z == 0f) continue;
+                var s = Div(want, above);
+                if ((t.localScale - s).sqrMagnitude > 1e-6f) { changed.Add($"{t.name} {Vector3.Scale(above, t.localScale)}"); t.localScale = s; }
+            }
+            if (changed.Count > 0)
+                Plugin.Log.LogInfo($"Custom models: '{baseName}' shown at its real size (vanilla scale was {string.Join(", ", changed)}).");
         }
 
         /// <summary>
