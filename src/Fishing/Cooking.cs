@@ -43,7 +43,20 @@ namespace ValheimDeepWaters
                     health *= 1.5f;
                     stamina *= 1.5f;
                 }
+                health = CapHealth(health);
             }
+
+        }
+
+        /// <summary>
+        /// Big fish would otherwise give hundreds of health (it grows with their weight). Up to 40 it's kept as it is;
+        /// above that each extra point counts for less, levelling off at 110, so the heaviest top out around 95-110.
+        /// </summary>
+        internal static float CapHealth(float health)
+        {
+            const float keep = 40f, cap = 110f, ease = 150f;
+            if (health <= keep) return health;
+            return keep + (cap - keep) * (1f - Mathf.Exp(-(health - keep) / ease));
 
         }
 
