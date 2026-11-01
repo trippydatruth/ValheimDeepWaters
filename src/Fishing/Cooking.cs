@@ -67,21 +67,46 @@ namespace ValheimDeepWaters
             if (drop != null) drop.m_itemData.m_shared.m_value = SellValue(fish, cooked: false);
         }
 
-        /// <summary>Creates "Cooked <fish>", gives it Food stats and a sell value, and wires a cooking-station
-        /// conversion from the raw fish. Safe to call even if Jotunn's conversion API rejects the config;
-        /// the cooked item still exists (usable via console) and only the conversion is skipped.</summary>
+        /// <summary>Creates "Cooked <fish>": the raw fish's own model, browned and grill-marked (CookedLook), made a
+        /// food like cooked meat, with Food stats, a sell value and a cooking-station conversion from the raw fish.
+        /// Call it before anything else (glow effects) is added to the raw prefab. Safe if Jotunn's conversion API
+        /// rejects the config: the cooked item still exists (usable via console) and only the conversion is skipped.</summary>
         public static void RegisterCookedFish(FishDefinition fish, GameObject rawPrefab)
         {
             string cookedId = "VDW_CookedFish_" + fish.Id;
+            var meat = PrefabManager.Instance.GetPrefab(FoodBasePrefab);
+            var meatShared = meat != null ? meat.GetComponent<ItemDrop>()?.m_itemData.m_shared : null;
 
-            var item = new CustomItem(cookedId, FoodBasePrefab);
-            if (item.ItemPrefab == null || item.ItemDrop == null)
+            var clone = PrefabManager.Instance.CreateClonedPrefab(cookedId, rawPrefab);
+            var item = clone != null ? new CustomItem(clone, false) : null;
+            if (item?.ItemPrefab == null || item.ItemDrop == null)
             {
                 Plugin.Log.LogWarning($"Could not create cooked item for fish '{fish.Id}'; that fish won't be cookable.");
                 return;
             }
+            // a cooked fish doesn't swim off when dropped in water
+            if (clone!.GetComponent<global::Fish>() is global::Fish live) UnityEngine.Object.DestroyImmediate(live);
+            CookedLook.ApplyToModel(clone);
+            if (meat != null)
+                foreach (Transform fx in meat.transform)
+                    if (fx.name.StartsWith("fx_FoodSteam"))
+                        UnityEngine.Object.Instantiate(fx.gameObject, clone.transform, false).name = fx.name;
 
             var shared = item.ItemDrop.m_itemData.m_shared;
+            if (meatShared != null)
+            {
+                shared.m_itemType = meatShared.m_itemType;
+                shared.m_maxStackSize = meatShared.m_maxStackSize;
+                shared.m_weight = meatShared.m_weight;
+                shared.m_foodBurnTime = meatShared.m_foodBurnTime;
+                shared.m_foodRegen = meatShared.m_foodRegen;
+                shared.m_foodEitr = 0f;
+                shared.m_consumeStatusEffect = meatShared.m_consumeStatusEffect;
+            }
+            shared.m_maxQuality = 1;
+            shared.m_teleportable = true;
+            if (shared.m_icons != null && shared.m_icons.Length > 0 && CookedLook.Icon(shared.m_icons[0]) is Sprite icon)
+                shared.m_icons = new[] { icon };
             string displayName = string.IsNullOrWhiteSpace(fish.Name) ? fish.Id : fish.Name;
             shared.m_name = Loc.Token("vdw_cooked_" + fish.Id, "Cooked " + displayName);
             shared.m_description = Loc.Token("vdw_cooked_" + fish.Id + "_desc", "Cooked " + displayName + ". " + fish.Description);

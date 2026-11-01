@@ -933,11 +933,11 @@ namespace ValheimDeepWaters
                     if (CustomModels.ApplyToPrefab(item.ItemPrefab, "fish_" + fish.Id))
                         GroundPose.FitCollider(item.ItemPrefab);
                     GroundPose.PrepareFishPrefab(item.ItemPrefab);
-                    VanillaFx.AttachToFish(item.ItemPrefab, fish.Id);          // legendary and boss fish only
                     Cooking.PriceRawFish(fish, item.ItemPrefab);
-
+                    // the cooked fish is a copy of this one, so it's made before the glow effects go on
                     try { Cooking.RegisterCookedFish(fish, item.ItemPrefab); }
                     catch (Exception ex) { Plugin.Log.LogError($"Failed to register cooked item for '{fish.Id}': {ex.Message}"); }
+                    VanillaFx.AttachToFish(item.ItemPrefab, fish.Id);          // legendary and boss fish only
                 }
                 catch (Exception ex)
                 {
