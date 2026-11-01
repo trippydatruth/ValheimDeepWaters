@@ -172,14 +172,19 @@ namespace ValheimDeepWaters
             if (StoreGui.IsVisible() && StoreGui.instance != null && TraderSales.TraderField?.GetValue(StoreGui.instance) is Trader t && t != null) return t;
             // a trader UI mod may replace the store: the trader you're standing at, while a trading or inventory screen is up
             if (!StoreGui.IsVisible() && !InventoryGui.IsVisible()) return null;
+            // a scene-wide search: done twice a second, not every frame the inventory is open
+            if (Time.time < _nextScan) return _scanned != null && _scanned ? _scanned : null;
+            _nextScan = Time.time + 0.5f;
             Trader? best = null; float bestD = 4f;
             foreach (var tr in FindObjectsByType<Trader>(FindObjectsSortMode.None))
             {
                 float d = Vector3.Distance(tr.transform.position, player.transform.position);
                 if (d < bestD) { best = tr; bestD = d; }
             }
-            return best;
+            return _scanned = best;
         }
+        private static float _nextScan;
+        private static Trader? _scanned;
 
         private void Update()
         {

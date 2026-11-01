@@ -245,23 +245,30 @@ namespace ValheimDeepWaters
             foreach (var w in vis.GetComponents<WornRelic>()) w.Remove();
         }
 
-        private static readonly System.Reflection.FieldInfo? UtilityHash = AccessTools.Field(typeof(VisEquipment), "m_currentUtilityItemHash");
-        private static readonly System.Reflection.FieldInfo? HelmetHash = AccessTools.Field(typeof(VisEquipment), "m_currentHelmetItemHash");
-        private static readonly System.Reflection.FieldInfo? HelmetInstance = AccessTools.Field(typeof(VisEquipment), "m_helmetItemInstance");
+        private static readonly AccessTools.FieldRef<VisEquipment, int>? UtilityHash = Fields.Ref<VisEquipment, int>("m_currentUtilityItemHash");
+        private static readonly AccessTools.FieldRef<VisEquipment, int>? HelmetHash = Fields.Ref<VisEquipment, int>("m_currentHelmetItemHash");
+        private static readonly AccessTools.FieldRef<VisEquipment, GameObject>? HelmetInstance = Fields.Ref<VisEquipment, GameObject>("m_helmetItemInstance");
+        private static readonly System.Collections.Generic.List<WornRelic> Have = new();
 
         [HarmonyPatch(typeof(VisEquipment), "UpdateEquipmentVisuals")]
         private static class UpdatePatch
         {
+            // runs every frame for every character: most wear no relic and have none on, and leave straight away
             private static void Postfix(VisEquipment __instance)
             {
-                if (UtilityHash == null || __instance.m_bodyModel == null) return;
+                if (__instance.m_bodyModel == null || UtilityHash == null) return;
+                int worn = UtilityHash(__instance), head = HelmetHash != null ? HelmetHash(__instance) : 0;
+                bool any = false;
+                foreach (var spec in WornRelics)
+                    if ((spec.Helmet ? head : worn) == spec.Hash) { any = true; break; }
+                if (!any && !__instance.TryGetComponent<WornRelic>(out _)) return;
                 LoadFits();
-                int worn = UtilityHash.GetValue(__instance) is int h ? h : 0;
-                int head = HelmetHash?.GetValue(__instance) is int hh ? hh : 0;
+                __instance.GetComponents(Have);
                 foreach (var spec in WornRelics)
                 {
                     bool wearing = (spec.Helmet ? head : worn) == spec.Hash;
-                    var have = __instance.GetComponents<WornRelic>().FirstOrDefault(w => w.Spec == spec);
+                    WornRelic? have = null;
+                    foreach (var w in Have) if (w != null && w.Spec == spec) { have = w; break; }
                     if (wearing && have == null) (have = __instance.gameObject.AddComponent<WornRelic>()).Attach(__instance, spec);
                     else if (!wearing && have != null) { have.Remove(); have = null; }
                     if (have != null) have.HideBelt(__instance);
@@ -281,7 +288,8 @@ namespace ValheimDeepWaters
             {
                 if (Spec != null && Spec.Helmet)
                 {
-                    if (!(HelmetInstance?.GetValue(vis) is GameObject helmet) || helmet == _hiddenBelt) return;
+                    var helmet = HelmetInstance != null ? HelmetInstance(vis) : null;
+                    if (helmet == null || helmet == _hiddenBelt) return;
                     foreach (var r in helmet.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
                     _hiddenBelt = helmet;
                     return;

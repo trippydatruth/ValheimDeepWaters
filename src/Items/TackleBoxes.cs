@@ -383,8 +383,8 @@ namespace ValheimDeepWaters
         private Player? _p; private VisEquipment? _vis;
         private GameObject? _model; private TackleBoxes.Tier? _tier;
         private Quaternion _turn = Quaternion.identity; private float _top, _bottom;
-        private static readonly FieldInfo? UtilityHash = AccessTools.Field(typeof(VisEquipment), "m_currentUtilityItemHash");
-        private static readonly FieldInfo? RightHash = AccessTools.Field(typeof(VisEquipment), "m_currentRightItemHash");
+        private static readonly AccessTools.FieldRef<VisEquipment, int>? UtilityHash = Fields.Ref<VisEquipment, int>("m_currentUtilityItemHash");
+        private static readonly AccessTools.FieldRef<VisEquipment, int>? RightHash = Fields.Ref<VisEquipment, int>("m_currentRightItemHash");
 
         private void Awake() { _p = GetComponent<Player>(); _vis = GetComponent<VisEquipment>(); }
 
@@ -393,14 +393,15 @@ namespace ValheimDeepWaters
         private void LateUpdate()
         {
             if (_p == null || _vis == null) return;
-            var tier = UtilityHash?.GetValue(_vis) is int h && h != 0 ? TackleBoxes.TierByItemHash(h) : null;
+            int h = UtilityHash != null ? UtilityHash(_vis) : 0;
+            var tier = h != 0 ? TackleBoxes.TierByItemHash(h) : null;
             if (tier != _tier) Rebuild(tier);
             if (_model == null) return;
             bool show = !_p.IsDead() && _p.gameObject.activeInHierarchy;
             if (_model.activeSelf != show) _model.SetActive(show);
             if (!show) return;
 
-            bool rightFree = !(RightHash?.GetValue(_vis) is int r && r != 0);
+            bool rightFree = RightHash == null || RightHash(_vis) == 0;
             bool inHand = rightFree && !_p.IsAttached() && !_p.IsSwimming() && _vis.m_rightHand != null;
             var face = Quaternion.LookRotation(Vector3.ProjectOnPlane(_p.transform.forward, Vector3.up).normalized, Vector3.up);
             if (inHand)

@@ -28,7 +28,8 @@ namespace ValheimDeepWaters
 
         public static bool IsRod(ItemDrop.ItemData? item) => GetRod(item) != null;
 
-        private static readonly System.Reflection.FieldInfo? VisRightHash = HarmonyLib.AccessTools.Field(typeof(VisEquipment), "m_currentRightItemHash");
+        private static readonly HarmonyLib.AccessTools.FieldRef<VisEquipment, int>? VisRightHash = Fields.Ref<VisEquipment, int>("m_currentRightItemHash");
+        private static readonly HashSet<int> RodHashes = new();
 
         /// <summary>
         /// Whether a player has a Deep Waters rod in hand. Other players' inventories aren't loaded on this client (their
@@ -38,9 +39,15 @@ namespace ValheimDeepWaters
         {
             if (p == null) return false;
             if (p == Player.m_localPlayer) return IsRod(p.GetCurrentWeapon());
-            var vis = p.GetComponent<VisEquipment>();
-            if (vis == null || VisRightHash?.GetValue(vis) is not int held || held == 0) return false;
-            return RodItems.Values.Any(r => r != null && r.gameObject.name.GetStableHashCode() == held);
+            if (VisRightHash == null || !p.TryGetComponent<VisEquipment>(out var vis)) return false;
+            int held = VisRightHash(vis);
+            if (held == 0) return false;
+            if (RodHashes.Count != RodItems.Count)          // the rods' name hashes, worked out once
+            {
+                RodHashes.Clear();
+                foreach (var r in RodItems.Values) if (r != null) RodHashes.Add(r.gameObject.name.GetStableHashCode());
+            }
+            return RodHashes.Contains(held);
         }
 
         public static RodDefinition? GetRod(ItemDrop.ItemData? item) =>

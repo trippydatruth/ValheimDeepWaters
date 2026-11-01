@@ -85,7 +85,7 @@ namespace ValheimDeepWaters
     /// </summary>
     internal static class RodMotion
     {
-        private static readonly FieldInfo? VisRightItem = AccessTools.Field(typeof(VisEquipment), "m_rightItemInstance");
+        private static readonly AccessTools.FieldRef<VisEquipment, GameObject>? VisRightItem = Fields.Ref<VisEquipment, GameObject>("m_rightItemInstance");
         private static readonly Dictionary<int, RodAnimator> Anglers = new();
         private static bool _warnedNoRod;
 
@@ -122,7 +122,7 @@ namespace ValheimDeepWaters
             }
         }
 
-        private static readonly FieldInfo? ZAnimField = AccessTools.Field(typeof(Character), "m_zanim");
+        private static readonly AccessTools.FieldRef<Character, ZSyncAnimation>? ZAnimField = Fields.Ref<Character, ZSyncAnimation>("m_zanim");
 
         /// <summary>The local player's synced animator and their rod's attack (its animation names), if a rod is out.</summary>
         private static ZSyncAnimation? LocalAnim(out Attack? attack)
@@ -132,7 +132,7 @@ namespace ValheimDeepWaters
             var weapon = p != null ? p.GetCurrentWeapon() : null;
             if (p == null || weapon == null || !ContentRegistry.IsRod(weapon)) return null;
             attack = weapon.m_shared.m_attack;
-            return ZAnimField?.GetValue(p) as ZSyncAnimation;
+            return ZAnimField != null ? ZAnimField(p) : null;
         }
 
         /// <summary>A fish nibbling a lure: the rod tip nods (there's no float to watch).</summary>
@@ -231,8 +231,7 @@ namespace ValheimDeepWaters
             GameObject? go = null;
             try
             {
-                var vis = player.GetComponent<VisEquipment>();
-                if (vis != null && VisRightItem != null) go = VisRightItem.GetValue(vis) as GameObject;
+                if (VisRightItem != null && player.TryGetComponent<VisEquipment>(out var vis)) go = VisRightItem(vis);
             }
             catch { }
             if (go == null && player == Player.m_localPlayer && !_warnedNoRod)
