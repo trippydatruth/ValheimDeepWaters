@@ -240,7 +240,9 @@ namespace ValheimDeepWaters
         private static void RegisterItem(BuffDefinition b)
         {
             string basePrefab = ResolvePrefab(b.VanillaFallbackPrefab, DefaultBase(b));
-            var item = b.Craftable && b.Recipe.Count > 0
+            // meads and tonics are brewed like vanilla's: a mead base at the cauldron, fermented into the mead
+            bool brewed = Is(b, "Mead") && b.Craftable && b.Recipe.Count > 0;
+            var item = b.Craftable && b.Recipe.Count > 0 && !brewed
                 ? new CustomItem(PrefabName(b), basePrefab, new ItemConfig
                 {
                     Amount = Math.Max(1, b.CraftAmount),
@@ -278,6 +280,46 @@ namespace ValheimDeepWaters
             RelicVisuals.Apply(item.ItemPrefab, "buff_" + b.Id);
             ItemManager.Instance.AddItem(item);
             if (Is(b, "Chum")) ChumBuckets.RegisterPlaced(b, item.ItemPrefab);
+            if (brewed) RegisterMeadBase(b);
+        }
+
+        /// <summary>Meads per base out of the fermenter, as vanilla's (each base costs that many meads' worth of the recipe).</summary>
+        public const int MeadsPerBase = 6;
+
+        /// <summary>
+        /// "Mead base: X" at the cauldron (the mead's own station level), and a fermenter conversion from it to the mead.
+        /// The mead's recipe makes CraftAmount meads; a base gives MeadsPerBase, so its ingredients are scaled to match.
+        /// </summary>
+        private static void RegisterMeadBase(BuffDefinition b)
+        {
+            string meadPrefab = PrefabName(b), basePrefabName = "VDW_MeadBase_" + b.Id;
+            float scale = MeadsPerBase / (float)Math.Max(1, b.CraftAmount);
+            string fallback = b.VanillaFallbackPrefab ?? "";
+            string vanillaBase = fallback.StartsWith("Mead") ? "MeadBase" + fallback.Substring(4) : "";
+            var item = new CustomItem(basePrefabName, ResolvePrefab(vanillaBase, "MeadBaseHealthMinor"), new ItemConfig
+            {
+                Amount = 1,
+                CraftingStation = b.CraftingStation,
+                MinStationLevel = Math.Max(1, b.StationLevel),
+                Requirements = b.Recipe.Select(r => new RequirementConfig(r.Item, Math.Max(1, (int)Math.Round(r.Amount * scale)))).ToArray()
+            });
+            if (item.ItemDrop == null) { Plugin.Log.LogWarning($"Mead base for '{b.Id}' couldn't be made; that mead can't be brewed."); return; }
+            var shared = item.ItemDrop.m_itemData.m_shared;
+            string meadName = string.IsNullOrWhiteSpace(b.Name) ? b.Id : b.Name;
+            shared.m_name = Loc.Token("vdw_meadbase_" + b.Id, "Mead base: " + meadName);
+            shared.m_description = Loc.Token("vdw_meadbase_" + b.Id + "_desc",
+                $"Put it in a fermenter to brew {MeadsPerBase} {meadName}.\n\n{EffectText(b)}");
+            ItemManager.Instance.AddItem(item);
+            try
+            {
+                ItemManager.Instance.AddItemConversion(new CustomItemConversion(new FermenterConversionConfig
+                {
+                    FromItem = basePrefabName,
+                    ToItem = meadPrefab,
+                    ProducedItems = MeadsPerBase
+                }));
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"Fermenter recipe for '{b.Id}' failed ({ex.Message})."); }
         }
 
         private static void RegisterTotem(BuffDefinition b)

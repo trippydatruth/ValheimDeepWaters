@@ -447,10 +447,11 @@ at the Cleaning Table.
 
 Tiered items that unlock as you progress:
 
-- **Meads** (cauldron): Angler's Mead (faster bites), Steady-Hand Tonic (easier hookset), Troll-Grip Mead
-  (reel speed and stamina).
-- **Lingonberry Angler's Mead** (cauldron 5): a strong all-rounder for the Deep North - faster bites, easier hookset
-  and longer fights.
+- **Meads** (brewed like Valheim's): Angler's Mead (faster bites), Steady-Hand Tonic (easier hookset), Troll-Grip Mead
+  (reel speed and stamina). Make the **mead base** at the cauldron, put it in a **fermenter**, and it comes out as
+  6 meads, the same as vanilla meads and tonics.
+- **Lingonberry Angler's Mead** (base at cauldron 5): a strong all-rounder for the Deep North - faster bites, easier
+  hookset and longer fights. **Spawning Musk** is brewed the same way.
 - **Rune of Njord** (forge, worn as a belt): bigger fish, more legendaries.
 - **Chum** (cauldron): set the bucket down on the bank to draw more, less picky fish to the water around it for
   5 minutes, for anyone fishing there.
