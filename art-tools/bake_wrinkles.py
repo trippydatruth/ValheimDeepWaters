@@ -125,7 +125,9 @@ before = KEEP[:-4] + "_nrm.png"
 for label, path in (("before", before), ("after", out.filepath_raw)):
     if not os.path.exists(path): continue
     nti.image = bpy.data.images.load(path); nti.image.colorspace_settings.name = 'Non-Color'
-    for view, d in (("front", fwd), ("side", (fwd + side).normalized())):
+    for view, d in (("front", fwd), ("side", (fwd + side).normalized()), ("back", -fwd)):
+        ld = (d * 0.5 + d.cross(up).normalized() * -0.8 + up * 0.5).normalized()        # lit from the viewer's side, raking
+        sun.rotation_euler = (-ld).to_track_quat('-Z', 'Y').to_euler()
         cam.location = bc + d * big * 3 - up * big * (0.15 if PIECE == "overalls" else -0.15)
         cam.rotation_euler = (-d).to_track_quat('-Z', 'Y' if abs(up.y) > 0.5 else 'Z').to_euler()
         zf = d; xr = up.cross(zf).normalized(); yu = zf.cross(xr)

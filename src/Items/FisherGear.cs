@@ -117,7 +117,7 @@ namespace ValheimDeepWaters
         {
             ["fisher_chest"] = ("fisher_shirt_paint_v3", true, null),
             // the overalls and boots on the legs layer (drawn over the shirt), with the boots' rims as a small model
-            ["fisher_legs"] = ("fisher_overalls_paint_v12", false, "fisher_boot_rims"),
+            ["fisher_legs"] = ("fisher_overalls_paint_v14", false, "fisher_boot_rims"),
         };
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace ValheimDeepWaters
         /// The coat worn half painted on: its sleeves and upper body painted onto the body (CoatPaint), its collar and skirt
         /// the fisher_coat_skirt model in place of the whole coat. Left as the whole coat if either is missing.
         /// </summary>
-        private const string CoatPaintTex = "fisher_coat_paint_v12";   // + "_nrm": its folds and wrinkles
+        private const string CoatPaintTex = "fisher_coat_paint_v16";   // + "_nrm": its folds and wrinkles
 
         private static void PaintCoat(GameObject prefab, SkinnedMeshRenderer body, Piece p)
         {
