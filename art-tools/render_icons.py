@@ -172,6 +172,12 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     piv.matrix_world = R @ Matrix.Translation(-Vector(centre))
     bpy.context.view_layer.update(); dg = bpy.context.evaluated_depsgraph_get()
     c = world_pts(); lo, hi = c.min(0), c.max(0); mid = (lo + hi) / 2
+    if look == "rod" and fr is not None:
+        # frame only the butt end (handle and reel), so they show big; the rest runs out of the top-right corner
+        keep = float(os.environ.get("VDW_ROD_KEEP", "0.38"))
+        t = c @ np.array([0.707, 0, 0.707])
+        part = c[t <= t.min() + (t.max() - t.min()) * keep]
+        lo, hi = part.min(0), part.max(0); mid = (lo + hi) / 2
 
     cd = bpy.data.cameras.new("C"); cd.type = 'ORTHO'
     cd.ortho_scale = max(hi[0] - lo[0], hi[2] - lo[2]) * MARGIN.get(look, 1.12)
