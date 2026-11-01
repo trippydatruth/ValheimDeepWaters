@@ -218,9 +218,14 @@ def crystal(base, tip, r, mat, sides=6):
 
 
 # ---------------------------------------------------------------- more shapes for furniture
-def box(c, size, mat, rot=0.0, tilt=(0.0, 0.0)):
+# VDW_REFINE=1 (the user's asks of 2026-10-29): boards and slabs get rounded bevelled edges, coins (zucchini, carrot
+# slices) rounded rims, liquid surfaces a quad grid with no middle vertex, berries sit in little piles
+REFINE = os.environ.get("VDW_REFINE", "") == "1"
+BEVELS = []     # (box vertices, offset) to bevel once the whole piece is built
+
+def box(c, size, mat, rot=0.0, tilt=(0.0, 0.0), bevel=0.0):
     """A box centred on c (size x, y, z), turned rot degrees about Z (and tilted about X, Y). Grain runs along its
-    longest side; each face maps the whole tile."""
+    longest side; each face maps the whole tile. bevel (metres, with VDW_REFINE) rounds its edges."""
     c = Vector(c); sx, sy, sz = (s / 2 for s in size)
     R = Matrix.Rotation(math.radians(rot), 3, 'Z') @ Matrix.Rotation(math.radians(tilt[1]), 3, 'Y') @ Matrix.Rotation(math.radians(tilt[0]), 3, 'X')
     P = [c + R @ Vector((x, y, z)) for z in (-sz, sz) for y in (-sy, sy) for x in (-sx, sx)]
@@ -230,10 +235,37 @@ def box(c, size, mat, rot=0.0, tilt=(0.0, 0.0)):
     for q in quads:
         uvs = [(0, 0), (1, 0), (1, 1), (0, 1)] if long_x else [(0, 0), (0, 1), (1, 1), (1, 0)]
         face([v[i] for i in q], [tuv(mat, a, b) for a, b in uvs], smooth=False)
+    if REFINE and bevel > 0:
+        # bevelled at the very end (BEVELS): bevelling now renumbers the vertices and the next part's turn()/shift()
+        # (which work from a vertex count) would move the wrong ones
+        BEVELS.append((v, min(bevel, min(size) * 0.45)))
 
 def surface(z, r, mat, seg=22, c=(0, 0, 0)):
-    """A flat disc facing up (liquid, brine) at height z."""
-    lathe([(r, z), (0.0, z)], mat, seg, c, cap=False)
+    """A flat disc facing up (liquid, brine) at height z. With VDW_REFINE: a quad grid filling the circle (as Blender's
+    Grid Fill), no vertex in the middle."""
+    if not REFINE:
+        lathe([(r, z), (0.0, z)], mat, seg, c, cap=False); return
+    n = 8; c = Vector(c); g = []
+    for j in range(n + 1):
+        row = []
+        for i in range(n + 1):
+            u, w = -1 + 2 * i / n, -1 + 2 * j / n                          # a square grid, squeezed into the circle
+            x, y = u * math.sqrt(1 - w * w / 2), w * math.sqrt(1 - u * u / 2)
+            row.append(bm.verts.new(c + Vector((x * r, y * r, z))))
+        g.append(row)
+    for j in range(n):
+        for i in range(n):
+            q = [g[j][i], g[j][i + 1], g[j + 1][i + 1], g[j + 1][i]]
+            face(q, [tuv(mat, (vv.co.x - c.x) / (2 * r) + 0.5, (vv.co.y - c.y) / (2 * r) + 0.5) for vv in q], smooth=False)
+
+def berry_pile(c, r, mat, n=5, seed=0):
+    """A little heap of berries: a ring on the board and one on top."""
+    rnd_ = np.random.default_rng(seed); x, y, z = c
+    ring_n = max(3, n - 1)
+    for k in range(ring_n):
+        a = 2 * math.pi * k / ring_n + rnd_.uniform(-0.2, 0.2)
+        blob((x + 1.05 * r * math.cos(a), y + 1.05 * r * math.sin(a), z), r * rnd_.uniform(0.9, 1.08), mat, seg=8, rings=5)
+    if n > ring_n: blob((x, y, z + 1.45 * r), r, mat, seg=8, rings=5)
 
 def lathe(profile, mat, seg=20, c=(0, 0, 0), cap=True):
     """A round shape about Z through c from a (radius, height) profile, bottom to top. UV u round, v along it."""
@@ -407,11 +439,24 @@ def chunk(c, size, mat, rot=0.0, sink=0.45, seed=0):
     box((x, y, z + sz * (0.5 - sink)), size, mat, rot=rot, tilt=(rnd.uniform(-15, 15), rnd.uniform(-15, 15)))
 
 def coin(c, r, t, mat, tilt=(0, 0)):
+    if REFINE:                                                     # a rounded rim instead of a sharp one
+        e = min(t * 0.45, r * 0.3)
+        arc = [(r - e + e * math.sin(a), -t / 2 + e - e * math.cos(a)) for a in np.linspace(0, math.pi / 2, 3)]
+        arc2 = [(r - e + e * math.cos(a), t / 2 - e + e * math.sin(a)) for a in np.linspace(0, math.pi / 2, 3)]
+        n0 = mark(); lathe([(0.0, -t / 2)] + arc + arc2 + [(0.0, t / 2)], mat, 14)
+        turn(n0, (0, 0, 0), 'X', tilt[0]); turn(n0, (0, 0, 0), 'Y', tilt[1]); shift(n0, c); return
     n0 = mark(); lathe([(0.0, -t / 2), (r, -t / 2), (r, t / 2), (0.0, t / 2)], mat, 10)
     turn(n0, (0, 0, 0), 'X', tilt[0]); turn(n0, (0, 0, 0), 'Y', tilt[1]); shift(n0, c)
 
+# VDW_FILLET_MARKERS=1: fillets aren't built; where each one goes is written to <NAME>_fillets.json instead, for
+# swap_fillets.py to put the user's own fillet models there (the rest of the piece is built as usual)
+FILLET_MARKERS = os.environ.get("VDW_FILLET_MARKERS", "") == "1"
+FILLETS = []; CURRENT_STAGE = [NAME]
 def fillet(c, L, W, T, mat, rot=0.0):
-    """A thick fish fillet, tapering to the tail end, flat-shaded; an optional skin underneath."""
+    """A thick fish fillet, tapering to the tail end (+X), flat-shaded; an optional skin underneath."""
+    if FILLET_MARKERS:
+        FILLETS.append({"c": list(c), "L": L, "W": W, "T": T, "mat": mat, "rot": rot, "part": CURRENT_STAGE[0], "grow": 1.0})
+        return
     n0 = mark()
     out = [(L * (s - 0.5), W * 0.5 * (1 - 0.45 * s ** 1.5) * (0.85 + 0.15 * math.sin(math.pi * s))) for s in np.linspace(0, 1, 8)]
     plate(out + [(x, -y) for x, y in reversed(out)], T, mat, cup=-T * 0.4, smooth=False)
@@ -432,7 +477,7 @@ if PIECE == "food_fishermans_stew":
 elif PIECE == "food_fin_soup":
     lvl = wide_bowl(mat="darkwood", liquid="broth", fill=0.8)
     fillet((0.0, 0.01, lvl + 0.004), 0.1, 0.06, 0.022, "whitefish", rot=20)                                     # a big fillet, skin up
-    box((0.0, 0.01, lvl + 0.017), (0.085, 0.045, 0.004), "skin", rot=20)
+    if not FILLET_MARKERS: box((0.0, 0.01, lvl + 0.017), (0.085, 0.045, 0.004), "skin", rot=20)   # (the user's fillet has its own look)
     fillet((-0.05, -0.04, lvl + 0.002), 0.07, 0.045, 0.016, "whitefish", rot=-30)
     rnd = np.random.default_rng(5)
     for k in range(5):
@@ -478,21 +523,27 @@ elif PIECE == "food_ink_noodles":
     for k in range(5): ring((rnd.uniform(-0.06, 0.06), rnd.uniform(-0.06, 0.06), lvl + 0.007), (0, 0, 1), 0.007, 0.0025, "scallion", seg=8, mseg=4)
     for k, (x, y) in enumerate(((0.06, 0.04), (-0.05, -0.05))): blob((x, y, lvl + 0.01), 0.015, "puff", seg=8, rings=6, bump=0.3, seed=k)
 elif PIECE == "food_ember_fillet":
-    box((0, 0, 0.012), (0.32, 0.2, 0.024), "slate")                                                             # slate board
+    box((0, 0, 0.012), (0.32, 0.2, 0.024), "slate", bevel=0.008)                                                # slate board
     for k in range(3): fillet((-0.02 + 0.015 * k, -0.06 + 0.06 * k, 0.04), 0.13, 0.065, 0.03, "grilledsalmon", rot=-15 + 6 * k)
     for k in range(3):                                                                                          # cinder scales, glowing
         n0 = mark(); plate([(0.016 * math.cos(a), 0.016 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 10)], 0.003, "cinder")
         turn(n0, (0, 0, 0), 'X', 15); shift(n0, (0.12, -0.07 + 0.07 * k, 0.03))
-    for k, (x, y) in enumerate(((-0.12, 0.07), (-0.13, -0.05), (-0.11, -0.075))): blob((x, y, 0.034), 0.011, "vineberry", seg=8, rings=5)
+    if REFINE:
+        berry_pile((-0.12, 0.055, 0.035), 0.011, "vineberry", n=5, seed=1); berry_pile((-0.12, -0.06, 0.035), 0.011, "vineberry", n=4, seed=2)
+    else:
+        for k, (x, y) in enumerate(((-0.12, 0.07), (-0.13, -0.05), (-0.11, -0.075))): blob((x, y, 0.034), 0.011, "vineberry", seg=8, rings=5)
 elif PIECE == "food_rime_salmon":
-    box((0, 0, 0.012), (0.32, 0.2, 0.024), "wood")                                                              # a wooden board
+    box((0, 0, 0.012), (0.32, 0.2, 0.024), "wood", bevel=0.008)                                                 # a wooden board
     fillet((0.07, 0.03, 0.045), 0.12, 0.08, 0.035, "curedsalmon", rot=10)                                       # the rest of the side
     for k in range(5): crystal((0.03 + 0.02 * k, 0.03 + 0.005 * k, 0.06), (0.03 + 0.02 * k, 0.035, 0.075 + 0.005 * (k % 2)), 0.005, "ice")   # rime on it
     for k in range(7):                                                                                          # thin slices fanned like fallen dominoes
         n0 = mark(); out = [(0.05 * math.cos(a), 0.024 * math.sin(a) * (1 - 0.25 * math.cos(a))) for a in np.linspace(0, 2 * math.pi, 16, endpoint=False)]
         plate(out, 0.004, "curedsalmon", cup=0.004, smooth=False)
         turn(n0, (0, 0, 0), 'Y', 24); turn(n0, (0, 0, 0), 'Z', 8); shift(n0, (-0.13 + 0.028 * k, -0.035, 0.032 + 0.004 * k))   # overlapping, leaning on the next
-    for k, (x, y) in enumerate(((0.13, -0.07), (0.12, -0.05), (-0.13, 0.07), (0.0, -0.08))): blob((x, y, 0.03), 0.009, "berry", seg=8, rings=5)
+    if REFINE:
+        berry_pile((0.125, -0.065, 0.033), 0.009, "berry", n=5, seed=3); berry_pile((-0.125, 0.065, 0.033), 0.009, "berry", n=4, seed=4)
+    else:
+        for k, (x, y) in enumerate(((0.13, -0.07), (0.12, -0.05), (-0.13, 0.07), (0.0, -0.08))): blob((x, y, 0.03), 0.009, "berry", seg=8, rings=5)
     for k in range(10): box((0.04 + 0.006 * k, 0.02 + (k % 3) * 0.012, 0.064), (0.004, 0.004, 0.003), "coal")     # peppercorns
 elif PIECE == "food_grilled_fillet":
     box((0, 0, 0.01), (0.22, 0.12, 0.02), "wood")
@@ -512,9 +563,13 @@ elif PIECE.startswith("piece_feast_"):
         global bm, uvl
         keep_bm, keep_uvl = bm, uvl
         bm = _bmesh.new(); uvl = bm.loops.layers.uv.new("UVMap")
+        CURRENT_STAGE[0] = name
         for fn in items:                                                                       # each piece of food 1.45x about its own foot: heaped, readable platters
-            n0 = len(bm.verts); fn(); bm.verts.ensure_lookup_table()
+            n0 = len(bm.verts); m0 = len(FILLETS); fn(); bm.verts.ensure_lookup_table()
             vs = bm.verts[n0:]
+            for mk in FILLETS[m0:]:                                                            # a fillet marker grows about its own foot the same way
+                foot = mk["c"][2] - mk["T"] / 2
+                mk["c"][2] = foot + (mk["c"][2] - foot) * 1.45; mk["grow"] = 1.45
             if not vs: continue
             cx = sum(v.co.x for v in vs) / len(vs); cy = sum(v.co.y for v in vs) / len(vs); cz = min(v.co.z for v in vs)
             for v in vs: v.co = Vector((cx + (v.co.x - cx) * 1.45, cy + (v.co.y - cy) * 1.45, cz + (v.co.z - cz) * 1.45))
@@ -525,6 +580,7 @@ elif PIECE.startswith("piece_feast_"):
         o2 = bpy.data.objects.new(name, m2); bpy.context.scene.collection.objects.link(o2)
         print(f"  {name}: {len(m2.polygons)} faces, {len(items)} part(s)")
         bm, uvl = keep_bm, keep_uvl
+        CURRENT_STAGE[0] = NAME
     def stages(items):
         n = len(items)
         make_stage("food_full", items)
@@ -532,9 +588,9 @@ elif PIECE.startswith("piece_feast_"):
         make_stage("food_low", items[: max(1, round(n * 0.22))])
     rnd = np.random.default_rng(31)
     def board(w=1.0, d=0.6, mat="wood", h=0.09):
-        box((0, 0, h - 0.025), (w, d, 0.05), mat)                                                             # the serving board
+        box((0, 0, h - 0.025), (w, d, 0.05), mat, bevel=0.012)                                                # the serving board
         for sx in (-1, 1):
-            box((sx * (w / 2 - 0.08), 0, (h - 0.05) / 2), (0.08, d - 0.08, h - 0.05), "darkwood")              # its feet
+            box((sx * (w / 2 - 0.08), 0, (h - 0.05) / 2), (0.08, d - 0.08, h - 0.05), "darkwood", bevel=0.008)  # its feet
         return h
     def lying_fish(x, y, z, L, mat, rot):
         def f(): fish((x, y, z), L, mat=mat, rot=rot, flat=0.55)
@@ -613,7 +669,7 @@ elif PIECE.startswith("piece_feast_"):
         for k in range(5): items.append(lambda k=k: blob((-0.4 + 0.2 * k, -0.24 + 0.02 * (k % 2), top + 0.025), 0.025, "puff", seg=8, rings=6, bump=0.3, seed=k))
         stages(items)
     elif FEAST == "ashlands":             # Ember Fish Platter: grilled salmon on a slate slab, glowing cinder scales, vineberries
-        top = board(mat="darkwood"); box((0, 0, top + 0.012), (0.9, 0.5, 0.024), "slate"); top += 0.024
+        top = board(mat="darkwood"); box((0, 0, top + 0.012), (0.9, 0.5, 0.024), "slate", bevel=0.008); top += 0.024
         items = []
         for k in range(6): items.append(lambda k=k: fillet((-0.32 + 0.13 * k, -0.05 + 0.1 * (k % 2), top + 0.02), 0.15, 0.07, 0.03, "grilledsalmon", rot=-10 + 4 * k))
         for k in range(6):
@@ -621,7 +677,10 @@ elif PIECE.startswith("piece_feast_"):
                 n0 = mark(); plate([(0.02 * math.cos(a), 0.02 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 10, endpoint=False)], 0.003, "cinder")
                 turn(n0, (0, 0, 0), 'X', 15); shift(n0, (-0.35 + 0.14 * k, 0.18, top + 0.008))
             items.append(scale_)
-        for k in range(8): items.append(lambda k=k: blob((-0.38 + 0.1 * k, -0.2, top + 0.012), 0.013, "vineberry", seg=8, rings=5))
+        if REFINE:
+            for k, x in enumerate((-0.33, 0.0, 0.33)): items.append(lambda k=k, x=x: berry_pile((x, -0.2, top + 0.013), 0.013, "vineberry", n=5, seed=10 + k))
+        else:
+            for k in range(8): items.append(lambda k=k: blob((-0.38 + 0.1 * k, -0.2, top + 0.012), 0.013, "vineberry", seg=8, rings=5))
         rnd.shuffle(items); stages(items)
     elif FEAST == "deepnorth":            # Rime Fish Smorgasbord: cured salmon slices, dried fish, lingonberries, rime
         top = board()
@@ -749,6 +808,11 @@ elif PIECE == "piece_plaque":
     ring((0, -0.01, H / 2 + 0.02), (0, 1, 0), 0.025, 0.004, "gold", seg=12)                              # hanging ring
 
 
+for vs_, off_ in BEVELS:                                   # the boards' rounded edges (VDW_REFINE)
+    vs_ = [v for v in vs_ if v.is_valid]
+    if len(vs_) < 8: continue
+    edges = list({e for v in vs_ for e in v.link_edges if all(x in vs_ for x in e.verts)})
+    bmesh.ops.bevel(bm, geom=edges + vs_, offset=off_, offset_type='OFFSET', segments=3, profile=0.5, affect='EDGES', clamp_overlap=True)
 # clean up for Unity: weld points  that sit on top of each other (the poles of the round parts), drop degenerate faces,
 # and hand over triangles - Unity otherwise splits the collapsed quads into zero-area triangles and rejects the normals
 bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-7)
@@ -782,7 +846,8 @@ if PIECE.startswith("piece_"):
     gone = {m for _, ms in WOOD_SPLIT for m in ms}
     bmesh.ops.delete(src, geom=[f for f in src.faces if mat_of(f, suv) in gone], context='FACES')
     src.to_mesh(me); src.free()
-co = np.array([v.co[:] for v in me.vertices]); print(f"PIECE {PIECE}: {len(co)} verts, {np.ptp(co, 0).round(3)} m")
+co = np.array([v.co[:] for v in me.vertices]).reshape(-1, 3)
+print(f"PIECE {PIECE}: {len(co)} verts" + (f", {np.ptp(co, 0).round(3)} m" if len(co) else " (only fillet markers)"))
 
 def smooth_(e0, e1, x): t = np.clip((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t)
 # ---------------------------------------------------------------- paint the atlas
@@ -827,4 +892,8 @@ def save(arr, kind, alpha=None):
     im.filepath_raw = p; im.file_format = 'PNG'; im.save(); print("MAP", os.path.basename(p))
 save(alb, "Albedo"); save(np.dstack((metal, metal, metal)), "MetallicSmoothness", alpha=np.clip(1 - rough, 0, 1)); save(nrm * 0.5 + 0.5, "Normal"); save(emi, "Emission")
 ob.data.materials.append(bpy.data.materials.new(NAME))
+if FILLET_MARKERS:
+    import json
+    with open(os.path.join(OUT, "Blender Files", NAME + "_fillets.json"), "w") as fh: json.dump(FILLETS, fh, indent=1)
+    print("FILLETS", len(FILLETS), "markers")
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "Blender Files", NAME + ".blend")); print("SAVED")

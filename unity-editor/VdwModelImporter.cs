@@ -152,7 +152,7 @@ public static class VdwModelImporter
         new Entry("buff_totem_njord", "pieces", Kind.Static, 1.5f),   // the same totem, recoloured (recolor_totem.py)
         new Entry("fishing_boat", "pieces", Kind.Static),             // hull + oar.L / oar.R pivoting at their oarlocks (build_boat.py)
         // Fish Cleaning Table and its add-ons (build_cleaning_table.py)
-        new Entry("piece_cleaning_table", "pieces", Kind.Static),
+        new Entry("piece_cleaning_table", "pieces", Kind.Static, 0f, 2048),   // the user's remade table: one 2048 set (bake_piece.py)
         new Entry("piece_cleaning_ext1", "pieces", Kind.Static),
         new Entry("piece_cleaning_ext2", "pieces", Kind.Static),
         new Entry("piece_cleaning_ext3", "pieces", Kind.Static),

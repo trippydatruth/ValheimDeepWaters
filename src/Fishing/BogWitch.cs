@@ -124,6 +124,17 @@ namespace ValheimDeepWaters
             if (CustomModels.ApplyToPrefab(piece.PiecePrefab, key))
             {
                 PieceDressing.Dress(piece.PiecePrefab);
+                // Placed close together, the feasts' boxes touched and the copied physics pushed them up and over
+                // each other: a feast stays where it's put.
+                foreach (var rb in piece.PiecePrefab.GetComponentsInChildren<Rigidbody>(true))
+                {
+                    rb.isKinematic = true;
+                    rb.useGravity = false;
+                    Plugin.Log.LogInfo($"Fish feast '{f.Id}': held still ('{rb.name}' had physics).");
+                }
+                // and its box a little inside the board's edge, so two set side by side don't touch
+                if (piece.PiecePrefab.GetComponent<BoxCollider>() is BoxCollider box)
+                    box.size = new Vector3(Mathf.Max(0.1f, box.size.x - 0.06f), box.size.y, Mathf.Max(0.1f, box.size.z - 0.06f));
                 var model = piece.PiecePrefab.transform.Find("vdw_model");
                 GameObject? Stage(string n) => model == null ? null
                     : model.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name.StartsWith(n))?.gameObject;
