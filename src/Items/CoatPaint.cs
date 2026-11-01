@@ -45,20 +45,23 @@ namespace ValheimDeepWaters
             private static void Postfix(VisEquipment __instance)
             {
                 if (_coatHash == 0 || __instance.m_bodyModel == null) return;
-                var st = States.GetOrCreateValue(__instance);
-                var mat = __instance.m_bodyModel.material;
-                var now = mat.GetTexture(LegsTex);
+                // runs every frame for every character: decide from the worn coat first, and only touch the body's
+                // material (reading .material makes it a per-character copy) when the coat is on or just came off
                 bool worn = ShoulderHash(__instance) == _coatHash;
                 if (!worn)
                 {
-                    if (st.Applied)
+                    if (States.TryGetValue(__instance, out var was) && was.Applied)
                     {
-                        if (now == st.Shown) mat.SetTexture(LegsTex, st.Base);
-                        if (st.ShownBump != null && mat.GetTexture(LegsBump) == st.ShownBump) mat.SetTexture(LegsBump, st.BaseBump);
-                        st.Applied = false;
+                        var m = __instance.m_bodyModel.material;
+                        if (m.GetTexture(LegsTex) == was.Shown) m.SetTexture(LegsTex, was.Base);
+                        if (was.ShownBump != null && m.GetTexture(LegsBump) == was.ShownBump) m.SetTexture(LegsBump, was.BaseBump);
+                        was.Applied = false;
                     }
                     return;
                 }
+                var st = States.GetOrCreateValue(__instance);
+                var mat = __instance.m_bodyModel.material;
+                var now = mat.GetTexture(LegsTex);
                 if (st.Applied && now == st.Shown) return;                      // nothing changed underneath
                 // what the legs layer would show without the coat: the legs armour's, or the bare body's
                 Texture? under = now != null && now != st.Shown ? now : BaseLegs(__instance);

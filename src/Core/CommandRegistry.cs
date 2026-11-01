@@ -82,7 +82,7 @@ namespace ValheimDeepWaters
         {
             public override string Name => "vdw_debug";
             public override bool IsCheat => true;
-            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | catch <fish> | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | paint <chest|legs|both|alpha|off|dump> | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
+            public override string Help => "Deep Waters testing tools. Usage: vdw_debug [bite | catch <fish> | boss <fish> | worms | horn | resetlog | rank <points> | resetrank | master <fish> <count> | variant <golden|albino> | rarefish <fish> <golden|albino> | wear <crown|pearl|rune> [axis value] | paint <chest|legs|both|alpha|off|dump> | pose <name> [seconds] [delay] [fps] | tokens | listrods | listhooks | listbuffs | listfish | listbait]";
 
             public override void Run(string[] args)
             {
@@ -120,6 +120,14 @@ namespace ValheimDeepWaters
                 {
                     if (Player.m_localPlayer == null) return;
                     Console.instance.Print(ArmorPaintTest.Run(Player.m_localPlayer, args.Length > 1 ? args[1].ToLowerInvariant() : ""));
+                }
+                else if (args[0].Equals("pose", StringComparison.OrdinalIgnoreCase))
+                {
+                    // vdw_debug pose <name> [seconds] [delay] [fps]: records the real skeleton for Blender gear tests
+                    if (Player.m_localPlayer == null) return;
+                    if (args.Length < 2) { Console.instance.Print($"Usage: vdw_debug pose <name> [seconds=4] [delay=3] [fps=15]   (saved to {PoseRecorder.Dir})"); return; }
+                    float F(int i, float d) => args.Length > i && float.TryParse(args[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
+                    Console.instance.Print(PoseRecorder.Start(Player.m_localPlayer, args[1], F(2, 4f), F(3, 3f), F(4, 15f)));
                 }
                 else if (args[0].Equals("worms", StringComparison.OrdinalIgnoreCase))
                 {

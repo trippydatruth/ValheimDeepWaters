@@ -35,6 +35,15 @@ bpy.ops.wm.obj_import(filepath=BODY)
 body = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 body.name = "game_body"
 bme = body.data; bme.transform(body.matrix_world); body.matrix_world = Matrix.Identity(4)
+# smooth, as the game draws it: the dump has no normals, so the OBJ came in flat and every body triangle baked into the
+# normal map as its own tilted tile (blocky wrinkles). Normals averaged over vertices sharing a spot, so the UV seams
+# (split vertices) don't show either. VDW_BODY_FLAT=1 for the old flat bake.
+if os.environ.get("VDW_BODY_FLAT", "0") != "1":
+    for p in bme.polygons: p.use_smooth = True
+    acc = {}
+    for v in bme.vertices: acc.setdefault(tuple(round(c, 5) for c in v.co), Vector()).__iadd__(v.normal)
+    bme.normals_split_custom_set_from_vertices([acc[tuple(round(c, 5) for c in v.co)].normalized() for v in bme.vertices])
+    print("BODY smooth-shaded, normals welded across seams")
 bv = [v.co.copy() for v in bme.vertices]
 kd = KDTree(len(bv))
 for i, v in enumerate(bv): kd.insert(v, i)

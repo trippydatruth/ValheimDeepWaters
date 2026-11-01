@@ -17,6 +17,7 @@ for o in list(bpy.data.objects):
     if o.mode != 'OBJECT' and o.name in bpy.context.view_layer.objects:
         bpy.context.view_layer.objects.active = o; bpy.ops.object.mode_set(mode='OBJECT')
 arm = bpy.data.objects["Armature"]
+arm.animation_data_clear()   # a blend with the recorded game poses keyed (Game_anims_*) would re-pose the rig over the reset
 for pb in arm.pose.bones: pb.location = (0, 0, 0); pb.rotation_quaternion = (1, 0, 0, 0); pb.rotation_euler = (0, 0, 0); pb.scale = (1, 1, 1)
 bpy.context.view_layer.update()
 ed = bpy.data.objects[os.environ.get("VDW_EDITED", "coat_collar_skirt")]
