@@ -106,6 +106,7 @@ namespace ValheimDeepWaters
             var skin = item.ItemPrefab.transform.Find("attach_skin");
             if (skin != null) UnityEngine.Object.DestroyImmediate(skin.gameObject);
             if (CustomModels.ApplyToPrefab(item.ItemPrefab, t.ModelKey)) GroundPose.FitCollider(item.ItemPrefab);
+            VanillaFx.AttachToBox(item.ItemPrefab, t.Id);      // Hildir's boxes: their faint biome effects
             ItemManager.Instance.AddItem(item);
             ByItemName[s.m_name] = t;
             ByItemHash[t.ItemPrefab.GetStableHashCode()] = t;
@@ -125,6 +126,7 @@ namespace ValheimDeepWaters
             foreach (var c in inst.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
             // a box collider round the model, to stand it on the ground and look at it
             var b = Bounds(inst);
+            VanillaFx.AttachToBox(inst, t.Id);                  // (after measuring, so the effects don't widen the collider)
             var col = go.AddComponent<BoxCollider>(); col.center = go.transform.InverseTransformPoint(b.center); col.size = b.size;
             var cont = go.GetComponent<Container>();
             cont.m_name = Loc.Token("vdw_tacklebox_item_" + t.Id, t.Name);

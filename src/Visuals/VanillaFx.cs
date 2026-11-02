@@ -61,6 +61,28 @@ namespace ValheimDeepWaters
                                     new Fx("SwordNiedhoggLightning", "attach/default/glow/Lightning", false, null, 0.55f, 0.65f) { Ribbon = true }, new Fx("SwordMistwalker", "attach/Mistwalker/Point light", true, SkyBolt) },
         };
 
+        /// <summary>
+        /// By box id: Hildir's three late-biome tackle boxes, faintly - eitr mist round the Mistlands box, embers off
+        /// the Ashlands one (id "swamp"), snowflakes and a breath of frost round the Deep North one (id "mountain").
+        /// </summary>
+        private static readonly Dictionary<string, Fx[]> BoxFx = new()
+        {
+            ["mistlands"] = new[] { new Fx("SwordMistwalker", "attach/Mistwalker/Particle System", false, new Color(0.7f, 0.45f, 1f), 0.3f, 0.55f) },
+            // the staff's embers alone were too small and sparse to see in daylight: more and bigger, over a faint
+            // smoulder of Dyrnwyn's flame (as on the Ashwood rod, short-lived, without its flare)
+            ["swamp"] = new[] { new Fx("StaffFireball", "attach/equiped/embers", false, null, 1.6f, 1.3f),
+                                new Fx("SwordDyrnwyn", "attach/Burny vfx", false, null, 0.12f, 0.3f) { Life = 0.4f, Skip = new[] { "flare" } } },
+            ["mountain"] = new[] { new Fx("MaceSilver", "attach/effects/vfx_BloodHit 1", false, null, 0.3f, 0.5f),
+                                   new Fx("MaceSilver", "attach/effects/soft cloud", false, FrostCloud, 0.2f, 0.3f) { Life = 0.6f } },
+        };
+
+        /// <summary>A Hildir box's faint effects on a box object (the item, or the set-down chest), emitting from its model.</summary>
+        public static void AttachToBox(GameObject root, string boxId)
+        {
+            if (!BoxFx.TryGetValue(boxId, out var list) || root.transform.Find("vdw_fx") != null) return;
+            Attach(root.transform, list, Emitter(root.transform), "tacklebox_" + boxId);
+        }
+
         private static readonly HashSet<string> Warned = new();
 
         /// <summary>The fish's effects on a fish object (item prefab or the hooked visual), emitting from its model.</summary>
@@ -217,6 +239,8 @@ namespace ValheimDeepWaters
                 // ride the model: placed at the emitter, emitting from its surface
                 go.transform.SetParent(emitter.transform, false);
                 go.transform.localPosition = Vector3.zero; go.transform.localRotation = Quaternion.identity; go.transform.localScale = Vector3.one;
+                foreach (var t in go.GetComponentsInChildren<Transform>(true).Where(t => fx.Skip.Contains(t.name)).ToArray())
+                    UnityEngine.Object.DestroyImmediate(t.gameObject);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                     if (r is MeshRenderer || r is SkinnedMeshRenderer) r.enabled = false;     // particles and lights only
                 foreach (var c in go.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
@@ -286,6 +310,7 @@ namespace ValheimDeepWaters
                         if (noise.enabled) noise.strengthMultiplier *= 0.3f;
                         if (vel.enabled) { vel.x = vel.y = vel.z = new ParticleSystem.MinMaxCurve(0f); }
                     }
+                    if (fx.Life != 1f) main.startLifetimeMultiplier *= fx.Life;
                     var em = ps.emission;
                     em.rateOverTimeMultiplier *= fx.Rate * Mathf.Sqrt(sizeK);
                     ps.Play(true);

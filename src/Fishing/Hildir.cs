@@ -96,6 +96,7 @@ namespace ValheimDeepWaters
             s.m_itemType = ItemDrop.ItemData.ItemType.Material;
             s.m_value = 0; s.m_maxStackSize = 1; s.m_weight = 3f; s.m_teleportable = true;
             if (CustomModels.ApplyToPrefab(item.ItemPrefab, "tacklebox_" + b.Id)) GroundPose.FitCollider(item.ItemPrefab);
+            VanillaFx.AttachToBox(item.ItemPrefab, b.Id);
             ItemManager.Instance.AddItem(item);
             return item.ItemDrop;
         }
