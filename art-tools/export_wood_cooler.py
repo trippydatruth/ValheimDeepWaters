@@ -10,25 +10,26 @@
 #        importer's static models want (Hildir's lost tackle boxes)
 import bpy, os
 OUT = os.environ["VDW_OUT"]; KIND = os.environ.get("VDW_KIND", "cooler")
-NAME, RIG = ("tacklebox", "TackleBox_Rig") if KIND == "tacklebox" else ("cooler", "Cooler_Rig")
+NAME, RIG = {"tacklebox": ("tacklebox", "TackleBox_Rig"), "gear": ("tackle", "")}.get(KIND, ("cooler", "Cooler_Rig"))   # gear: a reel or line (build_gear.py), static
 TIERS = os.environ.get("VDW_TIERS", "t1,t2,t3,t4" if KIND == "tacklebox" else "c1,c2,c3").split(",")
-SCALE = float(os.environ.get("VDW_SCALE", "1")); STATIC = os.environ.get("VDW_STATIC") == "1"
-ob, rig = bpy.data.objects[NAME], bpy.data.objects[RIG]
+SCALE = float(os.environ.get("VDW_SCALE", "1")); STATIC = os.environ.get("VDW_STATIC") == "1" or KIND == "gear"
+ob, rig = bpy.data.objects[NAME], bpy.data.objects.get(RIG)
 me = ob.data
 if "Grain" in me.uv_layers: me.uv_layers.remove(me.uv_layers["Grain"])
 me.uv_layers.active = me.uv_layers["UVMap"]; me.uv_layers["UVMap"].active_render = True
 me.materials.clear(); me.materials.append(bpy.data.materials.get(NAME) or bpy.data.materials.new(NAME))
 for p in me.polygons: p.material_index = 0
-rig.data.pose_position = 'REST'
+if rig: rig.data.pose_position = 'REST'
 # extra objects that go with the box: lures hung by hang_lures.py and their line, each with its own texture set
 extras = [o for o in bpy.data.objects if o.type == 'MESH' and o.name.startswith(("bait_lure_", "fishing_line"))]
 if SCALE != 1.0:
     from mathutils import Matrix
     me.transform(Matrix.Scale(SCALE, 4))
     for o in extras: o.data.transform(Matrix.Scale(SCALE, 4))
-    bpy.context.view_layer.objects.active = rig; bpy.ops.object.mode_set(mode='EDIT')   # (before the rig is dropped)
-    for eb in rig.data.edit_bones: eb.head *= SCALE; eb.tail *= SCALE
-    bpy.ops.object.mode_set(mode='OBJECT')
+    if rig:
+        bpy.context.view_layer.objects.active = rig; bpy.ops.object.mode_set(mode='EDIT')   # (before the rig is dropped)
+        for eb in rig.data.edit_bones: eb.head *= SCALE; eb.tail *= SCALE
+        bpy.ops.object.mode_set(mode='OBJECT')
 co = [v.co for v in me.vertices]
 print(f"EXPORT {NAME}: {max(c.x for c in co) - min(c.x for c in co):.3f} x {max(c.y for c in co) - min(c.y for c in co):.3f} x {max(c.z for c in co):.3f} m (scale {SCALE})")
 if STATIC:   # the rig dropped: the mesh as it stands at rest, on its own
@@ -36,7 +37,8 @@ if STATIC:   # the rig dropped: the mesh as it stands at rest, on its own
         if md.type == 'ARMATURE': ob.modifiers.remove(md)
     mw = ob.matrix_world.copy(); ob.parent = None; ob.matrix_world = mw
     for vg in list(ob.vertex_groups): ob.vertex_groups.remove(vg)
-    bpy.data.objects.remove(rig); rig = None
+    if rig: bpy.data.objects.remove(rig)
+    rig = None
 if STATIC:
     for o in extras:
         for md in list(o.modifiers): o.modifiers.remove(md)

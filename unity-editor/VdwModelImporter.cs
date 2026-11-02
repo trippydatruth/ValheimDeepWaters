@@ -98,6 +98,20 @@ public static class VdwModelImporter
         new Entry("tackle_egg_sinker", "tackle", Kind.Static) { Scale = 1.5f },
         new Entry("tackle_pyramid_sinker", "tackle", Kind.Static) { Scale = 1.5f },
         new Entry("tackle_leader", "tackle", Kind.Static) { Scale = 1.5f },
+        // reels and lines (build_gear.py, baked by bake_wood_cooler.py VDW_KIND=gear); the top three reels' hubs glow
+        new Entry("tackle_reel_bronze", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_reel_iron", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_reel_silver", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_reel_blackmetal", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_reel_dvergr", "tackle", Kind.Static, 1.5f) { Scale = 1.5f },
+        new Entry("tackle_reel_flametal", "tackle", Kind.Static, 1.5f) { Scale = 1.5f },
+        new Entry("tackle_reel_frostcore", "tackle", Kind.Static, 1.5f) { Scale = 1.5f },
+        new Entry("tackle_line_leather", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_line_guck", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_line_linen", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_line_sap", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_line_morgen", "tackle", Kind.Static) { Scale = 1.5f },
+        new Entry("tackle_line_moose", "tackle", Kind.Static) { Scale = 1.5f },
         // the tackle boxes (TackleBoxes.cs): the user's box, rigged (the mod turns its "lid" bone), baked per tier
         // (rig_tacklebox.py, unwrap_tacklebox.py, bake_tacklebox.py); 0.6 m long, the mod scales it per use
         new Entry("tacklebox_t1", "tacklebox", Kind.Rigged, 0f),

@@ -16,7 +16,7 @@ import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; TIER = os.environ.get("VDW_TIER", "c1")
-KIND = os.environ.get("VDW_KIND", "cooler"); PREFIX = "tacklebox" if KIND == "tacklebox" else "cooler"
+KIND = os.environ.get("VDW_KIND", "cooler"); PREFIX = {"tacklebox": "tacklebox", "gear": "tackle"}.get(KIND, "cooler")
 SIZE = int(os.environ.get("VDW_SIZE", "2048")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
 SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
 GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
@@ -95,6 +95,55 @@ TB_TIERS.update({
         web=matte((0.86, 0.86, 0.84), 0.9, (0.9, 0.9, 0.88), 0.0, (0.5, 0.48, 0.52), 0.08),   # cobwebs
         glow_slots={"eitr": (0.6, 0.3, 1.0)}),
 })
+# Reels and lines (build_gear.py, VDW_KIND=gear): slots plate / flange (wood or metal), metal, grip, line, glow. The line
+# is the procedural wood with no knots, its grain fine and squeezed so it reads as fibres wound round the spool.
+def WD(light, dark, worn, wear, dirt, amt, rough=0.65, knots=0.3, damage=0.2, scale=8.0, stretch=0.25):
+    return (WOOD, "generic_wood_01", {"Light Color": (*light, 1), "Dark Color": (*dark, 1), "Knots": knots, "Damage": damage, "Roughness": rough,
+            "Clearcoat": 0.0, "_scale": scale, "_stretch": stretch}, (*worn, 1), 0.0, wear, (*dirt, 1), amt)
+def LN(light, dark, rough, dirt, amt): return WD(light, dark, light, 0.05, dirt, amt, rough, 0.0, 0.0, scale=30.0, stretch=0.05)
+def MT(col, rough, worn, wear, dirt, amt, lib=METAL, mat="basic_worn_metal_01"):   # (its pattern scaled down: a reel is ~9 cm)
+    return (lib, mat, {"Color": (*col, 1), "Roughness": rough, "Scale": float(os.environ.get("VDW_GEAR_METAL_SCALE", "6")), "Overall Scale": float(os.environ.get("VDW_GEAR_METAL_SCALE", "6"))}, (*worn, 1), 1.0, wear, (*dirt, 1), amt)
+_D, _SOOT, _RIME = (0.18, 0.12, 0.07), (0.03, 0.03, 0.03), (0.90, 0.95, 1.0)
+_OAK = WD((0.52, 0.34, 0.18), (0.30, 0.18, 0.09), (0.62, 0.45, 0.28), 0.3, _D, 0.3)
+_GRIP = WD((0.66, 0.48, 0.30), (0.45, 0.30, 0.17), (0.75, 0.6, 0.42), 0.25, _D, 0.2, knots=0.0)
+_BIRCH = WD((0.66, 0.58, 0.44), (0.48, 0.40, 0.28), (0.76, 0.69, 0.56), 0.25, _D, 0.2)
+_DARKOAK = WD((0.24, 0.15, 0.08), (0.11, 0.065, 0.035), (0.32, 0.21, 0.12), 0.3, (0.10, 0.09, 0.05), 0.35)
+_ASHWOOD = WD((0.20, 0.07, 0.05), (0.08, 0.03, 0.02), (0.30, 0.12, 0.08), 0.3, _SOOT, 0.4)
+_FROSTWOOD = WD((0.42, 0.46, 0.52), (0.22, 0.25, 0.30), (0.60, 0.65, 0.72), 0.35, _RIME, 0.5)
+_BRONZE = MT((0.55, 0.36, 0.16), 0.35, (0.85, 0.65, 0.40), 0.3, _D, 0.3, GOLD, "gold_rough")
+_IRON = MT((0.20, 0.20, 0.21), 0.5, (0.50, 0.50, 0.52), 0.35, _D, 0.3)
+_SILVER = MT((0.74, 0.77, 0.80), 0.3, (0.92, 0.93, 0.95), 0.35, (0.20, 0.17, 0.12), 0.25)
+_BLACK = MT((0.06, 0.06, 0.07), 0.4, (0.28, 0.28, 0.30), 0.35, (0.24, 0.18, 0.10), 0.3)
+_DVERGR = MT((0.18, 0.19, 0.21), 0.45, (0.42, 0.43, 0.46), 0.35, (0.08, 0.07, 0.10), 0.3)
+_TAN = LN((0.55, 0.45, 0.32), (0.38, 0.29, 0.19), 0.7, _D, 0.15)
+_LINEN = LN((0.78, 0.73, 0.60), (0.60, 0.55, 0.44), 0.75, _D, 0.15)
+_SINEW = LN((0.34, 0.11, 0.075), (0.19, 0.055, 0.037), 0.55, (0.05, 0.03, 0.03), 0.2)
+_MOOSE = LN((0.76, 0.72, 0.64), (0.58, 0.54, 0.47), 0.7, _RIME, 0.35)
+_EITR = matte((0.45, 0.20, 0.85), 0.3, (0.7, 0.5, 1.0), 0.1, (0.2, 0.1, 0.3), 0.1)
+_EMBER = matte((0.9, 0.22, 0.02), 0.5, (1.0, 0.45, 0.1), 0.05, (0.15, 0.03, 0.0), 0.05)
+_ICE = matte((0.55, 0.80, 0.95), 0.1, (0.85, 0.95, 1.0), 0.04, (0.85, 0.93, 1.0), 0.04)
+GEAR_TIERS = {
+    "reel_bronze": dict(plate=_OAK, metal=_BRONZE, grip=_GRIP, line=_TAN),
+    "reel_iron": dict(plate=_IRON, metal=MT((0.14, 0.14, 0.15), 0.5, (0.40, 0.40, 0.42), 0.35, _D, 0.3), grip=_GRIP, line=_TAN),
+    "reel_silver": dict(plate=_SILVER, metal=MT((0.60, 0.63, 0.67), 0.3, (0.90, 0.92, 0.95), 0.3, (0.20, 0.17, 0.12), 0.25), grip=_BIRCH,
+                        line=LN((0.70, 0.66, 0.56), (0.52, 0.48, 0.40), 0.7, _D, 0.15)),
+    "reel_blackmetal": dict(plate=_BLACK, metal=MT((0.10, 0.10, 0.11), 0.45, (0.32, 0.32, 0.34), 0.35, (0.24, 0.18, 0.10), 0.3), grip=_DARKOAK, line=_LINEN),
+    "reel_dvergr": dict(plate=MT((0.62, 0.30, 0.16), 0.35, (0.90, 0.60, 0.40), 0.35, (0.10, 0.12, 0.10), 0.3, GOLD, "gold_rough"), metal=_DVERGR,
+                        grip=_DARKOAK, line=_LINEN, glow=_EITR, glow_slots={"glow": (0.6, 0.3, 1.0)}),
+    "reel_flametal": dict(plate=MT((0.95, 0.45, 0.10), 0.22, (1.0, 0.80, 0.45), 0.45, (0.05, 0.04, 0.04), 0.3, GOLD, "gold_rough"),
+                          metal=MT((0.08, 0.07, 0.07), 0.6, (0.30, 0.22, 0.18), 0.4, _SOOT, 0.4), grip=_ASHWOOD, line=_SINEW,
+                          glow=_EMBER, glow_slots={"glow": (1.0, 0.38, 0.06)}),
+    "reel_frostcore": dict(plate=_FROSTWOOD, metal=MT((0.60, 0.66, 0.74), 0.3, (0.90, 0.93, 0.97), 0.35, _RIME, 0.4),
+                           grip=WD((0.55, 0.58, 0.63), (0.36, 0.39, 0.44), (0.70, 0.74, 0.80), 0.25, _RIME, 0.35, knots=0.0), line=_MOOSE,
+                           glow=_ICE, glow_slots={"glow": (0.45, 0.8, 1.0)}),
+    "line_leather": dict(flange=_OAK, metal=_BRONZE, line=LN((0.30, 0.17, 0.08), (0.17, 0.09, 0.04), 0.6, _D, 0.2)),
+    "line_guck": dict(flange=_DARKOAK, metal=_IRON, line=LN((0.20, 0.25, 0.07), (0.10, 0.13, 0.03), 0.3, (0.08, 0.09, 0.05), 0.3)),
+    "line_linen": dict(flange=_BIRCH, metal=_BLACK, line=_LINEN),
+    "line_sap": dict(flange=WD((0.35, 0.36, 0.30), (0.18, 0.19, 0.15), (0.45, 0.46, 0.40), 0.3, (0.08, 0.07, 0.10), 0.3), metal=_DVERGR,
+                     line=LN((0.62, 0.33, 0.06), (0.38, 0.17, 0.02), 0.25, (0.10, 0.08, 0.05), 0.15)),
+    "line_morgen": dict(flange=_ASHWOOD, metal=MT((0.08, 0.07, 0.07), 0.6, (0.30, 0.22, 0.18), 0.4, _SOOT, 0.4), line=_SINEW),
+    "line_moose": dict(flange=_FROSTWOOD, metal=MT((0.60, 0.66, 0.74), 0.3, (0.90, 0.93, 0.97), 0.35, _RIME, 0.4), line=_MOOSE),
+}
 PAINT = {"t1": (0.055, 0.14, 0.075), "t2": (0.20, 0.03, 0.02), "t3": (0.62, 0.58, 0.48), "t4": (0.36, 0.22, 0.03),
          "swamp": (0.045, 0.012, 0.008), "mountain": (0.28, 0.36, 0.44), "mistlands": (0.12, 0.07, 0.19)}
 # how worn the paint is per tier: the low tiers mostly bare wood with the colour only clinging on, the high ones kept up
@@ -105,10 +154,11 @@ if KIND == "tacklebox" and os.environ.get("VDW_PAINT", "1") == "1":     # VDW_PA
         TB_TIERS[k]["paint"] = v
         w = list(TB_TIERS[k]["wood"]); w[5] = PAINT_WEAR[k] * float(os.environ.get("VDW_PAINT_WEAR", "1")); TB_TIERS[k]["wood"] = tuple(w)
 if KIND == "tacklebox": TIERS = TB_TIERS
+elif KIND == "gear": TIERS = GEAR_TIERS
 T = TIERS[TIER]
 box = bpy.data.objects[PREFIX]; me = box.data
 # the parts, as the model's materials (a tackle box may have extras: mark, moss, ice, eitr)
-SLOTS = [m.name.split(".")[0] for m in me.materials] if KIND == "tacklebox" else ["wood", "grip", "iron", "brass"]
+SLOTS = [m.name.split(".")[0] for m in me.materials] if KIND in ("tacklebox", "gear") else ["wood", "grip", "iron", "brass"]
 me.uv_layers.active = me.uv_layers["UVMap"]; me.uv_layers["UVMap"].active_render = True
 co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0); LENGTH = float(hi[0] - lo[0])
 
@@ -187,14 +237,15 @@ def build(slot):
     m = append_material(rel, name).copy(); m.name = f"cool_{slot}_{TIER}"
     N, L = m.node_tree.nodes, m.node_tree.links
     grp = next(n for n in N if n.type == 'GROUP' and n.node_tree and any("Bake" in o.name for o in n.outputs))
+    inputs = dict(inputs); stretch = inputs.pop("_stretch", None); scale = inputs.pop("_scale", None)   # per-part grain (gear)
     for k, v in inputs.items():
         if k in grp.inputs: grp.inputs[k].default_value = v
     if rel == WOOD:      # the grain along each board's long side: its "Grain" UVs (metres), U along the length
         uv = N.new("ShaderNodeUVMap"); uv.uv_map = "Grain"; uv.name = "vdw_grain"
         # stretched 5x along the board (U) so the grain runs straight instead of wavy
-        mp = N.new("ShaderNodeMapping"); mp.name = "vdw_grain_stretch"; mp.inputs["Scale"].default_value = (float(os.environ.get("VDW_GRAIN_STRETCH", "0.2")), 1.0, 1.0)
+        mp = N.new("ShaderNodeMapping"); mp.name = "vdw_grain_stretch"; mp.inputs["Scale"].default_value = (stretch if stretch is not None else float(os.environ.get("VDW_GRAIN_STRETCH", "0.2")), 1.0, 1.0)
         L.new(uv.outputs["UV"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], grp.inputs["Vector"])
-        if "Scale" in grp.inputs: grp.inputs["Scale"].default_value = float(os.environ.get("VDW_WOOD_SCALE", "1.6"))
+        if "Scale" in grp.inputs: grp.inputs["Scale"].default_value = scale if scale is not None else float(os.environ.get("VDW_WOOD_SCALE", "1.6"))
         # generic_wood's grain runs along V: turned a quarter about Z it runs along U, the board's length
         grp.inputs["Texture Rotation"].default_value = (0.0, 0.0, 1.5708)
     mtex = N.new("ShaderNodeTexImage"); mtex.image = mask_img; mtex.name = "vdw_mask"
@@ -346,7 +397,7 @@ if SHADE > 0:
 # the rune line (t4): a band of marks round the outside of the top rail, glowing - an Emission map, and the albedo
 # there in the glow's colour, darker
 emit = None
-if T.get("glow"):
+if isinstance(T.get("glow"), tuple) and len(T["glow"]) == 3:   # a rune line's colour (a gear "glow" part is a material)
     def emit_bake(make, name):
         img = bpy.data.images.new(name, SIZE, SIZE, alpha=False, float_buffer=True); img.colorspace_settings.name = 'Non-Color'
         for m in mats:

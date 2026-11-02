@@ -161,7 +161,9 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
 
     look = "rod" if key.startswith("rod_") else key   # every rod lies and shows like the wooden one
     fr = FRAME.get(look, DEFAULT)
-    if key in UPRIGHT:
+    if key.startswith(("tackle_reel_", "tackle_line_")):   # a reel or spool on its side: three-quarters on, the crank side toward you, from a little above
+        R = Matrix.Rotation(math.radians(22), 4, 'X') @ Matrix.Rotation(math.radians(-52), 4, 'Z')
+    elif key in UPRIGHT:
         R = Matrix.Rotation(math.radians(LOOK_DOWN.get(key, 0)), 4, 'X') @ Matrix.Rotation(math.radians(-28), 4, 'Z')
     elif key.startswith(("food_", "prep_")):   # dishes and prepared food: level, long side across, seen from the front and above
         R = Matrix.Rotation(math.radians(FOOD_VIEW), 4, 'X') @ Matrix.Rotation(math.radians(FOOD_TURN.get(key, 0)), 4, 'Z')
@@ -174,6 +176,11 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
         side = long.cross(up)
         src = Matrix((long, up, side)).transposed()                         # columns: model frame
         d1 = Vector((0.707, 0, 0.707)); d2 = Vector((-0.707, 0, 0.707)); d3 = d1.cross(d2)
+        if mode == "full":   # the whole rod standing tip up, leaning a little (the tackle screen's picture)
+            lean = math.radians(float(os.environ.get("VDW_FULL_LEAN", "7")))
+            d1 = Vector((math.sin(lean), 0, math.cos(lean))); d2 = Vector((-math.cos(lean), 0, math.sin(lean)))
+            if os.environ.get("VDW_FULL_FLIP", "1") == "1": d2 = -d2      # turned half round its length: the line and reel face right
+            d3 = d1.cross(d2)
         dst = Matrix((d1, d2, d3)).transposed()                               # where they go on screen
         # roll toward the viewer: a bit of 3D. A positive roll tilts the top AWAY from the camera (the underside showed),
         # so lying items default to -28 and show their top; the rods and bobber keep the +28 the user chose for them.
@@ -182,7 +189,7 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     piv.matrix_world = R @ Matrix.Translation(-Vector(centre))
     bpy.context.view_layer.update(); dg = bpy.context.evaluated_depsgraph_get()
     c = world_pts(); lo, hi = c.min(0), c.max(0); mid = (lo + hi) / 2
-    if look == "rod" and fr is not None:
+    if look == "rod" and fr is not None and mode != "full":
         # frame only the butt end (handle and reel), so they show big; the rest runs out of the top-right corner
         keep = float(os.environ.get("VDW_ROD_KEEP", "0.38"))
         t = c @ np.array([0.707, 0, 0.707])
@@ -191,6 +198,8 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
 
     cd = bpy.data.cameras.new("C"); cd.type = 'ORTHO'
     cd.ortho_scale = max(hi[0] - lo[0], hi[2] - lo[2]) * MARGIN.get(look, 1.12)
+    ASPECT = 4 if mode == "full" else 1                     # a full rod: a tall picture, 1 wide by 4 high
+    if mode == "full": cd.sensor_fit = 'VERTICAL'; cd.ortho_scale = max(hi[2] - lo[2], (hi[0] - lo[0]) * ASPECT) * 1.03
     span = float((hi - lo).max()); cd.clip_start = span * 0.01; cd.clip_end = span * 20
     cam = bpy.data.objects.new("C", cd); sc.collection.objects.link(cam); sc.camera = cam
     cam.location = Vector((mid[0], lo[1] - span * 3, mid[2])); cam.rotation_euler = (math.radians(90), 0, 0)
@@ -209,11 +218,12 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     except TypeError: sc.render.engine = 'BLENDER_EEVEE'   # Blender 5 renamed it back
     sc.render.film_transparent = True
     sc.render.resolution_x = sc.render.resolution_y = SIZE
+    if mode == "full": sc.render.resolution_x = SIZE // ASPECT
     sc.render.image_settings.file_format = 'PNG'; sc.render.image_settings.color_mode = 'RGBA'
     sc.view_settings.view_transform = 'Standard'
-    sc.render.filepath = os.path.join(OUT, key + ".png")
+    sc.render.filepath = os.path.join(OUT, key + ("_full" if mode == "full" else "") + ".png")
     bpy.ops.render.render(write_still=True)
-    if look in DIAGONAL_MIRROR:
+    if look in DIAGONAL_MIRROR and mode != "full":
         img = bpy.data.images.load(sc.render.filepath); w, h = img.size
         px = np.array(img.pixels[:]).reshape(h, w, 4).transpose(1, 0, 2)   # rows are bottom-up: (x, y) -> (y, x)
         img.pixels[:] = px.ravel(); img.filepath_raw = sc.render.filepath; img.file_format = 'PNG'; img.save()
