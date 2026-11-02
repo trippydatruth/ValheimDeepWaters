@@ -253,7 +253,46 @@ if HILDIR:
             for x in (-0.15, -0.05, 0.05, 0.15):
                 blob((x, -D / 2 - 0.0055, z), 0.0058, "eitr", "root", 1.0, int(x * 100), seg=8, rings=5)
                 blob((x, D / 2 + 0.0055, z), 0.0058, "eitr", "root", 1.0, int(x * 100) + 50, seg=8, rings=5)
-    MATS += [m for m in ("mark", "moss", "ice", "snow", "eitr", "ember") if any(p[1] == m for p in parts)]
+        # cobwebs (the Mistlands' spiders): thin strands, spokes from a hub out to where they're tied and rings across
+        def strand(a, b, bone="lid"): cyl(a, b, 0.00045, "web", bone, seg=4)
+        def web(hub, anchors, rings=(0.32, 0.52, 0.7, 0.86), closed=True, seed=0, bone="lid"):
+            rr = random.Random(seed); hub = Vector(hub); A = [Vector(a) for a in anchors]
+            for a in A: strand(hub, a, bone)
+            for f in rings:
+                for i in range(len(A) if closed else len(A) - 1):
+                    p = hub + (A[i] - hub) * (f + rr.uniform(-0.05, 0.05)); q = hub + (A[(i + 1) % len(A)] - hub) * (f + rr.uniform(-0.05, 0.05))
+                    strand(p, q, bone)
+        z0 = LID1 + T; HX_, R_, GZ_ = 0.105, 0.028, LID1 + T + float(os.environ.get("VDW_HANDLE_H", "0.065"))
+        c45 = (-HX_ + R_ * (1 - math.cos(math.pi / 4)), 0, GZ_ - R_ + R_ * math.sin(math.pi / 4))
+        # filling one half of the handle's arch: tied to the lid, up the rod, round its corner and under the grip
+        web((-0.062, 0, z0 + 0.03), [(-0.012, 0, z0 + 0.001), (-0.05, 0, z0 + 0.001), (-0.09, 0, z0 + 0.001), (-HX_ + 0.005, 0, z0 + 0.024),
+                                     (-HX_ + 0.005, 0, GZ_ - R_), c45, (-0.072, 0, GZ_ - 0.005), (-0.03, 0, GZ_ - 0.012)], seed=1)
+        # a small one in the arch's other corner
+        web((HX_ - 0.022, 0, GZ_ - 0.022), [(HX_ - 0.005, 0, GZ_ - 0.05), (HX_ - 0.005, 0, GZ_ - R_), (-c45[0], 0, c45[2]), (HX_ - 0.045, 0, GZ_ - 0.005)],
+            rings=(0.35, 0.6, 0.85), closed=False, seed=2)
+        # a tent of web from that handle's foot down to the lid toward the corner
+        web((HX_ + 0.03, 0.0, z0 + 0.012), [(HX_ + 0.004, 0, z0 + 0.04), (HX_ + 0.075, -0.035, z0 + 0.001), (HX_ + 0.085, 0.01, z0 + 0.001),
+                                            (HX_ + 0.05, 0.055, z0 + 0.001), (HX_ + 0.01, 0.045, z0 + 0.001), (HX_ + 0.012, -0.05, z0 + 0.001)], seed=3)
+        # and two on the body's front (yf: just proud of the iron bands; the box's corner edge at x = W/2)
+        yf, yc, xc = -D / 2 - 0.0045, -D / 2 - 0.001, W / 2 + 0.001
+        # from the top right corner, under the lid's iron corner, down and to the left to the bottom, as far over as
+        # the right side of Hildir's right mark
+        web((0.197, -D / 2 - 0.011, 0.11), [(xc, yc, ZB - 0.005), (0.185, yf, ZB - 0.006), (0.163, yf, 0.09), (0.163, yf, 0.004),
+                                            (0.205, yf, 0.004), (xc, yc, 0.035), (xc, yc, 0.11)], seed=4, bone="root")
+        # from the latch down to the bottom, where the front lure hangs (the lure ends up caught in front of it)
+        web((-0.048, -D / 2 - 0.009, 0.068), [(-0.018, yf - 0.002, 0.137), (-0.068, yf, 0.12), (-0.1, yf, 0.05), (-0.082, yf, 0.004),
+                                              (-0.028, yf, 0.004), (-0.018, yf - 0.002, 0.118)], seed=5, bone="root")
+        # the back: from its top corner on the other end, down and along to the bottom (the front's corner web turned round)
+        web((-0.197, D / 2 + 0.011, 0.11), [(-xc, -yc, ZB - 0.005), (-0.185, -yf, ZB - 0.006), (-0.163, -yf, 0.09), (-0.163, -yf, 0.004),
+                                            (-0.205, -yf, 0.004), (-xc, -yc, 0.035), (-xc, -yc, 0.11)], seed=6, bone="root")
+        xs = W / 2 + 0.0045     # the ends' faces, just proud of their bands
+        # the near end: across its lower front corner
+        web((-xs - 0.007, -0.065, 0.05), [(-xc, yc, 0.004), (-xc, yc, 0.06), (-xc, yc, 0.105), (-xs, -0.02, 0.1), (-xs, 0.005, 0.045), (-xs, -0.03, 0.004)],
+            seed=7, bone="root")
+        # the far end: its lower back corner, behind the lure hanging there
+        web((xs + 0.007, 0.07, 0.045), [(xc, -yc, 0.004), (xc, -yc, 0.055), (xc, -yc, 0.095), (xs, 0.035, 0.085), (xs, 0.02, 0.035), (xs, 0.04, 0.004)],
+            seed=8, bone="root")
+    MATS += [m for m in ("mark", "moss", "ice", "snow", "eitr", "ember", "web") if any(p[1] == m for p in parts)]
 
 # ---------------------------------------------------------------- one object, materials, UVs, bones
 me = bpy.data.meshes.new("tacklebox"); bm_all = bmesh.new(); lid_verts = []
