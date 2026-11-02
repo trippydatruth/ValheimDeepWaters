@@ -23,7 +23,7 @@ Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippy
   the rod in its slot takes no inventory space
 - Weights and leaders: every fish feeds at its own depth, so set your leader to fish the depth you want, or fish the
   bottom with a weight, a Texas rig or a Carolina rig. Light weights get dragged about by waves and storms
-- Tackle boxes in four tiers: carry your tackle in your hand, open it anywhere, set it down as a chest
+- Tackle boxes in seven tiers (four crafted, three from Hildir): carry your tackle in your hand, open it anywhere, set it down as a chest
 - Coolers in three tiers that keep your catch fresh: fresh fish sell for more and clean into more
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
@@ -413,12 +413,17 @@ goes: your inventory, a chest, your grave. It weighs what's in it.
 
 ![A tackle box carried at the hip](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box-hip.jpg)
 
-| Box | Made at | Slots |
-|---|---|---|
-| Tackle Box | Workbench 2 | 8 |
-| Iron-Bound Tackle Box | Forge 2 | 12 |
-| Silver Tackle Box | Forge 4 | 16 |
-| Dvergr Tackle Box | Black Forge | 24 |
+| Box | Biome | Made at | Slots |
+|---|---|---|---|
+| Tackle Box | Meadows / Black Forest | Workbench 2 | 8 |
+| Iron-Bound Tackle Box | Swamp | Forge 2 | 12 |
+| Silver Tackle Box | Mountain | Forge 4 | 16 |
+| Black-Metal Tackle Box | Plains | Forge 4 | 20 |
+| Dvergr-Mended Tackle Box | Mistlands | bought from Hildir | 30 |
+| Charred Tackle Box | Ashlands | bought from Hildir | 35 |
+| Rime-Crusted Tackle Box | Deep North | bought from Hildir | 40 |
+
+The last three are Hildir's own make: she sells each once you've brought back the one she lost in that biome (below).
 
 Wear it in the utility slot: it's carried by its handle in your right hand when that hand is free, at your hip
 otherwise. Press `K` to open it, and `Shift+K` to set it down as a chest whose lid opens for anyone using it; `E`
@@ -515,9 +520,9 @@ the trade panel) and her shop gains more:
 
 | Box | Found in | Hildir starts selling |
 |---|---|---|
-| Mossy Tackle Box | Sunken Crypts | Bog-Dyed Fisherman's gear, Guck Crawlers, Leather Grubs |
-| Frosted Tackle Box | Frost Caves | Frost-Dyed Fisherman's gear, Silver Swimbaits, Frost Bait |
-| Dvergr-Mended Tackle Box | Mistlands dvergr ruins | Mist-Dyed Fisherman's gear, Bone Jigs, Abyssal Bait |
+| Dvergr-Mended Tackle Box | Mistlands dvergr ruins | the Dvergr-Mended Tackle Box (30 slots, 1000), Mist-Dyed Fisherman's gear, Bone Jigs, Abyssal Bait |
+| Charred Tackle Box | Ashlands ruins and Charred fortresses | the Charred Tackle Box (35 slots, 1300), Ash-Dyed Fisherman's gear, Silver Swimbaits, Abyssal Bait |
+| Rime-Crusted Tackle Box | Deep North villages and Mörkhalla | the Rime-Crusted Tackle Box (40 slots, 1600), Rime-Dyed Fisherman's gear, Frostcore Jigs, Northern Bait |
 
 The dyed gear is bought, not crafted, but repairs at the workbench (level 2) like the rest of the set.
 

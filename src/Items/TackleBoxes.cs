@@ -43,9 +43,20 @@ namespace ValheimDeepWaters
             new Tier { Id = "t3", Name = "Silver Tackle Box", Biome = "Mountain", W = 4, H = 4, Station = "forge", Level = 4,
                 Desc = "Pale birch bound in silver, with a silver handle.",
                 Recipe = new[] { ("FineWood", 8), ("Silver", 4), ("WolfPelt", 2), ("VDW_Mat_fins", 4) } },
-            new Tier { Id = "t4", Name = "Dvergr Tackle Box", Biome = "Mistlands", W = 6, H = 4, Station = "blackforge", Level = 1,
-                Desc = "Dvergr work: blue-grey wood, hammered copper, and a faint rune line that glows round the lid.",
-                Recipe = new[] { ("YggdrasilWood", 8), ("Copper", 4), ("Carapace", 4), ("VDW_Mat_ink", 4) } },
+            new Tier { Id = "t4", Name = "Black-Metal Tackle Box", Biome = "Plains", W = 5, H = 4, Station = "forge", Level = 4,
+                Desc = "Sun-bleached ochre paint over plains oak, bound in black metal, with a linen-wrapped grip.",
+                Recipe = new[] { ("FineWood", 8), ("BlackMetal", 4), ("LinenThread", 6), ("VDW_Mat_roe", 4) } },
+            // Hildir's own make (Hildir.cs): not crafted - she sells each once you've brought back the one she lost in that
+            // biome. The late biomes, bigger than any you can build, going up as they do. (Their ids are where the lost
+            // boxes first were - kept so finds, keys and items carry over: "swamp" is now the Ashlands one, "mountain" the
+            // Deep North's.)
+            new Tier { Id = "mistlands", Name = "Dvergr-Mended Tackle Box", Biome = "Mistlands", W = 6, H = 5, Station = "",
+                Desc = "Hildir's own make, bound in dvergr iron by the people who mended hers, eitr rivets glowing in the bands." },
+            new Tier { Id = "swamp", Name = "Charred Tackle Box", Biome = "Ashlands", W = 7, H = 5, Station = "",
+                Desc = "Hildir's own make, scorched black and still glowing in the cracks, as the one she lost in the Ashlands." },
+            // the Deep North's (id "mountain": the box Hildir lost was first in the Frost Caves)
+            new Tier { Id = "mountain", Name = "Rime-Crusted Tackle Box", Biome = "Deep North", W = 8, H = 5, Station = "",
+                Desc = "Hildir's own make, frost-pale paint under a crust of rime and snow that never quite comes off." },
         };
 
         private const string DataKey = "vdw_box";
@@ -74,7 +85,8 @@ namespace ValheimDeepWaters
 
         private static void RegisterItem(Tier t)
         {
-            var item = new CustomItem(t.ItemPrefab, "BeltStrength", new ItemConfig
+            // a tier with no recipe (Hildir's) gets no crafting recipe at all: she's the only way to get one
+            var item = t.Recipe.Length == 0 ? new CustomItem(t.ItemPrefab, "BeltStrength") : new CustomItem(t.ItemPrefab, "BeltStrength", new ItemConfig
             {
                 CraftingStation = t.Station,
                 MinStationLevel = t.Level,

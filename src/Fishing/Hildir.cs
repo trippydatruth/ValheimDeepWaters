@@ -11,7 +11,7 @@ namespace ValheimDeepWaters
 {
     /// <summary>
     /// Hildir's fishing side.
-    ///   Lost tackle boxes - three of hers, lost in Sunken Crypts, Frost Caves and the dvergr ruins of the Mistlands, turning
+    ///   Lost tackle boxes - three of hers, lost in the dvergr ruins of the Mistlands, the Ashlands and the Deep North, turning
     ///   up in their chests. Give one back (use it on her like her lost chests, or from the trade panel) and her shop gains
     ///   a dyed set of the Fisherman's gear and some tackle.
     ///   Bounties - one a day: a species you've caught, at least so heavy, sometimes caught in the rain, at night or
@@ -25,22 +25,25 @@ namespace ValheimDeepWaters
             public string[] Chests = new string[0];
             public Color Tint;
             public (string prefab, int stack, int price)[] Tackle = new (string, int, int)[0];
+            public int BoxPrice;    // her own make of the box (TackleBoxes tier of the same id), sold once this one's back
         }
 
         private static readonly Box[] Boxes =
         {
-            new Box { Id = "swamp", Name = "Hildir's Mossy Tackle Box", Where = "Sunken Crypts", Key = "vdw_tacklebox_swamp",
-                Dye = "Bog-Dyed", Tint = new Color(0.62f, 0.85f, 0.5f), Chests = new[] { "TreasureChest_sunkencrypt" },
-                Line = "My tackle box! I dropped it running from the draugr. Here - I've had these dyed in bog moss for you.",
-                Tackle = new[] { ("VDW_Bait_lure_guck_crawler", 3, 150), ("VDW_Bait_lure_leather_grub", 5, 90) } },
-            new Box { Id = "mountain", Name = "Hildir's Frosted Tackle Box", Where = "Frost Caves", Key = "vdw_tacklebox_mountain",
-                Dye = "Frost-Dyed", Tint = new Color(0.78f, 0.88f, 1.05f), Chests = new[] { "TreasureChest_mountaincave" },
-                Line = "You went into the caves for this? It's frozen solid. Have the frost-dyed set, and my good swimbaits.",
-                Tackle = new[] { ("VDW_Bait_lure_silver_swimbait", 2, 240), ("VDW_Bait_frost_bait", 10, 160) } },
+            // the three late biomes, in order (the ids are where the boxes were first lost, kept so finds, keys and dyed gear
+            // carry over: "swamp" is now the Ashlands box, "mountain" the Deep North's)
             new Box { Id = "mistlands", Name = "Hildir's Dvergr-Mended Tackle Box", Where = "the dvergr ruins of the Mistlands", Key = "vdw_tacklebox_mistlands",
                 Dye = "Mist-Dyed", Tint = new Color(0.78f, 0.64f, 0.98f), Chests = new[] { "TreasureChest_dvergrtown", "TreasureChest_dvergrtower" },
                 Line = "The dvergr mended it! Look at these hinges. The mist-dyed set is yours to buy, and the deep-water tackle.",
-                Tackle = new[] { ("VDW_Bait_lure_bone_jig", 3, 220), ("VDW_Bait_deep_bait", 10, 200) } },
+                Tackle = new[] { ("VDW_Bait_lure_bone_jig", 3, 220), ("VDW_Bait_deep_bait", 10, 200) }, BoxPrice = 1000 },
+            new Box { Id = "swamp", Name = "Hildir's Charred Tackle Box", Where = "the Ashlands", Key = "vdw_tacklebox_swamp",
+                Dye = "Ash-Dyed", Tint = new Color(0.62f, 0.56f, 0.52f), Chests = new[] { "TreasureChest_ashland_stone", "TreasureChest_charredfortress" },
+                Line = "From the Ashlands? It's still warm! Here - the ash-dyed set, and the swimbaits I'd been keeping.",
+                Tackle = new[] { ("VDW_Bait_lure_silver_swimbait", 2, 260), ("VDW_Bait_deep_bait", 10, 220) }, BoxPrice = 1300 },
+            new Box { Id = "mountain", Name = "Hildir's Rime-Crusted Tackle Box", Where = "the Deep North", Key = "vdw_tacklebox_mountain",
+                Dye = "Rime-Dyed", Tint = new Color(0.78f, 0.88f, 1.05f), Chests = new[] { "TreasureChest_deepnorth_village", "TreasureChest_morkhalla" },
+                Line = "You found it in the Deep North? It's rimed right through. Have the rime-dyed set, and my frostcore jigs.",
+                Tackle = new[] { ("VDW_Bait_lure_frostcore_jig", 3, 260), ("VDW_Bait_northern_bait", 10, 180) }, BoxPrice = 1600 },
         };
 
         private static readonly (string prefab, string piece, int price)[] Gear =
@@ -68,6 +71,10 @@ namespace ValheimDeepWaters
                         var drop = PrefabManager.Instance.GetPrefab(prefab)?.GetComponent<ItemDrop>();
                         if (drop != null) trader.m_items.Add(new Trader.TradeItem { m_prefab = drop, m_stack = stack, m_price = price, m_requiredGlobalKey = b.Key });
                     }
+                    // her own make of the box, roomier than any you can build: once you've brought this one back
+                    var own = PrefabManager.Instance.GetPrefab("VDW_TackleChest_" + b.Id)?.GetComponent<ItemDrop>();
+                    if (own != null && b.BoxPrice > 0) trader.m_items.Add(new Trader.TradeItem { m_prefab = own, m_stack = 1, m_price = b.BoxPrice, m_requiredGlobalKey = b.Key });
+                    else Plugin.Log.LogWarning($"Hildir: her {b.Id} tackle box to sell wasn't found.");
                     foreach (var (prefab, piece, price) in Gear)
                     {
                         var dyed = AddDyed(prefab, b, piece);
@@ -85,7 +92,7 @@ namespace ValheimDeepWaters
             if (item.ItemDrop == null) return null;
             var s = item.ItemDrop.m_itemData.m_shared;
             s.m_name = Loc.Token("vdw_tacklebox_" + b.Id, b.Name);
-            s.m_description = Loc.Token("vdw_tacklebox_" + b.Id + "_desc", $"A battered tackle box with Hildir's mark on the lid, lost in the {b.Where}. She'd want it back.");
+            s.m_description = Loc.Token("vdw_tacklebox_" + b.Id + "_desc", $"A battered tackle box with Hildir's mark on the lid, lost in {b.Where}. She'd want it back.");
             s.m_itemType = ItemDrop.ItemData.ItemType.Material;
             s.m_value = 0; s.m_maxStackSize = 1; s.m_weight = 3f; s.m_teleportable = true;
             if (CustomModels.ApplyToPrefab(item.ItemPrefab, "tacklebox_" + b.Id)) GroundPose.FitCollider(item.ItemPrefab);
@@ -240,7 +247,7 @@ namespace ValheimDeepWaters
                     Title = Localization.instance.Localize(box.m_shared.m_name),
                     Icon = box.GetIcon(),
                     Body = had ? "Another of my tackle boxes? I've had this one back already - keep it as a keepsake."
-                               : $"That's my tackle box, lost in the {b.Where}! Give it back and I'll sell you the {b.Dye} gear and tackle that was in it.",
+                               : $"That's my tackle box, lost in {b.Where}! Give it back and I'll sell you the {b.Dye} gear and tackle that was in it.",
                     Button = had ? "" : "Give it back", CanPress = !had,
                     Press = () => trader.UseItem(player, box)
                 };
