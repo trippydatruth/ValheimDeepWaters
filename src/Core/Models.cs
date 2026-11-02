@@ -118,11 +118,14 @@ namespace ValheimDeepWaters
         public FindDefinition? Find;      // for non-craftable hooks: where they turn up
     }
 
-    /// <summary>Terminal tackle from Tackle.json: a weight (sinker) or a leader.</summary>
+    /// <summary>Tackle from Tackle.json: a weight (sinker), a leader, a reel or a line.</summary>
     public sealed class TackleDefinition
     {
         public string Id = "";
-        public string Kind = "Weight";      // Weight | Leader
+        public string Kind = "Weight";      // Weight | Leader | Reel | Line
+        public float LineCapacity = 0f;     // line: + m of line on top of the rod's own
+        public float LineStrength = 0f;     // line: + the rod's break tension (out of 100)
+        public Dictionary<string, float> Effects = new Dictionary<string, float>();   // reel / line: fishing stats (BuffStat) while in its slot
         public string Name = "";
         public string Description = "";
         public float CastBonus = 0f;        // weight: +x of the cast distance
@@ -137,6 +140,8 @@ namespace ValheimDeepWaters
 
         public bool IsWeight => string.Equals(Kind, "Weight", System.StringComparison.OrdinalIgnoreCase);
         public bool IsLeader => string.Equals(Kind, "Leader", System.StringComparison.OrdinalIgnoreCase);
+        public bool IsReel => string.Equals(Kind, "Reel", System.StringComparison.OrdinalIgnoreCase);
+        public bool IsLine => string.Equals(Kind, "Line", System.StringComparison.OrdinalIgnoreCase);
     }
 
     public sealed class RequirementDefinition

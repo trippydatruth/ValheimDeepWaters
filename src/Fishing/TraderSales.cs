@@ -57,6 +57,8 @@ namespace ValheimDeepWaters
             bool cooked = prefab.StartsWith("VDW_CookedFish_");
             int value = item.m_shared.m_value;
             if (variant != 0 && value <= 0) value = Cooking.SellValue(fish!, false);
+            // reels and lines you've moved on from: Haldor and Hildir take them off your hands
+            if (prefab.StartsWith("VDW_Tackle_reel_") || prefab.StartsWith("VDW_Tackle_line_")) return trader != "BogWitch" ? value : 0;
             switch (trader)
             {
                 case "Hildir":
@@ -305,9 +307,9 @@ namespace ValheimDeepWaters
             SetRect(_title, Pad, y, inner, 26f); y -= 26f;
             _subtitle!.text = key switch
             {
-                "Hildir" => "She collects Trophy-size and legendary fish, and spare relics.",
+                "Hildir" => "She collects Trophy-size and legendary fish, and spare relics. She'll take old reels and lines too.",
                 "BogWitch" => "She pays for roe, oil, ink, leeches and murky-water fish.",
-                _ => "He buys raw and cooked fish at their value."
+                _ => "He buys raw and cooked fish, and old reels and lines, at their value."
             };
             float sh = TextHeight(_subtitle, inner);
             SetRect(_subtitle, Pad, y, inner, sh); y -= sh + 6f;

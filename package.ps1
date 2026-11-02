@@ -59,7 +59,7 @@ if (Test-Path $ModelsDir) {
         [VdwPack]::Pack($_.FullName, (Join-Path $dest ($_.BaseName + '.vdwpak')))
     }
     Get-ChildItem $ModelsDir -File | Where-Object {
-        $_.Name -like '*_icon.png' -or $_.Name -eq 'horn_of_aegir.wav'
+        $_.Name -like '*_icon.png' -or $_.Name -like 'rod_*_full.png' -or $_.Name -eq 'horn_of_aegir.wav'
     } | Copy-Item -Destination $dest
 } else {
     Write-Warning "Models folder not found ($ModelsDir); packaging without models and icons."

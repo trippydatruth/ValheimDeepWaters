@@ -538,7 +538,17 @@ namespace ValheimDeepWaters
         public static string HookDisplayName(HookDefinition h) => Loc.Token("vdw_hook_" + h.Id,
             (string.IsNullOrWhiteSpace(h.Name) ? h.Id : h.Name) + (string.IsNullOrWhiteSpace(h.Label) ? "" : " " + h.Label));
 
-        /// <summary>Weights and leaders (Tackle.json): crafted tackle that goes in the Weight and Leader slots.</summary>
+        /// <summary>What a trader pays for a reel or line, by the station it's made at: 15 (forge 1) up to 150 (black forge 3); lines 60% of that.</summary>
+        private static int GearSellValue(TackleDefinition gear)
+        {
+            int lv = Math.Max(1, gear.StationLevel);
+            int coins = gear.CraftingStation == "blackforge" ? 60 + 30 * lv
+                      : gear.CraftingStation == "forge" ? new[] { 0, 15, 25, 40, 50, 60 }[Math.Min(lv, 5)]
+                      : 10;
+            return gear.IsLine ? Mathf.RoundToInt(coins * 0.6f) : coins;
+        }
+
+        /// <summary>Weights, leaders, reels and lines (Tackle.json): crafted tackle for their tackle slots.</summary>
         private static void RegisterTackle()
         {
             foreach (var gear in Tackle.Values)
@@ -561,13 +571,16 @@ namespace ValheimDeepWaters
                     shared.m_name = name;
                     string stats = gear.IsWeight
                         ? $"\n\nWeight slot. No float: the bait goes to the bottom. Cast +{gear.CastBonus * 100f:0}%. " +
-                          (gear.Hold >= 1.5f ? "Holds against waves; only a storm drags it." : gear.Hold >= 0.8f ? "Holds in a lake and light seas." : "Waves and wind drag it about.")
-                        : "\n\nLeader slot. With a float, the bait hangs at the leader's length (set it with - and + on the tackle panel).";
-                    shared.m_description = Loc.Token("vdw_tackle_" + gear.Id + "_desc", gear.Description + stats + " Lost only when the line snaps.");
+                          (gear.Hold >= 1.5f ? "Holds against waves; only a storm drags it." : gear.Hold >= 0.8f ? "Holds in a lake and light seas." : "Waves and wind drag it about.") + " Lost only when the line snaps."
+                        : gear.IsReel ? "\n\nReel slot. " + string.Join(". ", gear.Effects.Select(e => BuffStat.Describe(e.Key, e.Value))) + "."
+                        : gear.IsLine ? $"\n\nLine slot. Line +{gear.LineCapacity:0} m" + (gear.LineStrength > 0f ? $", strength +{gear.LineStrength:0.#}" : "") + " on top of the rod's own."
+                        : "\n\nLeader slot. With a float, the bait hangs at the leader's length (set it with - and + on the tackle screen). Lost only when the line snaps.";
+                    shared.m_description = Loc.Token("vdw_tackle_" + gear.Id + "_desc", gear.Description + stats);
                     shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
-                    shared.m_weight = 0.05f;
-                    shared.m_maxStackSize = 50;
-                    shared.m_value = 0;
+                    bool kept = gear.IsReel || gear.IsLine;                 // gear you keep, one at a time
+                    shared.m_weight = kept ? 0.5f : 0.05f;
+                    shared.m_maxStackSize = kept ? 1 : 50;
+                    shared.m_value = kept ? GearSellValue(gear) : 0;      // reels and lines sell to Haldor and Hildir (TraderSales)
                     if (CustomModels.ApplyToPrefab(item.ItemPrefab, "tackle_" + gear.Id)) GroundPose.FitCollider(item.ItemPrefab);
                     ItemManager.Instance.AddItem(item);
                     TackleByItemName[name] = gear;

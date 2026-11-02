@@ -145,6 +145,8 @@ namespace ValheimDeepWaters
             }
             // Chum buckets set down by anyone, near where the line is in the water.
             if (at != null) total += ChumBuckets.Total(stat, at.Value);
+            // the reel, line and float in your tackle (your own only: the slots are the local player's)
+            if (player == Player.m_localPlayer) total += Tackle.GearEffect(player, stat);
             // the lantern float's bite bonus only counts after dark
             if (stat == BuffStat.BiteSpeed && EnvMan.instance != null && EnvMan.IsNight()) total += Total(player, BuffStat.NightBite, at);
             return total;
@@ -157,6 +159,7 @@ namespace ValheimDeepWaters
         public static BuffDefinition? ActiveFloat(Player? player)
         {
             if (player == null) return null;
+            if (player == Player.m_localPlayer && Tackle.FloatOn(player) is BuffDefinition slotted) return slotted;   // the float in the Float slot
             foreach (var se in player.GetSEMan().GetStatusEffects())
                 if (ByStatus.TryGetValue(se.m_name, out var def) && !string.IsNullOrWhiteSpace(def.FloatModel)) return def;
             return null;
@@ -193,10 +196,25 @@ namespace ValheimDeepWaters
 
         internal static string DisplayName(BuffDefinition b) => Loc.Token("vdw_buff_" + b.Id, string.IsNullOrWhiteSpace(b.Name) ? b.Id : b.Name);
 
+        /// <summary>A float item (a buff with a FloatModel) by its item name, for the Float slot.</summary>
+        public static BuffDefinition? FloatByItemName(string? itemName)
+        {
+            if (itemName == null) return null;
+            if (_floats == null)
+            {
+                _floats = new Dictionary<string, BuffDefinition>();
+                foreach (var b in Buffs.Values.Where(b => !string.IsNullOrWhiteSpace(b.FloatModel))) _floats[DisplayName(b)] = b;
+            }
+            return _floats.TryGetValue(itemName, out var f) ? f : null;
+        }
+        private static Dictionary<string, BuffDefinition>? _floats;
+
         internal static string EffectText(BuffDefinition b)
         {
             var lines = b.Effects.Where(e => BuffStat.All.Contains(e.Key)).Select(e => BuffStat.Describe(e.Key, e.Value)).ToList();
-            if (!string.IsNullOrWhiteSpace(b.FloatModel)) lines.Add($"Your line wears this float for {b.Duration / 60f:0.#} min{(b.FloatLight ? ", lit after dark" : "")}");
+            if (!string.IsNullOrWhiteSpace(b.FloatModel))
+                lines.Add(VdwConfig.SeparateTackle.Value ? $"Goes in your tackle's Float slot: your line wears it until you swap it{(b.FloatLight ? ", lit after dark" : "")}"
+                                                         : $"Your line wears this float for {b.Duration / 60f:0.#} min{(b.FloatLight ? ", lit after dark" : "")}");
             else if (Is(b, "Mead")) lines.Add($"Lasts {b.Duration / 60f:0.#} min");
             if (Is(b, "Chum")) lines.Add($"For {b.Duration / 60f:0.#} min, within {b.Radius:0} m of where you set it down");
             if (Is(b, "Totem")) lines.Add($"Anyone fishing within {b.Radius:0} m");

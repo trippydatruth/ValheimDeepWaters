@@ -11,6 +11,7 @@ namespace ValheimDeepWaters
         public static ConfigEntry<float> HudScale = null!;
         public static ConfigEntry<float> ReelVolume = null!;
         public static ConfigEntry<float> RodWear = null!;
+        public static ConfigEntry<bool> SeparateTackle = null!;
 
         public static ConfigEntry<bool> SpawnSwimmingFish = null!;
         public static ConfigEntry<float> SwimmingFishDensity = null!;
@@ -51,6 +52,8 @@ namespace ValheimDeepWaters
             HudScale = cfg.Bind("1 General", "HUD Scale", 0.85f, "Size of the fishing HUD and catch log. 1 = same scale as Valheim's own UI.");
             ReelVolume = cfg.Bind("1 General", "Reel Sound Volume", 0.5f, "Volume of the reel clicking while you reel (0-1).");
             RodWear = Server(cfg, "1 General", "Rod Wear", 1f, "How fast rods lose durability while fighting a fish. 0 = rods never wear.");
+            SeparateTackle = Server(cfg, "1 General", "Reels, Lines and Floats", true, "Reels, lines and floats are tackle of their own, in their own slots on the tackle screen. Off: a rod fishes with its own reel and line as before, reels and lines can't be crafted, and floats are used like a mead for a while.");
+            SeparateTackle.SettingChanged += (_, _) => Tackle.ApplySeparateSetting();
 
             SpawnSwimmingFish = Server(cfg, "2 World", "Spawn Swimming Fish", true, "Deep Waters fish swim in lakes, rivers and the sea in their own biomes. Species seen near your float are likelier to bite.");
             SwimmingFishDensity = Server(cfg, "2 World", "Swimming Fish Density", 1f, "Multiplies how often Deep Waters fish spawn in the world.");
@@ -65,7 +68,7 @@ namespace ValheimDeepWaters
             RodKey = cfg.Bind("3 Controls", "Rod Key", new KeyboardShortcut(KeyCode.F, KeyCode.LeftAlt), "Takes the rod in your tackle's rod slot in hand, or puts it away.");
             TackleBoxKey = cfg.Bind("3 Controls", "Tackle Box Key", new KeyboardShortcut(KeyCode.K), "Opens (or closes) the tackle box you're wearing.");
             TackleBoxSetDownKey = cfg.Bind("3 Controls", "Tackle Box Set Down Key", new KeyboardShortcut(KeyCode.K, KeyCode.LeftShift), "Sets the tackle box you're wearing down as a chest (Shift+E on it picks it up again).");
-            TacklePanelPosition = cfg.Bind("4 Interface", "Tackle Panel Position", "", "Where the tackle panel sits in the inventory screen, set by dragging it. Empty: under the inventory. Double-clicking the panel also resets it.");
+            TacklePanelPosition = cfg.Bind("4 Interface", "Tackle Screen Position", "", "Where the tackle screen sits beside the inventory, set by dragging it. Empty: beside the inventory. Double-clicking its title also resets it.");
             DragControl = cfg.Bind("3 Controls", "Drag Control", StepControl.MouseWheel, "What sets the drag while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). If drag and reel speed use the same control, drag gets it.");
             ReelSpeedControl = cfg.Bind("3 Controls", "Reel Speed Control", StepControl.AltMouseWheel, "What sets the reel speed while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). Shift always reels at full speed.");
         }

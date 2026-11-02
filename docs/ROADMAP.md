@@ -24,7 +24,7 @@ Things to do later, in the order they were listed (2026-10-10). Not a schedule; 
 13. **Anything that makes the mod feel more fleshed out.**
 14. **Fisherman's gear.** *Done 2026-10-17: the remade set (Mesh\Fishermen gear\Blender Files\new_gear_rig.blend) is back in the build, weighted from the player body, with the coat skirt swinging.*
 15. **Models for the stand-in fish.** Each needs its own model of its kind of fish - no borrowing another species' model (the bass, sea bass and catfish models are kept for those fish, to be added later). *Done: twelve on 2026-10-12 from Sketchfab models (Mesh\Sourced, tools\prep_sourced_fish.py), and Rimejaw Cod, Glacier Grayling, Lingcod, Fenringfin and Mistfin on 2026-10-17 from Tripo models. The Dvergr Dace was dropped instead.*
-16. **Bass, bluegill, sea bass and catfish.** Add them as fish, on their own models (Mesh\Bass, Mesh\bluegill, Mesh\perch, Mesh\catfish).
+16. **Bass, bluegill, sea bass and catfish.** *Done: all four are in the game on their own models.* Add them as fish, on their own models (Mesh\Bass, Mesh\bluegill, Mesh\perch, Mesh\catfish).
     *Done 2026-10-17: all four on their own models - the bass and bluegill on their downloads' own rigs and swim cycles with jaws, the sea bass and channel catfish on the Deep Waters rig with the user's weights.*
 ## Progression and replayability plan (2026-10-18)
 
@@ -91,11 +91,19 @@ Improvements first, new content last, in this order:
     at (float stop or sinker), with fish that hold at different depths.
 38. **Tackle inventory.** *Started 1.0.1: a rod slot (rod takes no inventory space, Alt+F to use it), rod stats on the panel, and the panel can be dragged anywhere.* A Fishing Planet-style tackle screen: the rod in the middle with a slot for each piece
     of equipment (reel, line, leader, weight, hook, float, bait or lure) instead of the inventory bait slot.
-39. **Meads from mead bases.** The fishing meads made like vanilla meads: a mead base at the cauldron, fermented in
+    *Built 2026-11-02, being tested: the screen with the whole rod pictured, eight slots, three loadouts (Shift+click
+    saves), collapsible stats; 7 reels and 6 lines (craftable, sellable to Haldor and Hildir); a setting to play without
+    separate reels, lines and floats.*
+39. **Meads from mead bases.** *Done and tested 2026-11-02: a mead base at the cauldron, fermented into 6 meads.* The fishing meads made like vanilla meads: a mead base at the cauldron, fermented in
     the fermenter into several meads.
 40. **Cooler box.** *Done 2026-10-25: three coolers (Coolers.cs) on the user's ice chest model, set down not worn, no spoilage; fresh fish +25% sale and +1 when cleaned; frost effect inside while open.* A box for your catch, like the tackle boxes but for fish: keeps them fresh (slower spoiling or none),
     carried or set down. (The tackle boxes are in: 1.0.1, TackleBoxes.cs.)
-## After the first release
+## Next, in order (2026-11-02; released on Thunderstore 2026-10-26)
+
+1. #38 the tackle screen. 2. Hildir's stock in recipes (below). 3. #7 bait models, and restyle the bait models
+already made (more stylized, better looking). 4. #25 the floats. 5. #27 the custom rewards (pennants, angler caps).
+
+## Hildir's stock (was "after the first release")
 
 - **Hildir's stock in recipes** (the rest of #20). Checked in the game files: Sparkler (`Sparkler`), Basic Fireworks
   (`FireworksRocket_White`), her caps `HelmetHat1`-`10` (Brown Fur Cap = `HelmetHat3`, Grey Fur Cap = `HelmetHat8`,

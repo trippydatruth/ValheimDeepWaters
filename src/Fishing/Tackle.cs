@@ -17,7 +17,12 @@ namespace ValheimDeepWaters
     /// </summary>
     internal static class Tackle
     {
-        public const int RodSlot = 0, BaitSlot = 1, HookSlot = 2, WeightSlot = 3, LeaderSlot = 4, Slots = 5;
+        // (new slots go on the end: a saved row of tackle keeps its places)
+        public const int RodSlot = 0, BaitSlot = 1, HookSlot = 2, WeightSlot = 3, LeaderSlot = 4, ReelSlot = 5, LineSlot = 6, FloatSlot = 7, Slots = 8;
+
+        /// <summary>Reels, lines and floats as tackle of their own (the server's "Reels, Lines and Floats" setting).</summary>
+        public static bool Separate => VdwConfig.SeparateTackle?.Value ?? true;
+        public static bool SlotInUse(int slot) => slot < ReelSlot || Separate;
         private const string SaveKey = "vdw_tackle2";
         private const string OldSaveKey = "vdw_tackle";      // before the rod slot: bait at 0, hook at 1
 
@@ -39,10 +44,101 @@ namespace ValheimDeepWaters
             string? name = item?.m_shared?.m_name;
             if (name == null) return -1;
             if (ContentRegistry.RodByItemName.ContainsKey(name)) return RodSlot;
-            if (ContentRegistry.TackleByItemName.TryGetValue(name, out var gear)) return gear.IsLeader ? LeaderSlot : WeightSlot;
+            if (ContentRegistry.TackleByItemName.TryGetValue(name, out var gear))
+                return gear.IsLeader ? LeaderSlot : gear.IsReel ? (Separate ? ReelSlot : -1) : gear.IsLine ? (Separate ? LineSlot : -1) : WeightSlot;
             if (ContentRegistry.BaitByItemName.TryGetValue(name, out var bait)) return bait.IsLure ? HookSlot : BaitSlot;
             if (ContentRegistry.HookByItemName.ContainsKey(name)) return HookSlot;
+            if (Separate && FishingBuffs.FloatByItemName(name) != null) return FloatSlot;
             return -1;
+        }
+
+        // ------------------------------------------------------------------ reel, line and float
+
+        public static TackleDefinition? ReelOn(Player player) => Separate ? GearIn(player, ReelSlot) : null;
+        public static TackleDefinition? LineOn(Player player) => Separate ? GearIn(player, LineSlot) : null;
+        public static BuffDefinition? FloatOn(Player player) => Separate ? FishingBuffs.FloatByItemName(ItemIn(player, FloatSlot)?.m_shared?.m_name) : null;
+
+        /// <summary>One fishing stat from the reel, line and float in the slots (they count like a buff while they're on).</summary>
+        public static float GearEffect(Player player, string stat)
+        {
+            if (!Separate) return 0f;
+            float total = 0f;
+            if (ReelOn(player) is TackleDefinition reel && reel.Effects.TryGetValue(stat, out var r)) total += r;
+            if (LineOn(player) is TackleDefinition line && line.Effects.TryGetValue(stat, out var l)) total += l;
+            if (FloatOn(player) is BuffDefinition fl && fl.Effects.TryGetValue(stat, out var f)) total += f;
+            return total;
+        }
+
+        /// <summary>The rod as it fishes: its upgrade level's stats, with the line in the Line slot added to its own.</summary>
+        public static RodDefinition EffectiveRod(Player player, RodDefinition def, int quality)
+        {
+            var rod = RodUpgrades.Scaled(def, quality);
+            if (LineOn(player) is TackleDefinition line)
+            {
+                if (ReferenceEquals(rod, def)) rod = def.Copy();
+                rod.LineCapacity += line.LineCapacity;
+                rod.BreakTension = Mathf.Min(99.9f, rod.BreakTension + line.LineStrength);
+            }
+            return rod;
+        }
+
+        // ------------------------------------------------------------------ loadouts
+
+        public const int Loadouts = 3;
+        private const string LoadoutKey = "vdw_loadout_";
+
+        private static string KeyOf(ItemDrop.ItemData item) => item.m_dropPrefab != null ? item.m_dropPrefab.name : item.m_shared.m_name;
+
+        public static bool HasLoadout(Player player, int n) => player.m_customData.TryGetValue(LoadoutKey + n, out var s) && !string.IsNullOrEmpty(s);
+
+        /// <summary>Remembers what's in every slot now as loadout n (1..3).</summary>
+        public static void SaveLoadout(Player player, int n)
+        {
+            var parts = new string[Slots];
+            for (int s = 0; s < Slots; s++) { var it = ItemIn(player, s); parts[s] = it != null ? KeyOf(it) : ""; }
+            player.m_customData[LoadoutKey + n] = string.Join("|", parts);
+            player.Message(MessageHud.MessageType.Center, $"Tackle saved as loadout {n}.");
+        }
+
+        /// <summary>
+        /// Puts loadout n back on: each slot takes the saved item from your inventory or the tackle box you're wearing
+        /// (the best one you have: highest level, biggest stack). Slots saved empty are left as they are.
+        /// </summary>
+        public static void ApplyLoadout(Player player, int n)
+        {
+            if (!player.m_customData.TryGetValue(LoadoutKey + n, out var saved) || string.IsNullOrEmpty(saved))
+            {
+                player.Message(MessageHud.MessageType.Center, $"Loadout {n} is empty. Shift+click it to save your tackle to it.");
+                return;
+            }
+            var parts = saved.Split('|');
+            var missing = new List<string>();
+            for (int s = 0; s < Slots && s < parts.Length; s++)
+            {
+                string want = parts[s];
+                if (string.IsNullOrEmpty(want) || !SlotInUse(s)) continue;
+                var cur = ItemIn(player, s);
+                if (cur != null && KeyOf(cur) == want) continue;
+                var found = Carried(player).Where(i => KeyOf(i) == want && SlotFor(i) == s)
+                    .OrderByDescending(i => i.m_quality).ThenByDescending(i => i.m_stack).FirstOrDefault();
+                if (found == null) { missing.Add(PrettyName(want)); continue; }
+                if (s == RodSlot)
+                {
+                    bool held = cur != null && player.IsItemEquiped(cur);
+                    if (held) player.UnequipItem(cur, false);
+                    if (!player.GetInventory().ContainsItem(found)) { missing.Add(PrettyName(want) + " (in your tackle box)"); continue; }
+                    PutRodInSlot(player, found, held);
+                }
+                else Equip(player, found);
+            }
+            player.Message(MessageHud.MessageType.Center, missing.Count == 0 ? $"Loadout {n} on." : $"Loadout {n} on. Not carrying: {string.Join(", ", missing)}");
+        }
+
+        private static string PrettyName(string prefab)
+        {
+            var go = ObjectDB.instance?.GetItemPrefab(prefab);
+            var shared = go != null ? go.GetComponent<ItemDrop>()?.m_itemData?.m_shared : null;
+            return shared != null ? Loc.Text(shared.m_name) : prefab;
         }
 
         /// <summary>The lure in the hook slot, if it holds a lure rather than a plain hook.</summary>
@@ -348,6 +444,29 @@ namespace ValheimDeepWaters
         /// Anything saved in the wrong slot (a lure left in the bait slot from before lures went on the hook slot)
         /// moves to its own slot if that's free, or back to the inventory.
         /// </summary>
+        /// <summary>
+        /// Reel and line recipes only while reels, lines and floats are separate tackle; re-checked when the setting
+        /// changes (a server's value arrives after the world loads) and each time ObjectDB is set up.
+        /// </summary>
+        public static void ApplySeparateSetting()
+        {
+            if (ObjectDB.instance == null) return;
+            foreach (var r in ObjectDB.instance.m_recipes)
+            {
+                var n = r?.m_item != null ? r.m_item.name : null;
+                if (n != null && (n.StartsWith("VDW_Tackle_reel_") || n.StartsWith("VDW_Tackle_line_"))) r!.m_enabled = Separate;
+            }
+            if (Player.m_localPlayer != null) TidyNow(Player.m_localPlayer);
+        }
+
+        [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.CopyOtherDB))]
+        private static class RecipesCopyPatch { private static void Postfix() => ApplySeparateSetting(); }
+        [HarmonyPatch(typeof(ObjectDB), "Awake")]
+        private static class RecipesAwakePatch { private static void Postfix() => ApplySeparateSetting(); }
+
+        /// <summary>Reels, lines and floats turned off by the server: they go back to the inventory.</summary>
+        public static void TidyNow(Player player) { if (_inv != null && _owner == player) Tidy(player, _inv); }
+
         private static void Tidy(Player player, Inventory inv)
         {
             foreach (var item in inv.GetAllItems().ToList())
@@ -490,20 +609,52 @@ namespace ValheimDeepWaters
         private static bool _failed;
 
         private static RectTransform? _panel;
-        private static TextMeshProUGUI? _baitLabel, _hookLabel, _stats, _leaderLen, _rigLabel;
+        private static TextMeshProUGUI? _rigLabel, _leaderLen;
+        private static Image? _rodPic;
+        private static RectTransform? _leaderCtl, _rodRt;
+        private static readonly TextMeshProUGUI?[] _captions = new TextMeshProUGUI?[Tackle.Slots];
+        private static readonly Image?[] _loadoutBtn = new Image?[Tackle.Loadouts + 1];
+        private static float _space, _rowH;
+        private static Vector2 _cell0;                      // where the grid put its first cell (the others are moved from there)
+        private static UnityEngine.Object? _firstElement;
+        private static bool _laidOutSeparate;
+
+        private static readonly FieldInfo? ElementsField = AccessTools.Field(typeof(InventoryGrid), "m_elements");
+
+        // the screen: what's on the line listed on the left, the rod pictured in the middle, its slots to the right
+        private const float PadX = 14f, Top = 44f, BarH = 34f, InfoW = 162f, Footer = 24f, PadBottom = 10f;
+        private static float _rodW = 80f;                   // the rod picture is 1 wide by 4 high: as wide as its height needs
+        private const int Cols = 2, Rows = 4;
+
+        /// <summary>Slot order on the screen, tip to handle (as the line runs from the float back to the reel and rod).</summary>
+        private static int[] Order => Tackle.Separate
+            ? new[] { Tackle.FloatSlot, Tackle.BaitSlot, Tackle.HookSlot, Tackle.LeaderSlot, Tackle.WeightSlot, Tackle.LineSlot, Tackle.ReelSlot, Tackle.RodSlot }
+            : new[] { Tackle.BaitSlot, Tackle.HookSlot, Tackle.LeaderSlot, Tackle.WeightSlot, Tackle.RodSlot };
+
+        private static string Caption(int slot, bool lure) => slot switch
+        {
+            Tackle.RodSlot => "Rod", Tackle.BaitSlot => lure ? "Trailer" : "Bait", Tackle.HookSlot => lure ? "Lure" : "Hook",
+            Tackle.WeightSlot => "Weight", Tackle.LeaderSlot => "Leader", Tackle.ReelSlot => "Reel", Tackle.LineSlot => "Line", _ => "Float"
+        };
+
+        private static float RodX => PadX + InfoW;
+        private static float SlotsX => RodX + _rodW;
+        /// <summary>The rod picture's height for this many rows: the top of the first slot to the bottom of the last.</summary>
+        private static float RodH(int rows) => (rows - 1) * _rowH + _space;
+        private static float SlotsY => Top + Tuck + BarH;
 
         /// <summary>
-        /// Builds the panel from a copy of Valheim's chest panel, so the wood background, title and slot cells
-        /// look exactly like the rest of the inventory screen. Its buttons and weight readout are removed and
-        /// it's shrunk to two slots.
+        /// Builds the screen from a copy of Valheim's chest panel, so the wood background, title and slot cells look
+        /// like the rest of the inventory screen. Its buttons and weight readout are removed.
         /// </summary>
         private static void Build(InventoryGui gui)
         {
             try
             {
-                float space = gui.m_playerGrid.m_elementSpace;
-                const float padX = 18f, top = 46f, labelH = 22f, rowH = 26f, statsH = 58f, padBottom = 10f;
-                float w = space * Tackle.Slots + padX * 2f, h = top + space + labelH + rowH + statsH + padBottom;
+                _space = gui.m_playerGrid.m_elementSpace;
+                _rowH = _space + 22f;                                        // cell and caption
+                _rodW = RodH(Rows) / 4f;
+                float w = SlotsX + Cols * _space + PadX, h = Top + BarH + Rows * _rowH + Footer + PadBottom;
 
                 var panelGo = UnityEngine.Object.Instantiate(gui.m_container.gameObject, gui.m_player);
                 panelGo.name = "VDW_Tackle";
@@ -519,7 +670,6 @@ namespace ValheimDeepWaters
                 foreach (var tmp in panelGo.GetComponentsInChildren<TMP_Text>(true))
                 {
                     if (tmp.gameObject.name != weightName) continue;
-                    // The weight readout and the icon grouped with it.
                     var group = tmp.transform.parent != prt ? tmp.transform.parent : tmp.transform;
                     UnityEngine.Object.DestroyImmediate(group.gameObject);
                     break;
@@ -531,24 +681,25 @@ namespace ValheimDeepWaters
                 prt.anchorMin = prt.anchorMax = gui.m_player.pivot;
                 prt.pivot = Vector2.zero;
                 prt.sizeDelta = new Vector2(w, h + Tuck);
-                // First child = drawn first, so the inventory's own art covers the tucked-in top edge.
                 prt.SetAsFirstSibling();
                 panelGo.SetActive(true);
 
-                // Grid: emptied, two cells, under the title.
+                // the grid: emptied; its cells are made in one row and moved into place each frame. Its masks would clip
+                // every cell below the first row, so they go.
                 foreach (Transform child in grid.m_gridRoot) UnityEngine.Object.Destroy(child.gameObject);
                 foreach (var scroll in grid.GetComponentsInChildren<Scrollbar>(true)) scroll.gameObject.SetActive(false);
+                foreach (var m in grid.GetComponentsInChildren<RectMask2D>(true)) UnityEngine.Object.DestroyImmediate(m);
+                foreach (var m in grid.GetComponentsInChildren<Mask>(true)) UnityEngine.Object.DestroyImmediate(m);
                 var grt = (RectTransform)grid.transform;
                 grt.anchorMin = grt.anchorMax = new Vector2(0f, 1f);
                 grt.pivot = new Vector2(0f, 1f);
-                grt.anchoredPosition = new Vector2(padX, -(top + Tuck));
-                grt.sizeDelta = new Vector2(space * Tackle.Slots, space);
+                grt.anchoredPosition = new Vector2(SlotsX, -SlotsY);
+                grt.sizeDelta = new Vector2(_space * Tackle.Slots, Rows * _rowH);
 
                 if (title != null)
                 {
                     var trt = title.rectTransform;
-                    trt.anchorMin = new Vector2(0f, 1f);
-                    trt.anchorMax = new Vector2(1f, 1f);
+                    trt.anchorMin = new Vector2(0f, 1f); trt.anchorMax = new Vector2(1f, 1f);
                     trt.pivot = new Vector2(0.5f, 1f);
                     trt.anchoredPosition = new Vector2(0f, -(10f + Tuck));
                     trt.sizeDelta = new Vector2(0f, 32f);
@@ -573,40 +724,58 @@ namespace ValheimDeepWaters
                 grid.OnMoveToUpperInventoryGrid = null;
                 grid.OnSetTouchSelection = null;
 
-                // Slot captions in the panel's own font.
-                var font = title != null ? title.font : gui.m_containerName.font;
-                var caption = new Color(0.93f, 0.82f, 0.62f);
-                float labelY = -(top + Tuck + space + 2f);
-                AddLabel(prt, "Rod", font, 15f, caption, new Vector2(padX + space * Tackle.RodSlot, labelY), new Vector2(space, labelH));
-                _baitLabel = AddLabel(prt, "Bait", font, 15f, caption, new Vector2(padX + space * Tackle.BaitSlot, labelY), new Vector2(space, labelH));
-                _hookLabel = AddLabel(prt, "Hook", font, 15f, caption, new Vector2(padX + space * Tackle.HookSlot, labelY), new Vector2(space, labelH));
-                AddLabel(prt, "Weight", font, 15f, caption, new Vector2(padX + space * Tackle.WeightSlot, labelY), new Vector2(space, labelH));
-                AddLabel(prt, "Leader", font, 15f, caption, new Vector2(padX + space * Tackle.LeaderSlot, labelY), new Vector2(space, labelH));
-
-                // the leader's length: - [length] +, under the leader slot
-                float rowY = labelY - labelH - 2f, cx = padX + space * Tackle.LeaderSlot;
-                AddButton(prt, "-", font, new Vector2(cx - 14f, rowY), new Vector2(24f, 22f), () => { if (Player.m_localPlayer != null) Tackle.StepLeader(Player.m_localPlayer, -1); });
-                _leaderLen = AddLabel(prt, "", font, 14f, Color.white, new Vector2(cx + 10f, rowY), new Vector2(space - 20f, 22f));
-                AddButton(prt, "+", font, new Vector2(cx + space - 10f, rowY), new Vector2(24f, 22f), () => { if (Player.m_localPlayer != null) Tackle.StepLeader(Player.m_localPlayer, 1); });
-                _rigLabel = AddLabel(prt, "", font, 13f, new Color(0.62f, 0.86f, 0.93f), new Vector2(padX - 6f, rowY), new Vector2(space * Tackle.LeaderSlot - 18f, 22f));
-                _rigLabel.alignment = TextAlignmentOptions.MidlineLeft;
-
-                // the rod in the slot: its name and level, then its line, cast and wear
-                _stats = AddLabel(prt, "", font, 13f, new Color(0.85f, 0.8f, 0.7f), new Vector2(padX - 6f, rowY - rowH), new Vector2(space * Tackle.Slots + 12f, statsH));
-                _stats.alignment = TextAlignmentOptions.Top;
-
-                // dragged anywhere by its wood (not its slots); double-click the title to put it back. The chest panel's
-                // wood doesn't catch the mouse, so an invisible layer under the slots does.
+                // dragged anywhere by its wood (not its slots or buttons); double-click it to put it back. The chest panel's
+                // wood doesn't catch the mouse, so an invisible layer under everything does.
                 var catcher = new GameObject("VDW_DragArea", typeof(RectTransform));
                 var crt = (RectTransform)catcher.transform;
                 crt.SetParent(prt, false);
                 crt.SetAsFirstSibling();
                 crt.anchorMin = Vector2.zero; crt.anchorMax = Vector2.one;
-                crt.offsetMin = Vector2.zero; crt.offsetMax = new Vector2(0f, -Tuck);   // not the part tucked under the inventory
+                crt.offsetMin = Vector2.zero; crt.offsetMax = new Vector2(0f, -Tuck);
                 var img = catcher.AddComponent<Image>();
                 img.color = new Color(0f, 0f, 0f, 0f);
                 img.raycastTarget = true;
                 panelGo.AddComponent<TacklePanelDrag>().Init(prt, grid.transform);
+
+                var font = title != null ? title.font : gui.m_containerName.font;
+                var caption = new Color(0.93f, 0.82f, 0.62f);
+
+                // loadouts, centred under the title: 1 2 3 (click to put one on, Shift+click to save your tackle to it)
+                float barY = -(Top + Tuck), groupW = 70f + Tackle.Loadouts * 32f, gx = (w - groupW) / 2f;
+                var bl = AddLabel(prt, "Loadouts", font, 14f, caption, new Vector2(gx, barY - 2f), new Vector2(68f, 22f));
+                bl.alignment = TextAlignmentOptions.MidlineLeft;
+                for (int n = 1; n <= Tackle.Loadouts; n++)
+                {
+                    int k = n;
+                    _loadoutBtn[n] = AddButton(prt, n.ToString(), font, new Vector2(gx + 70f + (n - 1) * 32f, barY - 1f), new Vector2(26f, 24f), () =>
+                    {
+                        var p = Player.m_localPlayer; if (p == null) return;
+                        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) Tackle.SaveLoadout(p, k); else Tackle.ApplyLoadout(p, k);
+                    });
+                }
+                var hint = AddLabel(prt, "Shift+click to save", font, 11f, new Color(0.62f, 0.56f, 0.46f), new Vector2(0f, barY - 24f), new Vector2(w, 12f));
+                hint.alignment = TextAlignmentOptions.Center;
+
+                // the left: what's on the line, a section a piece, each opened or closed with a click on its name
+                BuildSections(prt, font);
+
+                // the middle: the rod, standing tip up from the top slot to the bottom one
+                var rodGo = new GameObject("VDW_RodPicture", typeof(RectTransform));
+                _rodRt = (RectTransform)rodGo.transform;
+                _rodRt.SetParent(prt, false);
+                _rodRt.anchorMin = _rodRt.anchorMax = new Vector2(0f, 1f); _rodRt.pivot = new Vector2(0f, 1f);
+                _rodRt.anchoredPosition = new Vector2(RodX, -SlotsY);
+                _rodRt.sizeDelta = new Vector2(_rodW, RodH(Rows));
+                _rodPic = rodGo.AddComponent<Image>();
+                _rodPic.preserveAspect = true; _rodPic.raycastTarget = false;
+
+                // the slot captions (moved with their slots)
+                for (int s = 0; s < Tackle.Slots; s++)
+                    _captions[s] = AddLabel(prt, "", font, 14f, caption, Vector2.zero, new Vector2(_space + 10f, 20f));
+
+                // the rig and how deep it fishes, along the bottom
+                _rigLabel = AddLabel(prt, "", font, 13f, new Color(0.62f, 0.86f, 0.93f), new Vector2(PadX, -(h + Tuck - PadBottom - Footer)), new Vector2(w - 2f * PadX, Footer));
+                _rigLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
                 _panel = prt;
                 Grid = grid;
@@ -614,30 +783,55 @@ namespace ValheimDeepWaters
             catch (Exception ex)
             {
                 _failed = true;
-                Plugin.Log.LogError($"Tackle: could not build the tackle slots ({ex}). Bait and hooks still work from the B and H keys.");
+                Plugin.Log.LogError($"Tackle: could not build the tackle screen ({ex}). Bait and hooks still work from the B and H keys.");
             }
         }
 
-        private const float Tuck = 14f; // how far the panel slides up under the inventory's bottom border
+        /// <summary>
+        /// Puts each slot (and its caption) where it goes on the screen, two to a row, tip to handle. The grid makes its
+        /// cells in one row; they're moved from where it put the first one. Slots not in use (reels, lines and floats
+        /// turned off) are hidden.
+        /// </summary>
+        private static void Layout(Player player)
+        {
+            if (Grid == null || !(ElementsField?.GetValue(Grid) is System.Collections.IList els) || els.Count < Tackle.Slots) return;
+            if (!(els[0] is Component first)) return;
+            if (!ReferenceEquals(first, _firstElement)) { _firstElement = first; _cell0 = ((RectTransform)first.transform).anchoredPosition; }
+            bool lure = Tackle.LureOn(player) != null;
+            var order = Order;
+            for (int s = 0; s < Tackle.Slots; s++)
+            {
+                int at = Array.IndexOf(order, s);
+                if (!(els[s] is Component el)) continue;
+                el.gameObject.SetActive(at >= 0);
+                var cap = _captions[s];
+                if (cap != null) cap.gameObject.SetActive(at >= 0);
+                if (at < 0) continue;
+                int c = at % Cols, r = at / Cols;
+                ((RectTransform)el.transform).anchoredPosition = _cell0 + new Vector2(c * _space, -r * _rowH);
+                if (cap != null)
+                {
+                    cap.rectTransform.anchoredPosition = new Vector2(SlotsX + c * _space - 5f, -(SlotsY + r * _rowH + _space + 1f));
+                    cap.text = Caption(s, lure);
+                }
+            }
+            // the rod reaches from the top row to the bottom one in use
+            int rows = (order.Length + Cols - 1) / Cols;
+            if (_rodRt != null) _rodRt.sizeDelta = new Vector2(_rodW, RodH(rows));
+            _laidOutSeparate = Tackle.Separate;
+        }
+
+        private const float Tuck = 14f; // how far the panel slides up under the inventory's top border
 
         /// <summary>
-        /// Hangs under the inventory's bottom-right corner, tucked behind its border so it reads as part of it.
-        /// A chest opens in that spot, so while one is open it steps out beside the inventory instead, past the
-        /// armor and weight readouts. Re-done every frame since the inventory grows with extra rows.
+        /// Beside the inventory, past its armor and weight readouts, top edges level. Re-done every frame since the
+        /// inventory grows with extra rows. Dragged somewhere, it stays there.
         /// </summary>
         private static void Position(InventoryGui gui)
         {
             if (_panel == null || TacklePanelDrag.Dragging) return;
             var player = gui.m_player;
             if (CustomPosition is Vector2 custom) { _panel.anchoredPosition = custom; return; }
-
-            if (!gui.IsContainerOpen())
-            {
-                float x = player.rect.xMax - _panel.sizeDelta.x;
-                _panel.anchoredPosition = new Vector2(x, DrawnBottom(player, x, player.rect.xMax) - _panel.sizeDelta.y + Tuck);
-                return;
-            }
-
             float right = player.rect.xMax;
             var corners = new Vector3[4];
             foreach (var text in new TMP_Text?[] { gui.m_armor, gui.m_weight })
@@ -647,12 +841,12 @@ namespace ValheimDeepWaters
                 rt.GetWorldCorners(corners);
                 foreach (var corner in corners) right = Mathf.Max(right, player.InverseTransformPoint(corner).x);
             }
-            _panel.anchoredPosition = new Vector2(right + 8f, player.rect.yMin);
+            _panel.anchoredPosition = new Vector2(right + 8f, player.rect.yMax - _panel.sizeDelta.y + Tuck);
         }
 
         // ------------------------------------------------------------------ where the player put it
 
-        /// <summary>Where the panel was dragged to (in the inventory's own space), or null to follow the inventory.</summary>
+        /// <summary>Where the screen was dragged to (in the inventory's own space), or null to sit beside the inventory.</summary>
         internal static Vector2? CustomPosition
         {
             get
@@ -667,18 +861,164 @@ namespace ValheimDeepWaters
                 ? string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0},{1:0}", v.x, v.y) : "";
         }
 
-        /// <summary>The rod in the slot, for the panel: its name and level over its line, cast and wear.</summary>
-        private static string RodStats(Player player)
+        // ------------------------------------------------------------------ the left: what's on the line, in sections
+
+        private const string Dim = "#9a8d78", Gold = "#c9a85c", Green = "#8fd18f";
+        private const int SecRod = 0, SecReel = 1, SecLine = 2, SecFloat = 3, SecHook = 4, SecBait = 5, SecWeight = 6, SecLeader = 7, Sections = 8;
+        private const string OpenKey = "vdw_tackle_open";
+
+        private sealed class Section { public RectTransform Head = null!; public TextMeshProUGUI HeadText = null!, Body = null!; }
+        private static readonly Section?[] _sec = new Section?[Sections];
+
+        /// <summary>Which sections are open, saved with the character (the rod and reel open to start with).</summary>
+        private static bool IsOpen(Player p, int i)
         {
-            var item = Tackle.RodIn(player);
+            string s = p.m_customData.TryGetValue(OpenKey, out var v) ? v : "11000000";
+            return i < s.Length && s[i] == '1';
+        }
+
+        private static void ToggleOpen(int i)
+        {
+            var p = Player.m_localPlayer; if (p == null) return;
+            var s = (p.m_customData.TryGetValue(OpenKey, out var v) ? v : "11000000").PadRight(Sections, '0').ToCharArray();
+            s[i] = s[i] == '1' ? '0' : '1';
+            p.m_customData[OpenKey] = new string(s);
+        }
+
+        private static void BuildSections(RectTransform prt, TMP_FontAsset? font)
+        {
+            for (int i = 0; i < Sections; i++)
+            {
+                int k = i;
+                var go = new GameObject("VDW_Section_" + i, typeof(RectTransform));
+                var rt = (RectTransform)go.transform;
+                rt.SetParent(prt, false);
+                rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); rt.pivot = new Vector2(0f, 1f);
+                rt.sizeDelta = new Vector2(InfoW, 18f);
+                var bg = go.AddComponent<Image>(); bg.color = new Color(0f, 0f, 0f, 0.001f);   // catches the click
+                var btn = go.AddComponent<Button>(); btn.targetGraphic = bg;
+                btn.onClick.AddListener(() => ToggleOpen(k));
+                var head = AddLabel(rt, "", font, 13f, new Color(0.93f, 0.86f, 0.72f), Vector2.zero, new Vector2(InfoW, 18f));
+                head.alignment = TextAlignmentOptions.MidlineLeft;
+                head.overflowMode = TextOverflowModes.Ellipsis;
+                var body = AddLabel(prt, "", font, 12f, new Color(0.7f, 0.65f, 0.56f), Vector2.zero, new Vector2(InfoW - 10f, 20f));
+                body.alignment = TextAlignmentOptions.TopLeft;
+                body.textWrappingMode = TextWrappingModes.Normal;
+                _sec[i] = new Section { Head = rt, HeadText = head, Body = body };
+            }
+            // the leader's length, - and + on its row
+            var lc = new GameObject("VDW_LeaderLength", typeof(RectTransform));
+            _leaderCtl = (RectTransform)lc.transform;
+            _leaderCtl.SetParent(prt, false);
+            _leaderCtl.anchorMin = _leaderCtl.anchorMax = new Vector2(0f, 1f); _leaderCtl.pivot = new Vector2(1f, 1f);
+            _leaderCtl.sizeDelta = new Vector2(74f, 18f);
+            AddButton(_leaderCtl, "-", font, new Vector2(0f, 0f), new Vector2(18f, 18f), () => { if (Player.m_localPlayer != null) Tackle.StepLeader(Player.m_localPlayer, -1); });
+            _leaderLen = AddLabel(_leaderCtl, "", font, 12f, Color.white, new Vector2(18f, 0f), new Vector2(38f, 18f));
+            AddButton(_leaderCtl, "+", font, new Vector2(56f, 0f), new Vector2(18f, 18f), () => { if (Player.m_localPlayer != null) Tackle.StepLeader(Player.m_localPlayer, 1); });
+        }
+
+        /// <summary>Each section's name and its stats (empty: nothing to open), or null to leave it out.</summary>
+        private static (string head, string body)? SectionText(Player player, int i)
+        {
+            bool lure = Tackle.LureOn(player) != null;
+            switch (i)
+            {
+                case SecRod:
+                {
+                    var item = Tackle.RodIn(player);
+                    var def = ContentRegistry.GetRod(item);
+                    if (item == null || def == null) return ($"<color={Dim}>No rod</color>", $"Put one in the rod slot. Right-click it or press {VdwConfig.RodKey.Value} to use it.");
+                    var rod = Tackle.EffectiveRod(player, def, item.m_quality);
+                    string level = item.m_shared.m_maxQuality > 1 ? $" <color={Gold}>{item.m_quality}</color>" : "";
+                    string held = player.IsItemEquiped(item) ? $" <color={Green}>in hand</color>" : "";
+                    float reel = rod.ReelSpeed * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed));
+                    string wear = item.m_shared.m_useDurability ? $"\nWear: {Mathf.CeilToInt(item.m_durability)}/{Mathf.CeilToInt(item.GetMaxDurability())}" : "";
+                    return ($"<b>{Loc.Text(item.m_shared.m_name)}</b>{level}{held}",
+                            $"Line: {rod.LineCapacity:0} m\nStrength: {rod.BreakTension:0.#}\nCast: {rod.CastDistance:0} m\nReel: {reel:0.#} m/s\nPower: {rod.Power:0.##}{wear}");
+                }
+                case SecReel when Tackle.Separate:
+                    return Piece(Tackle.ItemIn(player, Tackle.ReelSlot), "No reel: the rod's own",
+                        Tackle.ReelOn(player) is TackleDefinition reelDef ? string.Join("\n", reelDef.Effects.Select(e => BuffStat.Describe(e.Key, e.Value))) : "");
+                case SecLine when Tackle.Separate:
+                    return Piece(Tackle.ItemIn(player, Tackle.LineSlot), "No line: the rod's own",
+                        Tackle.LineOn(player) is TackleDefinition line ? $"Line +{line.LineCapacity:0} m" + (line.LineStrength > 0f ? $"\nStrength +{line.LineStrength:0.#}" : "") : "");
+                case SecFloat when Tackle.Separate:
+                    return Piece(Tackle.ItemIn(player, Tackle.FloatSlot), "Plain float",
+                        Tackle.FloatOn(player) is BuffDefinition fl ? string.Join("\n", fl.Effects.Select(e => BuffStat.Describe(e.Key, e.Value))) + (fl.FloatLight ? "\nLit after dark" : "") : "");
+                case SecHook: return Piece(Tackle.ItemIn(player, Tackle.HookSlot), lure ? "No lure" : "No hook", "", true);
+                case SecBait: return Piece(Tackle.ItemIn(player, Tackle.BaitSlot), lure ? "No trailer" : "No bait", "", true);
+                case SecWeight: return Piece(Tackle.ItemIn(player, Tackle.WeightSlot), "No weight", "", true);
+                case SecLeader: return Piece(Tackle.ItemIn(player, Tackle.LeaderSlot), "No leader", "");
+                default: return null;
+            }
+        }
+
+        private static (string, string) Piece(ItemDrop.ItemData? item, string none, string stats, bool count = false)
+        {
+            if (item == null) return ($"<color={Dim}>{none}</color>", "");
+            string n = $"<b>{Loc.Text(item.m_shared.m_name)}</b>";
+            if (count && item.m_stack > 1) n += $" <color={Dim}>x{item.m_stack}</color>";
+            return (n, stats);
+        }
+
+        /// <summary>Lays the sections out down the left: each name, and its stats under it when it's open.</summary>
+        private static void UpdateSections(Player player)
+        {
+            float y = -SlotsY;
+            float bottom = -(SlotsY + Rows * _rowH);
+            for (int i = 0; i < Sections; i++)
+            {
+                var sec = _sec[i]; if (sec == null) continue;
+                var t = SectionText(player, i);
+                bool show = t != null && y > bottom + 18f;
+                sec.Head.gameObject.SetActive(show);
+                sec.Body.gameObject.SetActive(false);
+                if (!show) continue;
+                var (head, body) = t!.Value;
+                bool open = IsOpen(player, i) && body.Length > 0;
+                string mark = body.Length == 0 ? "   " : open ? "- " : "+ ";
+                sec.HeadText.text = $"<color={Dim}>{mark}</color>{head}";
+                sec.Head.anchoredPosition = new Vector2(PadX, y);
+                y -= 19f;
+                if (i == SecLeader && _leaderCtl != null)
+                {
+                    bool on = Tackle.LeaderOn(player) != null;
+                    _leaderCtl.gameObject.SetActive(on);
+                    _leaderCtl.anchoredPosition = new Vector2(PadX + InfoW, y + 19f);
+                    if (on) sec.HeadText.rectTransform.sizeDelta = new Vector2(InfoW - 78f, 18f);
+                }
+                if (!open) continue;
+                sec.Body.text = body;
+                float bh = sec.Body.GetPreferredValues(body, InfoW - 10f, 0f).y;
+                sec.Body.rectTransform.sizeDelta = new Vector2(InfoW - 10f, bh);
+                sec.Body.rectTransform.anchoredPosition = new Vector2(PadX + 12f, y);
+                sec.Body.gameObject.SetActive(true);
+                y -= bh + 4f;
+            }
+        }
+
+        // ------------------------------------------------------------------ the middle: the rod
+
+        private static readonly Dictionary<string, Sprite?> RodPictures = new();
+
+        /// <summary>The rod standing tip up (rod_&lt;id&gt;_full.png beside the icons), or its icon if there's no picture of it.</summary>
+        private static Sprite? RodPicture(ItemDrop.ItemData? item)
+        {
             var def = ContentRegistry.GetRod(item);
-            if (item == null || def == null)
-                return $"<color=#9a8d78>No rod: put one in the rod slot.\nRight-click it or press {VdwConfig.RodKey.Value} to use it.</color>";
-            var rod = RodUpgrades.Scaled(def, item.m_quality);
-            string level = item.m_shared.m_maxQuality > 1 ? $"  <color=#c9a85c>level {item.m_quality}</color>" : "";
-            string held = player.IsItemEquiped(item) ? "  <color=#8fd18f>in hand</color>" : "";
-            string wear = item.m_shared.m_useDurability ? $" · Wear {Mathf.CeilToInt(item.m_durability)}/{Mathf.CeilToInt(item.GetMaxDurability())}" : "";
-            return $"<b>{Loc.Text(item.m_shared.m_name)}</b>{level}{held}\nLine {rod.LineCapacity:0} m · Cast {rod.CastDistance:0} m{wear}";
+            if (item == null || def == null) return null;
+            if (!RodPictures.TryGetValue(def.Id, out var pic))
+            {
+                pic = null;
+                string? png = CustomModels.FindFile("rod_" + def.Id + "_full.png");
+                if (png != null)
+                {
+                    var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = "rod_" + def.Id + "_full" };
+                    if (tex.LoadImage(System.IO.File.ReadAllBytes(png)))
+                        pic = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                }
+                RodPictures[def.Id] = pic;
+            }
+            return pic ?? item.GetIcon();
         }
 
         private static float _bottom, _nextMeasure;
@@ -707,7 +1047,7 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>A small wooden-dark button with a label, for the leader length.</summary>
-        private static void AddButton(RectTransform parent, string text, TMP_FontAsset? font, Vector2 topLeft, Vector2 size, Action onClick)
+        private static Image AddButton(RectTransform parent, string text, TMP_FontAsset? font, Vector2 topLeft, Vector2 size, Action onClick)
         {
             var go = new GameObject("VDW_Button_" + text, typeof(RectTransform));
             var rt = (RectTransform)go.transform;
@@ -724,6 +1064,7 @@ namespace ValheimDeepWaters
             btn.onClick.AddListener(() => onClick());
             var label = AddLabel(rt, text, font, 18f, new Color(0.95f, 0.85f, 0.6f), Vector2.zero, size);
             label.alignment = TextAlignmentOptions.Center;
+            return img;
         }
 
         private static TextMeshProUGUI AddLabel(RectTransform parent, string text, TMP_FontAsset? font, float size, Color color, Vector2 topLeft, Vector2 box)
@@ -759,13 +1100,20 @@ namespace ValheimDeepWaters
                 Position(__instance);
                 var drag = DragItemField?.GetValue(__instance) as ItemDrop.ItemData;
                 Grid.UpdateInventory(Tackle.Get(player), null, drag);
-                // With a lure on, the hook slot holds the lure and the bait slot takes an optional trailer.
-                bool lure = Tackle.LureOn(player) != null;
-                if (_baitLabel != null) _baitLabel.text = lure ? "Trailer" : "Bait";
-                if (_hookLabel != null) _hookLabel.text = lure ? "Lure" : "Hook";
-                if (_stats != null) _stats.text = RodStats(player);
+                if (_laidOutSeparate != Tackle.Separate) Tackle.TidyNow(player);
+                Layout(player);
+                UpdateSections(player);
                 if (_leaderLen != null) _leaderLen.text = $"{Tackle.LeaderLength(player):0.#} m";
                 if (_rigLabel != null) _rigLabel.text = FishingController.RigSummary(player);
+                if (_rodPic != null)
+                {
+                    var pic = RodPicture(Tackle.RodIn(player));
+                    _rodPic.sprite = pic;
+                    _rodPic.enabled = pic != null;
+                }
+                // a saved loadout's button is lit; an empty one is dim
+                for (int n = 1; n <= Tackle.Loadouts; n++)
+                    if (_loadoutBtn[n] != null) _loadoutBtn[n]!.color = Tackle.HasLoadout(player, n) ? new Color(0.42f, 0.29f, 0.14f, 0.95f) : new Color(0.18f, 0.13f, 0.09f, 0.9f);
                 Tackle.CheckHeldRod(player);
             }
         }
@@ -782,6 +1130,8 @@ namespace ValheimDeepWaters
                 if (__instance == Grid && Tackle.SlotFor(item) != pos.x)
                 {
                     Player.m_localPlayer.Message(MessageHud.MessageType.Center, pos.x == Tackle.RodSlot ? "Only a fishing rod goes in that slot."
+                        : pos.x == Tackle.ReelSlot ? "Only a reel goes in that slot." : pos.x == Tackle.LineSlot ? "Only a fishing line goes in that slot."
+                        : pos.x == Tackle.FloatSlot ? "Only a float goes in that slot."
                         : pos.x == Tackle.WeightSlot ? "Only a weight (sinker) goes in that slot." : pos.x == Tackle.LeaderSlot ? "Only a leader goes in that slot."
                         : pos.x == Tackle.BaitSlot ? "Only bait (or a trailer) goes in that slot." : "Only hooks and lures go in that slot.");
                     __result = false;
