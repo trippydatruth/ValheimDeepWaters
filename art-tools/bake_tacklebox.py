@@ -9,6 +9,8 @@
 # <out>/tacklebox_<tier>_baked.blend. Never overwrites a map unless VDW_REDO=1.
 #   blender -b tacklebox_rigged.blend --factory-startup --python bake_tacklebox.py
 #   env: VDW_OUT, VDW_TIER (t1), VDW_LENGTH (0.6), VDW_SIZE (1024), VDW_SAMPLES (64), VDW_REDO
+#   VDW_BANDS=0: leave off the painted metal straps and rim (t2-t4); VDW_BANDS=rim: only the thin rim along the seam
+#   VDW_EDITED=1: run on a tackle box edit blend (make_tacklebox_edit.py) to bake the user's edited materials as they are
 import bpy, os, math
 import numpy as np
 from mathutils import Vector
@@ -50,24 +52,34 @@ T = TIERS[TIER]
 # the wood is matched to paint_v3's tier colour afterwards (Sanctus' colours come out lighter than set)
 MATCH = os.environ.get("VDW_MATCH_DIR")   # folder holding tacklebox_<tier>/tacklebox_<tier>_Unity_{Albedo,MetallicSmoothness}.png
 
-box = bpy.data.objects["tacklebox"]; arm = bpy.data.objects["TackleBox_Rig"]; me = box.data
+# VDW_EDITED=1: bake from a tackle box edit blend (make_tacklebox_edit.py) - the box tacklebox_<tier> already at size,
+# split into its parts, with the user's edited materials on it; they're baked as they are
+EDITED = os.environ.get("VDW_EDITED") == "1"
+if EDITED:
+    box = bpy.data.objects[f"tacklebox_{TIER}"]; arm = None; me = box.data
+    box.location = (0, 0, 0); bpy.context.view_layer.update()      # the bands and runes are placed from world positions
+    for o in bpy.data.objects:
+        if o.type == 'MESH': o.hide_render = o is not box
+else:
+    box = bpy.data.objects["tacklebox"]; arm = bpy.data.objects["TackleBox_Rig"]; me = box.data
 # ---------------------------------------------------------------- 1. real size, and the parts
 co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0)
-s = LENGTH / (hi[0] - lo[0])
-arm.scale = (s, s, s); bpy.context.view_layer.update()
-for o in (arm, box):
-    for x in bpy.context.view_layer.objects: x.select_set(x is o)
-    bpy.context.view_layer.objects.active = o
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0)
+if not EDITED:
+    s = LENGTH / (hi[0] - lo[0])
+    arm.scale = (s, s, s); bpy.context.view_layer.update()
+    for o in (arm, box):
+        for x in bpy.context.view_layer.objects: x.select_set(x is o)
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0)
 k = (hi[2] - lo[2]) / 1.249                                   # 1 at the model's own (pre-scale) height
-names = [m.name for m in me.materials]; i_lid, i_base, i_lock = names.index("lid"), names.index("base"), names.index("lock")
+names = [m.name for m in me.materials]
+i_lid, i_base, i_lock = (names.index(n) if n in names else -1 for n in ("lid", "base", "lock"))
 seam = lo[2] + 0.497 * k
-lid_z = np.array([me.vertices[p.vertices[0]].co.z for p in me.polygons if p.material_index == i_lid])
-lid_top = np.percentile(lid_z, 90)
 WOOD, METAL, HANDLE = 0, 1, 2
-part = []
-for p in me.polygons:
+part = [p.material_index for p in me.polygons] if EDITED else []
+lid_top = np.percentile(np.array([me.vertices[p.vertices[0]].co.z for p in me.polygons if p.material_index == i_lid]), 90) if not EDITED else 0
+for p in ([] if EDITED else me.polygons):
     c = p.center; n = p.normal
     handle = p.material_index == i_lid and c.z > lid_top + 0.01 * k and abs(c.x) < 0.45 * hi[0]
     if handle: part.append(METAL if T.get("handle_metal") else HANDLE); continue
@@ -86,7 +98,10 @@ def append_material(rel, name):
 with bpy.data.libraries.load(GRUNGIT) as (src, dst): dst.node_groups = ["Grungit v1.9.1", "Grungit Dirt v1.9.1", "Baker v1.8.3"]
 G_MAIN, G_DIRT, G_BAKER = dst.node_groups
 
-mask_img = bpy.data.images.new(f"tacklebox_{TIER}_mask", SIZE, SIZE, alpha=False); mask_img.colorspace_settings.name = 'Non-Color'
+if EDITED:   # the edited materials' own mask image, rebaked in place below
+    mask_img = next(n.image for n in me.materials[0].node_tree.nodes if n.name == "vdw_mask")
+else:
+    mask_img = bpy.data.images.new(f"tacklebox_{TIER}_mask", SIZE, SIZE, alpha=False); mask_img.colorspace_settings.name = 'Non-Color'
 
 def build(rel, name, inputs, worn, metallic2, kind):
     m = append_material(rel, name).copy(); m.name = f"tb_{kind}"
@@ -123,18 +138,22 @@ def build(rel, name, inputs, worn, metallic2, kind):
     m["vdw_dirt"] = d.name
     return m
 
-mats = [build(*T["wood"], T["wood_worn"], 0.0, "wood"), build(*T["metal"], T["metal_worn"], 1.0, "metal"),
-        build(*T["handle"], T["handle_worn"], 0.0, "handle") if "handle" in T else build(*T["metal"], T["metal_worn"], 1.0, "handle")]
-me.materials.clear()
-for m in mats: me.materials.append(m)
-for p, part_i in zip(me.polygons, part): p.material_index = part_i
+if EDITED:
+    mats = list(me.materials)[:3]
+    print("BAKE the edited materials:", [m.name for m in mats])
+else:
+    mats = [build(*T["wood"], T["wood_worn"], 0.0, "wood"), build(*T["metal"], T["metal_worn"], 1.0, "metal"),
+            build(*T["handle"], T["handle_worn"], 0.0, "handle") if "handle" in T else build(*T["metal"], T["metal_worn"], 1.0, "handle")]
+    me.materials.clear()
+    for m in mats: me.materials.append(m)
+    for p, part_i in zip(me.polygons, part): p.material_index = part_i
 
 # ---------------------------------------------------------------- baking
 sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = SAMPLES
 sc.render.bake.margin = 16; sc.render.bake.use_clear = True
 for o in bpy.context.view_layer.objects: o.select_set(o is box)
 bpy.context.view_layer.objects.active = box
-box.modifiers["Armature"].show_render = False                 # bake the rest pose
+if "Armature" in box.modifiers: box.modifiers["Armature"].show_render = False   # bake the rest pose
 
 def set_target(img):
     for m in mats:
@@ -166,7 +185,13 @@ def channel(socket_name, nc):
         N, L = m.node_tree.nodes, m.node_tree.links
         d = N[m["vdw_dirt"]]; em = N["vdw_emit"]; out = next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output)
         for l in list(em.inputs["Color"].links): L.remove(l)
-        L.new(d.outputs[socket_name], em.inputs["Color"]); L.new(em.outputs["Emission"], out.inputs["Surface"])
+        if EDITED:   # whatever the user has feeding the shader (nodes added after the dirt included)
+            inp = N["vdw_bsdf"].inputs["Base Color" if socket_name == "Color" else socket_name]
+            if inp.links: L.new(inp.links[0].from_socket, em.inputs["Color"])
+            else:
+                v = inp.default_value; em.inputs["Color"].default_value = tuple(v) if hasattr(v, "__len__") else (v, v, v, 1)
+        else: L.new(d.outputs[socket_name], em.inputs["Color"])
+        L.new(em.outputs["Emission"], out.inputs["Surface"])
     set_target(img); bpy.ops.object.bake(type='EMIT'); return img
 
 def px(img):
@@ -228,7 +253,7 @@ P = None
 if T.get("glow") or T.get("bands"):
     pos = emit_bake(position, "bake_pos", float_buf=True); P = lo + pos[..., :3] * (hi - lo)
 
-if T.get("bands"):
+if T.get("bands") and os.environ.get("VDW_BANDS", "1") != "0":   # VDW_BANDS=0: no painted straps/rim (an edit blend's lip is real faces)
     # a second bake with the wood faces in metal, blended in through a smooth band mask: two straps round each end and a
     # rim along the seam, on the outside surfaces only
     Nobj = emit_bake(obj_normal, "bake_nrm_obj", float_buf=True)[..., :3] * 2 - 1
@@ -247,6 +272,7 @@ if T.get("bands"):
     def sm(e0, e1, x): t = np.clip((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t)
     from_end = hi[0] - np.abs(X); w = 0.004 * k / 0.259 * 0.259          # a soft edge about 1 mm wide
     strap = sm(0.14 * k - w, 0.14 * k + w, from_end) * (1 - sm(0.25 * k - w, 0.25 * k + w, from_end))
+    if os.environ.get("VDW_BANDS") == "rim": strap = strap * 0                 # the rim only, no straps round the ends
     rim = 1 - sm(0.03 * k - w, 0.03 * k + w, np.abs(Z - seam))
     band = np.clip(np.maximum(strap, rim), 0, 1) * outer * wood
     b4 = band[..., None]
@@ -268,6 +294,6 @@ if emit is not None: save(emit, f"tacklebox_{TIER}_Unity_Emission.png", False)
 ms = np.zeros_like(col); ms[..., 0] = ms[..., 1] = ms[..., 2] = met[..., 0]; ms[..., 3] = 1.0 - rough[..., 0]
 save(ms, f"tacklebox_{TIER}_Unity_MetallicSmoothness.png", True)
 nrm[..., 3] = 1.0; save(nrm, f"tacklebox_{TIER}_Unity_Normal.png", True)
-box.modifiers["Armature"].show_render = True
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, f"tacklebox_{TIER}_baked.blend"))
+if "Armature" in box.modifiers: box.modifiers["Armature"].show_render = True
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, f"tacklebox_{TIER}_baked.blend"), copy=EDITED)
 print("===== END =====")
