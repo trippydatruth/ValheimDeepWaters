@@ -26,6 +26,9 @@ UPRIGHT |= {"piece_plaque"}; LOOK_DOWN.update({"piece_plaque": 0})   # the Gold 
 UPRIGHT |= {"buff_regalia_njord"}; LOOK_DOWN.update({"buff_regalia_njord": 28})   # Njord's Regalia crown
 UPRIGHT |= {f"tacklebox_t{i}" for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 25 for i in range(1, 5)}); GLOW.update({"tacklebox_t4": 1.2})   # the tackle boxes
 UPRIGHT |= {f"cooler_c{i}" for i in range(1, 4)}; LOOK_DOWN.update({f"cooler_c{i}": 25 for i in range(1, 4)})   # the coolers
+# shown with the lid open (degrees, the "lid" bone): the wooden tackle boxes, their tray of tackle showing, so they don't
+# read as the coolers; seen from higher to look into the tray
+OPEN_LID = {f"tacklebox_t{i}": 100 for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 38 for i in range(1, 5)})
 UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,
@@ -108,6 +111,13 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
         if a.type == 'ARMATURE':
             if a.animation_data: a.animation_data.action = None
             for pb in a.pose.bones: pb.matrix_basis = Matrix()
+            if key in OPEN_LID and "lid" in a.pose.bones:
+                pb = a.pose.bones["lid"]; pb.rotation_mode = 'XYZ'; best = None
+                for s in (1, -1):                       # whichever way raises the lid's far edge opens it
+                    pb.rotation_euler = (s * math.radians(OPEN_LID[key]), 0, 0); bpy.context.view_layer.update()
+                    z = (a.matrix_world @ pb.tail).z
+                    if best is None or z > best[0]: best = (z, s)
+                pb.rotation_euler = (best[1] * math.radians(OPEN_LID[key]), 0, 0); bpy.context.view_layer.update()
             if coiled:
                 from mathutils import Quaternion
                 total, lift = COIL[key]
