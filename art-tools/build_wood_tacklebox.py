@@ -12,7 +12,8 @@
 #        VDW_STYLE: flush (default) - no corner posts or feet: flush boards meeting in box-jointed corners (the boards
 #        overlap turn and turn about up each corner), thin iron strips round the bottom and the rim, and a tall arched
 #        iron carrying handle with a wooden grip, so it reads apart from the cooler; posts - the first version (posts and
-#        feet like the cooler, a low handle)
+#        feet like the cooler, a low handle); VDW_HILDIR: swamp | mountain | mistlands - Hildir's lost boxes (her mark,
+#        and moss / ice / dvergr bands with eitr rivets); ashlands - glowing embers caught in it
 import bpy, bmesh, math, os
 from mathutils import Vector, Matrix
 
@@ -188,6 +189,71 @@ else:                  # a tall arched iron handle (a toolbox's), its ends in lu
         for a, b in zip(pts, pts[1:]): cyl(a, b, 0.0055, "iron", "lid", seg=10)
         cyl((x - sx * R, 0, GZ), (sx * 0.06, 0, GZ), 0.0055, "iron", "lid", seg=10)
     cyl((-0.062, 0, GZ), (0.062, 0, GZ), 0.012, "tray", "lid", seg=14)                           # the wooden grip
+
+# ---------------------------------------------------------------- Hildir's lost boxes (VDW_HILDIR=swamp|mountain|mistlands)
+# her red painted mark on the front, and what each picked up where it was lost: moss and bog slime (Sunken Crypts),
+# ice and icicles (Frost Caves), dvergr iron bands with glowing eitr rivets (the Mistlands ruins). Extra materials:
+# mark, moss, ice, eitr.
+HILDIR = os.environ.get("VDW_HILDIR", "")
+def blob(c, r, mat, bone="root", squash=0.4, seed=0, seg=8, rings=5):
+    bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=rings, radius=r)
+    rr = __import__("random").Random(seed)
+    for v in bm.verts: v.co *= 1 + rr.uniform(-0.25, 0.25)
+    bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector(c)) @ Matrix.Diagonal((1.0, 1.0, squash, 1.0)), verts=bm.verts)
+    add(bm, mat, bone, 0.0)
+def spike(base, tip, r, mat, bone="root", seg=6):
+    a, b = Vector(base), Vector(tip); d = b - a
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r, radius2=0.0, depth=d.length)
+    q = Vector((0, 0, 1)).rotation_difference(d.normalized())
+    bmesh.ops.transform(bm, matrix=Matrix.Translation((a + b) / 2) @ q.to_matrix().to_4x4(), verts=bm.verts)
+    add(bm, mat, bone, 0.0)
+if HILDIR:
+    import random
+    rnd = random.Random({"swamp": 3, "mountain": 5, "mistlands": 7}.get(HILDIR, 1))
+    mz = 0.083 if HILDIR == "mistlands" else 0.064     # (between the dvergr bands on the mistlands box)
+    for x in (-0.11, 0.11): box((x, -D / 2 - 0.0009, mz), (0.10, 0.0018, 0.011), "mark", bevel=0.0)    # her mark
+    if HILDIR == "ashlands":    # (the box first lost in the swamp, now the Ashlands') embers caught in the lid and the joints
+        for k in range(16):
+            x = rnd.uniform(-LW / 2 + 0.02, LW / 2 - 0.02); y = rnd.uniform(-LD / 2 + 0.015, LD / 2 - 0.015)
+            if abs(x) < 0.13 and abs(y) < 0.03: continue
+            blob((x, y, LID1 + 0.001), rnd.uniform(0.004, 0.009), "ember", "lid", 0.6, 60 + k, seg=8, rings=5)
+        for k in range(14):     # and smouldering in the body's seams
+            sx = rnd.choice((-1, 1)); along = rnd.uniform(-0.18, 0.18)
+            c = (along, sx * (D / 2 + 0.001), rnd.uniform(0.02, 0.15)) if rnd.random() < 0.65 else (sx * (W / 2 + 0.001), along * 0.45, rnd.uniform(0.02, 0.15))
+            blob(c, rnd.uniform(0.004, 0.008), "ember", "root", 0.8, 80 + k, seg=8, rings=5)
+    elif HILDIR == "swamp":
+        for k in range(10):     # moss on the lid, thicker toward one end
+            x = rnd.uniform(-LW / 2 + 0.03, LW / 2 - 0.12); y = rnd.uniform(-LD / 2 + 0.02, LD / 2 - 0.02)
+            if abs(x) > 0.08 or abs(y) > 0.03: blob((x, y, LID1 + 0.004), rnd.uniform(0.018, 0.034), "moss", "lid", 0.35, k)
+        for k in range(9):      # and creeping up the lower boards
+            sx = rnd.choice((-1, 1)); along = rnd.uniform(-0.18, 0.18)
+            if rnd.random() < 0.6: c = (along, sx * (D / 2 + 0.002), rnd.uniform(0.012, 0.05))
+            else: c = (sx * (W / 2 + 0.002), along * 0.45, rnd.uniform(0.012, 0.05))
+            blob(c, rnd.uniform(0.014, 0.026), "moss", "root", 0.6, 20 + k)
+    elif HILDIR == "mountain":
+        for k in range(6):      # clusters of stubby ice crystals grown on the lid
+            x = rnd.uniform(-LW / 2 + 0.04, LW / 2 - 0.04); y = rnd.uniform(-LD / 2 + 0.03, LD / 2 - 0.03)
+            if abs(x) < 0.14 and abs(y) < 0.035: continue       # clear of the handle
+            for j in range(3):
+                bx, by = x + rnd.uniform(-0.012, 0.012), y + rnd.uniform(-0.01, 0.01)
+                spike((bx, by, LID1 - 0.002), (bx + rnd.uniform(-0.012, 0.012), by + rnd.uniform(-0.008, 0.008), LID1 + rnd.uniform(0.016, 0.034)), rnd.uniform(0.008, 0.013), "ice", "lid")
+        for k in range(11):     # icicles off the lid's front and side edges
+            if k < 8: x, y = rnd.uniform(-LW / 2 + 0.02, LW / 2 - 0.02), -LD / 2 - 0.002
+            else: x, y = rnd.choice((-1, 1)) * (LW / 2 + 0.002), rnd.uniform(-0.08, 0.08)
+            if abs(x) < 0.04 and y < 0: continue                 # not over the hasp
+            spike((x, y, LID0 + 0.004), (x, y, LID0 - rnd.uniform(0.015, 0.045)), rnd.uniform(0.004, 0.007), "ice", "lid")
+        for k in range(7):      # (the Deep North's) snow drifted against the handle's feet and the lid's corners
+            x = rnd.choice((-1, 1)) * rnd.uniform(0.04, LW / 2 - 0.04); y = rnd.uniform(-LD / 2 + 0.025, LD / 2 - 0.025)
+            blob((x, y, LID1 + 0.002), rnd.uniform(0.022, 0.04), "snow", "lid", 0.28, 40 + k, seg=10, rings=6)
+    elif HILDIR == "mistlands":
+        for z in (0.052, 0.112):   # dvergr iron bands round the body, studded with eitr rivets
+            for side in (-1, 1):
+                box((0, side * (D / 2 + 0.002), z), (W + 0.008, 0.004, 0.016), "iron", "root", 0.0008)
+                box((side * (W / 2 + 0.002), 0, z), (0.004, D + 0.008, 0.016), "iron", "root", 0.0008)
+            for x in (-0.15, -0.05, 0.05, 0.15):
+                blob((x, -D / 2 - 0.0055, z), 0.0058, "eitr", "root", 1.0, int(x * 100), seg=8, rings=5)
+                blob((x, D / 2 + 0.0055, z), 0.0058, "eitr", "root", 1.0, int(x * 100) + 50, seg=8, rings=5)
+    MATS += [m for m in ("mark", "moss", "ice", "snow", "eitr", "ember") if any(p[1] == m for p in parts)]
 
 # ---------------------------------------------------------------- one object, materials, UVs, bones
 me = bpy.data.meshes.new("tacklebox"); bm_all = bmesh.new(); lid_verts = []

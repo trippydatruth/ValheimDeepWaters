@@ -138,7 +138,7 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
         if o.name.startswith(("vdw_wood", "vdw_darkwood")):     # the mod dresses these in Valheim's tiling ship planks
             o.data.materials.clear(); o.data.materials.append(planks_material(o.name.startswith("vdw_darkwood"))); continue
         own = maps(folder, o.name.split(".")[0])
-        m = own or maps(folder)
+        m = own or maps(folder, key) or maps(folder)   # the model's own set first (the folder may hold other parts' sets too)
         o.data.materials.clear()
         o.data.materials.append(material(key + "_" + o.name, m, glow))
         if key == "bait_fly":     # second slot: see-through wings

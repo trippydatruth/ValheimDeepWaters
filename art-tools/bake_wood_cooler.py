@@ -5,9 +5,9 @@
 #   c1 Wooden Cooler: oak, dark iron, brass        c2 Iron-Banded Cooler: dark tarred wood, worn steel, brass
 #   c3 Frost Cooler: pale frosted wood, silver fittings, frost in the cracks
 # VDW_KIND=tacklebox: the wooden tackle box (build_wood_tacklebox.py; wood, tray and iron), tiers t1 Wooden (oak,
-#   dark iron), t2 Iron-Bound (dark stained wood, steel), t3 Silver (pale birch, silver), t4 Dvergr (blue-grey wood,
-#   hammered copper, a blue rune line glowing round the top rail: an extra _Emission map); each painted (green, oxblood,
-#   cream, navy) and worn back to the wood (VDW_PAINT=0 for bare wood)
+#   dark iron), t2 Iron-Bound (dark stained wood, steel), t3 Silver (pale birch, silver), t4 Black-Metal (the Plains:
+#   oak, black metal); each painted (green, oxblood, cream, ochre) and worn back to the wood (VDW_PAINT=0 for bare
+#   wood); and Hildir's late-biome boxes (mistlands, swamp = the Ashlands, mountain = the Deep North)
 # Writes <out>/cooler_<tier>/cooler_<tier>_Unity_{Albedo,MetallicSmoothness,Normal}.png, the mask, and
 # <out>/cooler_<tier>_baked.blend (the live materials, for editing and rebaking). New files only.
 #   blender -b cooler_wood_v1.blend --factory-startup --python bake_wood_cooler.py
@@ -58,23 +58,56 @@ TB_TIERS = {
         wood=(WOOD, "generic_wood_01", {"Light Color": (0.66, 0.58, 0.44, 1), "Dark Color": (0.48, 0.40, 0.28, 1), "Knots": 0.3, "Damage": 0.2, "Roughness": 0.6, "Clearcoat": 0.0, "Bump": 0.35}, (0.76, 0.69, 0.56, 1), 0.0, 0.3, (0.22, 0.17, 0.10, 1), 0.3),
         tray=(WOOD, "generic_wood_01", {"Light Color": (0.74, 0.66, 0.52, 1), "Dark Color": (0.58, 0.50, 0.37, 1), "Knots": 0.0, "Damage": 0.1, "Roughness": 0.55, "Clearcoat": 0.0}, (0.82, 0.76, 0.64, 1), 0.0, 0.25, (0.22, 0.17, 0.10, 1), 0.2),
         iron=(METAL, "basic_worn_metal_01", {"Color": (0.74, 0.77, 0.80, 1), "Roughness": 0.3}, (0.92, 0.93, 0.95, 1), 1.0, 0.35, (0.20, 0.17, 0.12, 1), 0.3)),
-    "t4": dict(   # Dvergr: blue-grey wood, hammered copper, a rune line
-        wood=(WOOD, "generic_wood_01", {"Light Color": (0.25, 0.29, 0.35, 1), "Dark Color": (0.12, 0.15, 0.20, 1), "Knots": 0.3, "Damage": 0.2, "Roughness": 0.55, "Clearcoat": 0.0, "Bump": 0.35}, (0.36, 0.41, 0.48, 1), 0.0, 0.3, (0.08, 0.10, 0.13, 1), 0.3),
-        tray=(WOOD, "generic_wood_01", {"Light Color": (0.38, 0.42, 0.48, 1), "Dark Color": (0.22, 0.26, 0.32, 1), "Knots": 0.0, "Damage": 0.1, "Roughness": 0.55, "Clearcoat": 0.0}, (0.48, 0.52, 0.58, 1), 0.0, 0.25, (0.08, 0.10, 0.13, 1), 0.2),
-        iron=(COPPER, "hammered_copper", {"Color": (0.58, 0.30, 0.16, 1), "Roughness": 0.35, "Patina": 0.15}, (0.85, 0.55, 0.35, 1), 1.0, 0.35, (0.10, 0.14, 0.12, 1), 0.3),
-        glow=(0.25, 0.75, 1.0)),
+    "t4": dict(   # Black-Metal (the Plains): sun-bleached ochre paint over plains oak, black metal
+        wood=(WOOD, "generic_wood_01", {"Light Color": (0.48, 0.34, 0.18, 1), "Dark Color": (0.28, 0.18, 0.09, 1), "Knots": 0.35, "Damage": 0.25, "Roughness": 0.65, "Clearcoat": 0.0, "Bump": 0.4}, (0.58, 0.44, 0.27, 1), 0.0, 0.35, (0.24, 0.18, 0.10, 1), 0.35),
+        tray=(WOOD, "generic_wood_01", {"Light Color": (0.6, 0.45, 0.27, 1), "Dark Color": (0.40, 0.28, 0.15, 1), "Knots": 0.0, "Damage": 0.1, "Roughness": 0.6, "Clearcoat": 0.0}, (0.7, 0.56, 0.38, 1), 0.0, 0.25, (0.24, 0.18, 0.10, 1), 0.25),
+        iron=(METAL, "basic_worn_metal_01", {"Color": (0.06, 0.06, 0.07, 1), "Roughness": 0.4}, (0.28, 0.28, 0.30, 1), 1.0, 0.35, (0.24, 0.18, 0.10, 1), 0.3)),
 }
-PAINT = {"t1": (0.055, 0.14, 0.075), "t2": (0.20, 0.03, 0.02), "t3": (0.62, 0.58, 0.48), "t4": (0.025, 0.06, 0.15)}
+# Hildir's lost tackle boxes (build_wood_tacklebox.py VDW_HILDIR): the same box, painted and worn, with her red mark and
+# what each picked up where it was lost - moss (swamp), ice (mountain), dvergr bands and glowing eitr rivets (mistlands).
+# Their extra parts are Sanctus worn metal turned matte (Metallic 0) in the part's colour, worn by Grungit like the rest.
+def matte(col, rough, worn, wear, dirt_col, dirt):
+    return (METAL, "basic_worn_metal_01", {"Color": (*col, 1), "Metallic": 0.0, "Roughness": rough}, (*worn, 1), 0.0, wear, (*dirt_col, 1), dirt)
+_MARK = lambda dirt_col, dirt: matte((0.45, 0.04, 0.03), 0.6, (0.22, 0.08, 0.05), 0.12, dirt_col, dirt * 0.5)
+TB_TIERS.update({
+    "swamp": dict(   # Hildir's Charred Tackle Box (the Ashlands; "swamp" where it was first lost): scorched red-black paint,
+                     # black iron, soot in every crack, embers glowing in the lid and the seams
+        wood=(WOOD, "generic_wood_01", {"Light Color": (0.045, 0.03, 0.022, 1), "Dark Color": (0.012, 0.009, 0.007, 1), "Knots": 0.4, "Damage": 0.45, "Roughness": 0.8, "Clearcoat": 0.0, "Bump": 0.5}, (0.06, 0.058, 0.055, 1), 0.0, 0.3, (0.01, 0.01, 0.01, 1), 0.45),
+        char=dict(glow=(1.0, 0.36, 0.05), block=(0.075, 0.012), crack=0.06, hot=(0.50, 0.64), ash_col=(0.045, 0.044, 0.042)),   # charred: blocks along the grain, glowing cracks (char_wood)
+        tray=(WOOD, "generic_wood_01", {"Light Color": (0.32, 0.22, 0.14, 1), "Dark Color": (0.16, 0.10, 0.06, 1), "Knots": 0.0, "Damage": 0.2, "Roughness": 0.65, "Clearcoat": 0.0}, (0.4, 0.28, 0.18, 1), 0.0, 0.3, (0.03, 0.03, 0.03, 1), 0.5),
+        iron=(METAL, "basic_worn_metal_01", {"Color": (0.08, 0.07, 0.07, 1), "Roughness": 0.6}, (0.30, 0.22, 0.18, 1), 1.0, 0.4, (0.03, 0.03, 0.03, 1), 0.5),
+        mark=_MARK((0.03, 0.03, 0.03), 0.4),
+        ember=matte((0.9, 0.22, 0.02), 0.5, (1.0, 0.45, 0.1), 0.05, (0.15, 0.03, 0.0), 0.05),
+        glow_slots={"ember": (1.0, 0.38, 0.06)}),
+    "mountain": dict(   # Hildir's Rime-Crusted Tackle Box (the Deep North): pale blue-grey paint, silvery iron, ice and snow, rime in every crack
+        wood=(WOOD, "generic_wood_01", {"Light Color": (0.42, 0.36, 0.28, 1), "Dark Color": (0.24, 0.19, 0.13, 1), "Knots": 0.3, "Damage": 0.25, "Roughness": 0.6, "Clearcoat": 0.0, "Bump": 0.4}, (0.55, 0.5, 0.42, 1), 0.0, 0.45, (0.90, 0.95, 1.0, 1), 0.6),
+        tray=(WOOD, "generic_wood_01", {"Light Color": (0.5, 0.44, 0.34, 1), "Dark Color": (0.32, 0.26, 0.19, 1), "Knots": 0.0, "Damage": 0.1, "Roughness": 0.55, "Clearcoat": 0.0}, (0.6, 0.55, 0.46, 1), 0.0, 0.25, (0.90, 0.95, 1.0, 1), 0.5),
+        iron=(METAL, "basic_worn_metal_01", {"Color": (0.52, 0.55, 0.60, 1), "Roughness": 0.4}, (0.8, 0.82, 0.86, 1), 1.0, 0.35, (0.90, 0.95, 1.0, 1), 0.5),
+        mark=_MARK((0.90, 0.95, 1.0), 0.4),
+        ice=matte((0.55, 0.75, 0.92), 0.08, (0.80, 0.90, 1.0), 0.04, (0.85, 0.93, 1.0), 0.04),
+        snow=matte((0.88, 0.92, 0.97), 0.85, (0.95, 0.97, 1.0), 0.05, (0.80, 0.86, 0.95), 0.15)),
+    "mistlands": dict(   # Hildir's Dvergr-Mended Tackle Box: mist-purple paint, dark dvergr iron, glowing eitr rivets
+        wood=(WOOD, "generic_wood_01", {"Light Color": (0.30, 0.22, 0.14, 1), "Dark Color": (0.15, 0.10, 0.06, 1), "Knots": 0.3, "Damage": 0.25, "Roughness": 0.6, "Clearcoat": 0.0, "Bump": 0.4}, (0.38, 0.29, 0.19, 1), 0.0, 0.4, (0.08, 0.07, 0.10, 1), 0.35),
+        tray=(WOOD, "generic_wood_01", {"Light Color": (0.40, 0.30, 0.20, 1), "Dark Color": (0.24, 0.17, 0.10, 1), "Knots": 0.0, "Damage": 0.1, "Roughness": 0.55, "Clearcoat": 0.0}, (0.5, 0.4, 0.28, 1), 0.0, 0.25, (0.08, 0.07, 0.10, 1), 0.25),
+        iron=(METAL, "basic_worn_metal_01", {"Color": (0.18, 0.19, 0.21, 1), "Roughness": 0.45}, (0.42, 0.43, 0.46, 1), 1.0, 0.35, (0.08, 0.07, 0.10, 1), 0.3),
+        mark=_MARK((0.08, 0.07, 0.10), 0.3),
+        eitr=matte((0.45, 0.20, 0.85), 0.3, (0.7, 0.5, 1.0), 0.1, (0.2, 0.1, 0.3), 0.1),
+        glow_slots={"eitr": (0.6, 0.3, 1.0)}),
+})
+PAINT = {"t1": (0.055, 0.14, 0.075), "t2": (0.20, 0.03, 0.02), "t3": (0.62, 0.58, 0.48), "t4": (0.36, 0.22, 0.03),
+         "swamp": (0.045, 0.012, 0.008), "mountain": (0.28, 0.36, 0.44), "mistlands": (0.12, 0.07, 0.19)}
 # how worn the paint is per tier: the low tiers mostly bare wood with the colour only clinging on, the high ones kept up
-PAINT_WEAR = {"t1": 0.62, "t2": 0.55, "t3": 0.42, "t4": 0.32}
+PAINT_WEAR = {"t1": 0.62, "t2": 0.55, "t3": 0.42, "t4": 0.4, "swamp": 0.5, "mountain": 0.45, "mistlands": 0.4}
 if KIND == "tacklebox" and os.environ.get("VDW_PAINT", "1") == "1":     # VDW_PAINT=0: bare wood (the first wooden boxes)
     for k, v in PAINT.items():
+        if TB_TIERS[k].get("char"): continue          # charred wood: no paint left on it
         TB_TIERS[k]["paint"] = v
         w = list(TB_TIERS[k]["wood"]); w[5] = PAINT_WEAR[k] * float(os.environ.get("VDW_PAINT_WEAR", "1")); TB_TIERS[k]["wood"] = tuple(w)
 if KIND == "tacklebox": TIERS = TB_TIERS
 T = TIERS[TIER]
-SLOTS = ["wood", "tray", "iron"] if KIND == "tacklebox" else ["wood", "grip", "iron", "brass"]
 box = bpy.data.objects[PREFIX]; me = box.data
+# the parts, as the model's materials (a tackle box may have extras: mark, moss, ice, eitr)
+SLOTS = [m.name.split(".")[0] for m in me.materials] if KIND == "tacklebox" else ["wood", "grip", "iron", "brass"]
 me.uv_layers.active = me.uv_layers["UVMap"]; me.uv_layers["UVMap"].active_render = True
 co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0); LENGTH = float(hi[0] - lo[0])
 
@@ -84,6 +117,69 @@ def append_material(rel, name):
 with bpy.data.libraries.load(GRUNGIT) as (src, dst): dst.node_groups = ["Grungit v1.9.1", "Grungit Dirt v1.9.1", "Baker v1.8.3"]
 G_MAIN, G_DIRT, G_BAKER = dst.node_groups
 mask_img = bpy.data.images.new(f"{PREFIX}_{TIER}_mask", SIZE, SIZE, alpha=False); mask_img.colorspace_settings.name = 'Non-Color'
+
+def char_wood(N, L, grp, g, C):
+    """charred wood (the Ashlands box): near-black charcoal split into small blocks along the grain, ash-grey
+    highlights, the cracks sunk in, and in patches the cracks and a few grain lines glowing like embers. The glow
+    is the node "vdw_char_glow" (0..1), baked to the Emission map later. C: dict(glow colour, block sizes ...)"""
+    def node(t, **kw):
+        n = N.new(t)
+        for k, v in kw.items(): setattr(n, k, v)
+        return n
+    def vmath(op, a, b):
+        n = node("ShaderNodeVectorMath", operation=op); L.new(a, n.inputs[0])
+        if isinstance(b, tuple): n.inputs[1].default_value = b
+        else: L.new(b, n.inputs[1])
+        return n.outputs[0]
+    def maprange(sock, f0, f1, t0=0.0, t1=1.0):
+        n = node("ShaderNodeMapRange", clamp=True); L.new(sock, n.inputs["Value"])
+        n.inputs["From Min"].default_value, n.inputs["From Max"].default_value = f0, f1
+        n.inputs["To Min"].default_value, n.inputs["To Max"].default_value = t0, t1
+        return n.outputs["Result"]
+    def math(op, a, b):
+        n = node("ShaderNodeMath", operation=op); L.new(a, n.inputs[0])
+        if isinstance(b, float): n.inputs[1].default_value = b
+        else: L.new(b, n.inputs[1])
+        return n
+    def noise(vec, scale, detail=3.0):
+        n = node("ShaderNodeTexNoise"); n.inputs["Scale"].default_value = scale; n.inputs["Detail"].default_value = detail
+        L.new(vec, n.inputs["Vector"]); return n
+    uv = node("ShaderNodeUVMap", uv_map="Grain").outputs["UV"]            # metres, U along the board
+    w = noise(uv, 14.0).outputs["Color"]                                 # a little wobble so the blocks aren't regular
+    w = vmath('SUBTRACT', w, (0.5, 0.5, 0.5)); s = node("ShaderNodeVectorMath", operation='SCALE'); L.new(w, s.inputs[0]); s.inputs["Scale"].default_value = 0.012
+    warped = vmath('ADD', uv, s.outputs[0])
+    # the blocks: a Voronoi's edges, stretched along the grain (BLOCK = (length, width) in metres)
+    bl, bw = C.get("block", (0.045, 0.014))
+    vor = node("ShaderNodeTexVoronoi", feature='DISTANCE_TO_EDGE'); vor.inputs["Scale"].default_value = 1.0
+    L.new(vmath('MULTIPLY', warped, (1.0 / bl, 1.0 / bw, 1.0)), vor.inputs["Vector"])
+    crack = maprange(vor.outputs["Distance"], 0.0, C.get("crack", 0.07), 1.0, 0.0)    # 1 in the crack
+    # where it's still burning: broad patches
+    hot = maprange(noise(uv, C.get("patch", 7.0), 2.0).outputs["Fac"], *C.get("hot", (0.47, 0.62)))
+    # glowing grain lines running along the board
+    wave = node("ShaderNodeTexWave", wave_type='BANDS', bands_direction='Y'); wave.inputs["Scale"].default_value = C.get("lines", 55.0)
+    wave.inputs["Distortion"].default_value = 9.0; wave.inputs["Detail"].default_value = 3.0; wave.inputs["Detail Scale"].default_value = 1.5
+    L.new(uv, wave.inputs["Vector"])
+    lines = maprange(wave.outputs["Fac"], 0.88, 0.98)
+    hot_crack = math('MULTIPLY', crack, hot).outputs[0]
+    hot_line = math('MULTIPLY', math('MULTIPLY', lines, hot).outputs[0], C.get("line_glow", 0.55)).outputs[0]
+    glow = math('MAXIMUM', hot_crack, hot_line); glow.name = "vdw_char_glow"
+    # colour: charcoal with ash-grey speckle and streaks, the cracks darker, glowing places tinted ember
+    ash = maprange(noise(warped, 70.0, 6.0).outputs["Fac"], 0.55, 0.7)
+    base = node("ShaderNodeMix", data_type='RGBA'); L.new(ash, base.inputs["Factor"])
+    base.inputs[6].default_value = (*C.get("char_col", (0.018, 0.017, 0.018)), 1); base.inputs[7].default_value = (*C.get("ash_col", (0.09, 0.088, 0.085)), 1)
+    dark = node("ShaderNodeMix", data_type='RGBA'); L.new(maprange(crack, 0.0, 1.0, 0.0, 0.85), dark.inputs["Factor"])
+    L.new(base.outputs[2], dark.inputs[6]); dark.inputs[7].default_value = (0.004, 0.003, 0.003, 1)
+    ember = node("ShaderNodeMix", data_type='RGBA'); L.new(glow.outputs[0], ember.inputs["Factor"])
+    L.new(dark.outputs[2], ember.inputs[6]); ember.inputs[7].default_value = (*[c * 0.6 for c in C["glow"]], 1)
+    for l in list(g.inputs["Base Color 1"].links): L.remove(l)
+    L.new(ember.outputs[2], g.inputs["Base Color 1"])
+    for l in list(g.inputs["Roughness 1"].links): L.remove(l)
+    g.inputs["Roughness 1"].default_value = 0.9
+    # the cracks sunk in
+    bump = node("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.8; bump.inputs["Distance"].default_value = 0.004
+    L.new(maprange(crack, 0.0, 1.0, 1.0, 0.0), bump.inputs["Height"])
+    if "Normal Bake" in grp.outputs: L.new(grp.outputs["Normal Bake"], bump.inputs["Normal"])
+    if "Normal" in g.inputs: L.new(bump.outputs["Normal"], g.inputs["Normal"])
 
 def build(slot):
     rel, name, inputs, worn, worn_metal, wear, dirt_col, dirt = T[slot]
@@ -128,6 +224,7 @@ def build(slot):
         if a in g.outputs and a in d.inputs: L.new(g.outputs[a], d.inputs[a])
     if "Normal Bake" in grp.outputs and "Normal" in g.inputs: L.new(grp.outputs["Normal Bake"], g.inputs["Normal"])
     d.inputs["Dirt Base Color"].default_value = dirt_col; d.inputs["Overall Amount"].default_value = min(1.0, dirt + float(os.environ.get("VDW_DIRT_ADD", "0.15"))); d.inputs["AO"].default_value = 0.5
+    if slot == "wood" and T.get("char"): char_wood(N, L, grp, g, T["char"])
     bs = N.new("ShaderNodeBsdfPrincipled"); bs.name = "vdw_bsdf"
     for a, b in (("Color", "Base Color"), ("Metallic", "Metallic"), ("Roughness", "Roughness"), ("Normal", "Normal")): L.new(d.outputs[a], bs.inputs[b])
     out = next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output); L.new(bs.outputs["BSDF"], out.inputs["Surface"])
@@ -279,6 +376,35 @@ if T.get("glow"):
         N, L = m.node_tree.nodes, m.node_tree.links
         L.new(N["vdw_bsdf"].outputs["BSDF"], next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output).inputs["Surface"])
     print(f"BAKE rune line: {int(runes.sum())} pixels on the top rail")
+# charred wood (the Ashlands box): its cracks and grain lines glowing where the node "vdw_char_glow" says
+if T.get("char"):
+    def char_glow(N):
+        if "vdw_char_glow" in N: return N["vdw_char_glow"].outputs[0]
+        v = N.new("ShaderNodeValue"); v.outputs[0].default_value = 0.0; return v.outputs[0]
+    gm = np.clip(bake_value(char_glow, "bake_char_glow")[..., :1], 0, 1)
+    if emit is None: emit = np.zeros_like(col); emit[..., 3] = 1.0
+    emit[..., :3] = np.maximum(emit[..., :3], gm * np.array(T["char"]["glow"]))
+    for m in mats:
+        N, L = m.node_tree.nodes, m.node_tree.links
+        L.new(N["vdw_bsdf"].outputs["BSDF"], next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output).inputs["Surface"])
+    print(f"BAKE charred wood glowing: {int((gm[..., 0] > 0.3).sum())} pixels")
+# parts that glow (the mistlands box's eitr rivets): an Emission map there, the albedo in the glow's colour
+for slot, glow in T.get("glow_slots", {}).items():
+    if slot not in SLOTS: continue
+    si = SLOTS.index(slot)
+    for i, m in enumerate(mats):
+        N, L = m.node_tree.nodes, m.node_tree.links; em = N["vdw_emit"]; out = next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output)
+        for l in list(em.inputs["Color"].links): L.remove(l)
+        em.inputs["Color"].default_value = (1, 1, 1, 1) if i == si else (0, 0, 0, 1); L.new(em.outputs["Emission"], out.inputs["Surface"])
+    gimg = bpy.data.images.new("bake_glowmask", SIZE, SIZE, alpha=False); gimg.colorspace_settings.name = 'Non-Color'
+    set_target(gimg); bpy.ops.object.bake(type='EMIT')
+    ga = np.empty(SIZE * SIZE * 4, np.float32); gimg.pixels.foreach_get(ga); gpx = ga.reshape(SIZE, SIZE, 4)[..., 0] > 0.5
+    if emit is None: emit = np.zeros_like(col); emit[..., 3] = 1.0
+    emit[gpx, :3] = glow; col[gpx, :3] = np.array(glow) * 0.6
+    for m in mats:
+        N, L = m.node_tree.nodes, m.node_tree.links
+        L.new(N["vdw_bsdf"].outputs["BSDF"], next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output).inputs["Surface"])
+    print(f"BAKE {slot} glowing: {int(gpx.sum())} pixels")
 def save(arr, name, nc):
     im = bpy.data.images.new(name, SIZE, SIZE, alpha=True)
     if nc: im.colorspace_settings.name = 'Non-Color'
