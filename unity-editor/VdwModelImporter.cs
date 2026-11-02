@@ -103,7 +103,12 @@ public static class VdwModelImporter
         new Entry("tacklebox_t1", "tacklebox", Kind.Rigged, 0f),
         new Entry("tacklebox_t2", "tacklebox", Kind.Rigged, 0f),
         new Entry("tacklebox_t3", "tacklebox", Kind.Rigged, 0f),
-        new Entry("tacklebox_t4", "tacklebox", Kind.Rigged, 1.5f),
+        new Entry("tacklebox_t4", "tacklebox", Kind.Rigged, 0f),
+        // Hildir's late-biome boxes (build_wood_tacklebox.py VDW_HILDIR): Dvergr-Mended (eitr rivets), Charred (the
+        // Ashlands, embers; id "swamp"), Rime-Crusted (the Deep North; id "mountain")
+        new Entry("tacklebox_mistlands", "tacklebox", Kind.Rigged, 1f),
+        new Entry("tacklebox_swamp", "tacklebox", Kind.Rigged, 2f),
+        new Entry("tacklebox_mountain", "tacklebox", Kind.Rigged, 0f),
         // Coolers: the user's ice chest, lid rigged, three tiers (build_cooler.py)
         new Entry("cooler_c1", "cooler", Kind.Rigged, 0f),
         new Entry("cooler_c2", "cooler", Kind.Rigged, 0f),
@@ -182,10 +187,6 @@ public static class VdwModelImporter
         new Entry("buff_lantern_float", "buffs", Kind.Static, 1.5f),
         new Entry("buff_regalia_njord", "buffs", Kind.Static, 1.5f),   // Njord's Regalia crown (roadmap #24, build_cleaning_table.py)
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
-        // Hildir's lost tackle boxes (roadmap #20, build_cleaning_table.py)
-        new Entry("tacklebox_swamp", "buffs", Kind.Static),
-        new Entry("tacklebox_mountain", "buffs", Kind.Static),
-        new Entry("tacklebox_mistlands", "buffs", Kind.Static, 1f),
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
         new Entry("piece_plaque", "pieces", Kind.Static),   // the Gold Trophy Plaque board (species mastery); the fish is added in game
         new Entry("piece_feast_forest", "pieces", Kind.Static),
@@ -397,8 +398,12 @@ public static class VdwModelImporter
         Directory.GetFiles(Folder(e)).Select(p => p.Replace('\\', '/')).Where(p => !p.EndsWith(".meta") && !p.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase));
 
     // A model made of several meshes can have a texture set per mesh, named after it ("mound_Unity_Albedo" for the
-    // mesh "mound"); prefix null = the model's only set.
+    // mesh "mound"); prefix null = the model's own set: "<key>_Unity_*" first (the folder may also hold its extras'
+    // sets, like the lures on a tackle box, which sort ahead of it), else the only set there.
     static string FindTex(Entry e, string suffix, string prefix = null) =>
+        prefix == null ? (HasSet(e, e.Key) ? FindAny(e, suffix, e.Key) : FindAny(e, suffix)) : FindAny(e, suffix, prefix);
+
+    static string FindAny(Entry e, string suffix, string prefix = null) =>
         Textures(e).FirstOrDefault(p =>
         {
             var n = Path.GetFileNameWithoutExtension(p);
@@ -514,6 +519,13 @@ public static class VdwModelImporter
             m.SetColor("_EmissionColor", Color.white * e.Glow);
             m.EnableKeyword("_EMISSION");
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+        }
+        else
+        {   // no glow (any more): clear what a glowing version left on the reused material, or it glows flat white
+            m.SetTexture("_EmissionMap", null);
+            m.SetColor("_EmissionColor", Color.black);
+            m.DisableKeyword("_EMISSION");
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
         }
         if (fade)
         {
