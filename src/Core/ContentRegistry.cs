@@ -81,6 +81,7 @@ namespace ValheimDeepWaters
                 try { FishDishes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish dishes failed: {ex}"); }
                 try { BogWitch.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Bog Witch content failed: {ex}"); }
                 try { Hildir.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Hildir content failed: {ex}"); }
+                try { AnglerFlare.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Angler's Flare failed: {ex}"); }
                 TraderPanel.Ensure();
                 // Fisherman's gear: the remade set (new_gear_rig.blend, painted weights)
                 try { FisherGear.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear failed: {ex}"); }

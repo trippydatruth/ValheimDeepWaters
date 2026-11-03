@@ -345,6 +345,7 @@ namespace ValheimDeepWaters
 
                 ConsumeBait(player, s);
                 FishingFx.HookSet(bobberPos);
+                if (s.Boss != null) AnglerFlare.OnBossHooked(player, s.Fish.Name);   // a carried flare goes up
                 if (s.Swirl != null) { UnityEngine.Object.Destroy(s.Swirl); s.Swirl = null; }
                 s.FightPhase = 0;
                 s.Serpent = SerpentMove.None;

@@ -68,9 +68,10 @@ namespace ValheimDeepWaters
         public const string Legendary = "Legendary";           // +x: legendary fish more likely
         public const string Stealth = "Stealth";               // > 0: fish don't flee from your noise
         public const string NightBite = "NightBite";           // +x: fish bite sooner, at night only (the lantern float)
+        public const string DayBite = "DayBite";               // +x: fish bite sooner, by day only (the Sun Angler's Cap)
 
         public static readonly string[] All =
-            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite };
+            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite, DayBite };
 
         public static string Describe(string stat, float v)
         {
@@ -92,6 +93,7 @@ namespace ValheimDeepWaters
                 Legendary => $"Legendary fish +{pct} more likely",
                 Stealth => "Fish don't flee from your noise",
                 NightBite => $"At night, fish bite {pct} sooner",
+                DayBite => $"By day, fish bite {pct} sooner",
                 _ => $"{stat} {v}"
             };
         }
@@ -148,7 +150,7 @@ namespace ValheimDeepWaters
             // the reel, line and float in your tackle (your own only: the slots are the local player's)
             if (player == Player.m_localPlayer) total += Tackle.GearEffect(player, stat);
             // the lantern float's bite bonus only counts after dark
-            if (stat == BuffStat.BiteSpeed && EnvMan.instance != null && EnvMan.IsNight()) total += Total(player, BuffStat.NightBite, at);
+            if (stat == BuffStat.BiteSpeed && EnvMan.instance != null) total += Total(player, EnvMan.IsNight() ? BuffStat.NightBite : BuffStat.DayBite, at);
             return total;
         }
 

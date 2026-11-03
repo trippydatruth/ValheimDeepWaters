@@ -93,6 +93,9 @@ namespace ValheimDeepWaters
         public float TrailerBoost = 0f;
 
         [Newtonsoft.Json.JsonIgnore] public bool IsLure => Lure || Id.StartsWith("lure_", StringComparison.OrdinalIgnoreCase);
+        /// <summary>After dark: fish bite this much sooner (0.4 = 40%), and with NightGlow the lure sparkles and lights the water.</summary>
+        public float NightBite = 0f;
+        public bool NightGlow = false;
     }
 
     /// <summary>One hook size, from Hooks.json. Suits fish between MinKg and MaxKg.</summary>

@@ -143,6 +143,8 @@ namespace ValheimDeepWaters
                 {
                     s.BaitVisual.StayUnder = s.Weight != null ? 0.6f : lure != null ? 0.3f : 0.05f;   // a lure swims under the surface, below where the line goes in
                     s.BaitVisual.SetOnHook();
+                    // the Sparkler Popper fizzes and lights the water after dark
+                    if (baitDef.NightGlow && EnvMan.instance != null && EnvMan.IsNight()) VanillaFx.AttachToLure(s.BaitVisual.gameObject, baitDef.Id);
                 }
             }
 
@@ -180,7 +182,8 @@ namespace ValheimDeepWaters
         internal static float RollWait(BaitDefinition? bait, Vector3 spot, BaitDefinition? trailer = null)
         {
             float attraction = bait != null && bait.IsLure ? Lures.Attraction(bait, trailer) : Mathf.Max(0.5f, bait?.Attraction ?? 1f);
-            float biteSpeed = 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.BiteSpeed, spot);
+            float biteSpeed = 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.BiteSpeed, spot)
+                              + (bait != null && EnvMan.instance != null && EnvMan.IsNight() ? bait.NightBite : 0f);   // the Sparkler Popper after dark
             return UnityEngine.Random.Range(BiteMinSeconds, BiteMaxSeconds) / attraction / biteSpeed;
         }
 

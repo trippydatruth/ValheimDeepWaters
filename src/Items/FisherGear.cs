@@ -45,6 +45,22 @@ namespace ValheimDeepWaters
                 Armor = 4f, Weight = 5f, Recipe = new[] { ("DeerHide", 3), ("LeatherScraps", 6), ("Resin", 8) } },
         };
 
+        /// <summary>
+        /// The angler caps, made from Hildir's caps (build_caps.py): worn alone, not part of the Oilskins set, each with its
+        /// own fishing bonus. The watch cap also keeps the frost off.
+        /// </summary>
+        private static readonly (Piece piece, Dictionary<string, float> fx, bool frost)[] Caps =
+        {
+            (new Piece { Prefab = "VDW_IceAnglerCap", Clone = "HelmetHat8", Model = "fisher_beanie", Rigid = "Head",
+                Name = "Ice Angler's Watch Cap", Desc = "Hildir's grey fur cap knitted over into a snug watch cap, rolled up above the ears so you hear the ice creak. Warm through a long wait over a hole in the ice.",
+                Armor = 2f, Weight = 0.5f, Recipe = new[] { ("HelmetHat8", 1), ("WolfPelt", 2), ("VDW_Mat_rime", 2) } },
+             new Dictionary<string, float> { [BuffStat.HookWindow] = 0.15f }, true),
+            (new Piece { Prefab = "VDW_SunAnglerCap", Clone = "HelmetHat5", Model = "fisher_bucket", Rigid = "Head",
+                Name = "Sun Angler's Cap", Desc = "Hildir's red cap made over into a wide cotton bucket hat that keeps the sun off your eyes, a fly in its band and a float and a few hooks pinned on for luck.",
+                Armor = 2f, Weight = 0.5f, Recipe = new[] { ("HelmetHat5", 1), ("Feathers", 3), ("VDW_Mat_scales", 3) } },
+             new Dictionary<string, float> { [BuffStat.DayBite] = 0.25f }, false),
+        };
+
         private static StatusEffect? _setEffect;
         private static int _setHash;
 
@@ -67,6 +83,44 @@ namespace ValheimDeepWaters
                 try { RegisterPiece(p, body); }
                 catch (Exception ex) { Plugin.Log.LogError($"Fisherman's gear: '{p.Prefab}' failed: {ex}"); }
             }
+            foreach (var cap in Caps)
+            {
+                try { RegisterCap(cap.piece, cap.fx, cap.frost, body); }
+                catch (Exception ex) { Plugin.Log.LogError($"Angler cap '{cap.piece.Prefab}' failed: {ex}"); }
+            }
+        }
+
+        private static void RegisterCap(Piece p, Dictionary<string, float> fx, bool frost, SkinnedMeshRenderer? body)
+        {
+            if (PrefabManager.Instance.GetPrefab(p.Clone) == null) { Plugin.Log.LogWarning($"Angler cap: no vanilla '{p.Clone}' to make '{p.Name}' from."); return; }
+            var item = new CustomItem(p.Prefab, p.Clone, new ItemConfig
+            {
+                CraftingStation = "piece_workbench",
+                MinStationLevel = 2,
+                Requirements = p.Recipe.Select(r => new RequirementConfig(r.item, r.amount)).ToArray(),
+            });
+            if (item.ItemDrop == null) return;
+            var shared = item.ItemDrop.m_itemData.m_shared;
+            var def = new BuffDefinition { Id = p.Prefab.ToLowerInvariant(), Name = p.Name, Kind = "Gear", Effects = fx };
+            var se = FishingBuffs.MakeGearStatus(def, null);
+            string effects = FishingBuffs.EffectText(def) + (frost ? "\nResistant to frost" : "");
+            se.m_tooltip = effects;
+            shared.m_name = Loc.Token("vdw_" + p.Prefab.ToLowerInvariant(), p.Name);
+            shared.m_description = Loc.Token("vdw_" + p.Prefab.ToLowerInvariant() + "_desc", $"{p.Desc}\n\n{effects}");
+            shared.m_armor = p.Armor; shared.m_armorPerLevel = 1f; shared.m_weight = p.Weight; shared.m_movementModifier = 0f;
+            shared.m_maxQuality = 2;
+            shared.m_setName = ""; shared.m_setSize = 0; shared.m_setStatusEffect = null;
+            shared.m_equipStatusEffect = se;
+            shared.m_damageModifiers = frost
+                ? new List<HitData.DamageModPair> { new HitData.DamageModPair { m_type = HitData.DamageType.Frost, m_modifier = HitData.DamageModifier.Resistant } }
+                : new List<HitData.DamageModPair>();
+            shared.m_helmetHideHair = ItemDrop.ItemData.HelmetHairType.Hidden; shared.m_helmetHideBeard = ItemDrop.ItemData.HelmetHairType.Default;
+            var model = CustomModels.LoadBundleAsset<GameObject>(p.Model);
+            if (model == null) Plugin.Log.LogWarning($"Angler cap: no '{p.Model}' model in the bundles; '{p.Name}' keeps Hildir's cap's look.");
+            else if (body != null) Dress(item.ItemPrefab, model, body, p);
+            ItemManager.Instance.AddItem(item);
+            ItemIcons.ApplyHandMadeOnly(item.ItemPrefab, p.Model);
+            if (se.m_icon == null) se.m_icon = shared.m_icons != null && shared.m_icons.Length > 0 ? shared.m_icons[0] : null;
         }
 
         private static void RegisterPiece(Piece p, SkinnedMeshRenderer? body)
@@ -200,7 +254,7 @@ namespace ValheimDeepWaters
             }
 
             // the hat drawn with the body's (armour) shader, to match the coat
-            if (p.Model == "fisher_hat") parts = parts.Select(x => (x.Item1, x.Item2.Select(m => BodyShaded(m, body)).ToArray())).ToList();
+            if (p.Rigid == "Head") parts =parts.Select(x => (x.Item1, x.Item2.Select(m => BodyShaded(m, body)).ToArray())).ToList();
             AttachSkin(prefab, parts, p);
         }
 

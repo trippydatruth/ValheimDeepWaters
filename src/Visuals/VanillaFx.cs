@@ -28,6 +28,9 @@ namespace ValheimDeepWaters
             public float Life = 1f;         // particle lifetime multiplier (shorter flames)
             public string[] Skip = Array.Empty<string>();   // child objects of the effect left out (e.g. a big glow sprite)
             public bool Vary;               // on a rod's bones: each copy a different size and height (patchy, not an even line)
+            public float LightRange = 0f;   // > 0: the light reaches this far (m), whatever the model's size (a small lure's was tiny)
+            public float LightBoost = 1f;   // the light's brightness multiplier
+            public bool AllOn;              // switch on every part of the copy (a held item's sparks start off until it's equipped)
             public Fx(string prefab, string path, bool light = false, Color? tint = null, float rate = 1f, float size = 1f) { Prefab = prefab; Path = path; Light = light; Tint = tint; Rate = rate; Size = size; }
         }
 
@@ -81,6 +84,19 @@ namespace ValheimDeepWaters
         {
             if (!BoxFx.TryGetValue(boxId, out var list) || root.transform.Find("vdw_fx") != null) return;
             Attach(root.transform, list, Emitter(root.transform), "tacklebox_" + boxId);
+        }
+
+        /// <summary>By bait id: the Sparkler Popper carries vanilla's Sparkler fizz (its whole held effect, with its light).</summary>
+        private static readonly Dictionary<string, Fx[]> LureFx = new()
+        {
+            ["lure_sparkler"] = new[] { new Fx("Sparkler", "attach", true, null, 0.8f, 0.6f) { LightRange = 6f, LightBoost = 2.2f, AllOn = true } },   // lights the water round it
+        };
+
+        /// <summary>A lure's effects on the lure on the line (the bait visual), emitting from its model.</summary>
+        public static void AttachToLure(GameObject root, string baitId)
+        {
+            if (!LureFx.TryGetValue(baitId, out var list) || root.transform.Find("vdw_fx") != null) return;
+            Attach(root.transform, list, Emitter(root.transform), "lure_" + baitId);
         }
 
         private static readonly HashSet<string> Warned = new();
@@ -236,6 +252,10 @@ namespace ValheimDeepWaters
                 var go = UnityEngine.Object.Instantiate(src.gameObject, holder.transform, false);
                 go.name = "vdw_fx_" + src.name;
                 go.SetActive(true);
+                if (fx.AllOn) foreach (var t in go.GetComponentsInChildren<Transform>(true)) t.gameObject.SetActive(true);
+                if (Warned.Add("dump:" + what + "/" + fx.Prefab))
+                    Plugin.Log.LogInfo($"Effects: '{what}' copies {fx.Prefab}/{fx.Path}: " + string.Join(", ", go.GetComponentsInChildren<Transform>(true).Select(t =>
+                        $"{t.name}{(t.gameObject.activeSelf ? "" : " (off)")}{(t.GetComponent<ParticleSystem>() is ParticleSystem ps ? $" [particles, rate {ps.emission.rateOverTimeMultiplier:0.#}/s + {ps.emission.rateOverDistanceMultiplier:0.#}/m]" : "")}{(t.GetComponent<Light>() != null ? " [light]" : "")}")));
                 // ride the model: placed at the emitter, emitting from its surface
                 go.transform.SetParent(emitter.transform, false);
                 go.transform.localPosition = Vector3.zero; go.transform.localRotation = Quaternion.identity; go.transform.localScale = Vector3.one;
@@ -319,7 +339,8 @@ namespace ValheimDeepWaters
                 for (int i = 0; i < lights.Length; i++)
                 {
                     if (!fx.Light || i > 0) { UnityEngine.Object.DestroyImmediate(lights[i]); continue; }
-                    lights[i].range = Mathf.Max(lights[i].range, 2f) * Mathf.Clamp(sizeK, 0.6f, 3f);
+                    lights[i].range = fx.LightRange > 0f ? fx.LightRange : Mathf.Max(lights[i].range, 2f) * Mathf.Clamp(sizeK, 0.6f, 3f);
+                    lights[i].intensity *= fx.LightBoost;
                     lights[i].transform.localPosition = mesh.bounds.center;
                     if (fx.Tint is Color c) lights[i].color = c;
                 }
