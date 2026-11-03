@@ -67,6 +67,22 @@ public static class VdwModelImporter
         new Entry("hook_heavy", "hooks", Kind.Static, 0f),
         new Entry("hook_giant", "hooks", Kind.Static, 0f),
         new Entry("hook_golden", "hooks", Kind.Static, 1f),
+        // the circle, EWG and treble hooks (build_lures hook_<style>, baked per tier VDW_KIND=lure, scaled to the J hooks' sizes)
+        new Entry("hook_circle_small", "hooks", Kind.Static, 0f),
+        new Entry("hook_circle_medium", "hooks", Kind.Static, 0f),
+        new Entry("hook_circle_large", "hooks", Kind.Static, 0f),
+        new Entry("hook_circle_heavy", "hooks", Kind.Static, 0f),
+        new Entry("hook_circle_giant", "hooks", Kind.Static, 0f),
+        new Entry("hook_ewg_small", "hooks", Kind.Static, 0f),
+        new Entry("hook_ewg_medium", "hooks", Kind.Static, 0f),
+        new Entry("hook_ewg_large", "hooks", Kind.Static, 0f),
+        new Entry("hook_ewg_heavy", "hooks", Kind.Static, 0f),
+        new Entry("hook_ewg_giant", "hooks", Kind.Static, 0f),
+        new Entry("hook_treble_small", "hooks", Kind.Static, 0f),
+        new Entry("hook_treble_medium", "hooks", Kind.Static, 0f),
+        new Entry("hook_treble_large", "hooks", Kind.Static, 0f),
+        new Entry("hook_treble_heavy", "hooks", Kind.Static, 0f),
+        new Entry("hook_treble_giant", "hooks", Kind.Static, 0f),
         // Fisherman's gear (armour) - on hold: back in when it's ready (FisherGear.cs; Mesh\Fishermen gear\README.txt).
         new Entry("fisher_chest", "armor", Kind.Rigged),        // the striped shirt (tunic)
         new Entry("fisher_coat", "armor", Kind.Rigged),         // the oilskin coat (cape)

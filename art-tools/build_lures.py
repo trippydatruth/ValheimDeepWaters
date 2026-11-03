@@ -664,6 +664,11 @@ elif LURE == "rune_bait":
     ring((0, 0.039, -0.001), (0, 0, 1), 0.003, 0.0008, "silver")
     treble((0, 0.042, -0.002), 0.026, "silver", axis=(0, 1, 0))
 
+# the hook items' own models (Hooks.json Style), one per kind at the Small hook's size (7 cm); the export scales each
+# size up and the bake gives it its tier's metal
+if LURE == "hook_circle": circle_hook((0, -0.035, 0), 0.07, "steel", axis=(0, 1, 0), side=(0, 0, 1), r=0.003)
+if LURE == "hook_ewg": ewg_hook((0, -0.035, 0), 0.07, "steel", axis=(0, 1, 0), side=(0, 0, 1), r=0.003)
+if LURE == "hook_treble": treble((0, -0.035, 0), 0.065, "steel", axis=(0, 1, 0), r=0.0026)
 # the hook shapes side by side, for a look (not a bait): J, treble, circle, EWG - in a row along Z, each in its own Y-Z plane
 if LURE == "hooks_demo":
     hook((0, -0.03, 0), 0.04, "steel", up=1)
