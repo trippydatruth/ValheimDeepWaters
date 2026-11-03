@@ -618,7 +618,7 @@ namespace ValheimDeepWaters
                     var shared = item.ItemDrop.m_itemData.m_shared;
                     string name = HookDisplayName(hook);
                     shared.m_name = name;
-                    shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\nSuits fish of {hook.MinKg:0.#}–{hook.MaxKg:0.#} kg. " +
+                    shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\n{HookStyles.Describe(hook)}\n\nSuits fish of {hook.MinKg:0.#}–{hook.MaxKg:0.#} kg. " +
                                            (hook.NeverStraightens ? "Never straightens. " : "Smaller fish struggle to take it; bigger ones can straighten it, and much bigger ones won't bite. ") +
                                            (hook.KeepChance > 0f ? $"{hook.KeepChance * 100f:0}% chance to survive a snapped line. " : "") +
                                            (hook.HookBonus > 0f ? $"Hook chance +{hook.HookBonus * 100f:0}%. " : "") +

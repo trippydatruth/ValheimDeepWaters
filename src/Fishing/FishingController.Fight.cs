@@ -209,7 +209,8 @@ namespace ValheimDeepWaters
                         s.Biter = biter;
                         SetBiterFish(s, biter.Fish, biter.WeightKg);
                         s.Phase = FishingPhase.Bite;
-                        s.HookDeadline = Time.time + HookWindowSeconds * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
+                        s.HookDeadline = Time.time + HookWindowSeconds * HookStyles.WindowMult(s.Hook) * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
+                        s.BiteTime = Time.time;
                         FishingFx.Bite(bobberPos);
                         Msg("FISH ON!");
                     }
@@ -228,7 +229,9 @@ namespace ValheimDeepWaters
                     }
                     else if (Time.time > s.HookDeadline)
                     {
-                        LoseBiter(s, bobberPos, "Too slow - the fish let go.");
+                        // a circle hook left alone sets itself as the fish turns away with the bait
+                        if (HookStyles.SetsItself(s.Hook) && s.Boss == null) { TryHook(player, s, bobberPos, selfSet: true); if (_session == null) return; }
+                        else LoseBiter(s, bobberPos, "Too slow - the fish let go.");
                     }
                     break;
 
@@ -306,10 +309,11 @@ namespace ValheimDeepWaters
             }
         }
 
-        private static void TryHook(Player player, FishingSession s, Vector3 bobberPos)
+        private static void TryHook(Player player, FishingSession s, Vector3 bobberPos, bool selfSet = false)
         {
-            RodMotion.Trigger(RodEvent.HookSet);   // the sweep, whether it sticks or not
-            float bonus = s.Bait?.HookBonus ?? 0f;
+            if (!selfSet) RodMotion.Trigger(RodEvent.HookSet);   // the sweep, whether it sticks or not
+            bool early = !selfSet && Time.time - s.BiteTime < HookWindowSeconds * 0.25f;
+            float bonus = (s.Bait?.HookBonus ?? 0f) + HookStyles.ChanceBonus(s.Hook, s, early);
             float chance = Mathf.Clamp01(BaseHookChance + bonus + s.Rod.HookBonus + (s.Hook?.HookBonus ?? 0f) + FishingBuffs.Total(player, BuffStat.HookChance) + SkillHookChance * Skill(player));
             bool tooBig = HookTooBig(s.Hook, s.FishWeight);
             if (tooBig) chance *= HookTooBigChance;
@@ -350,11 +354,13 @@ namespace ValheimDeepWaters
                 s.FightPhase = 0;
                 s.Serpent = SerpentMove.None;
                 s.NextSerpentMove = Time.time + 1.5f;   // a sea serpent starts circling almost at once
-                Msg(s.Boss != null ? $"{BossFish.Phrase(s.Fish.Name)} is hooked!" : "Hook set!");
+                Msg(s.Boss != null ? $"{BossFish.Phrase(s.Fish.Name)} is hooked!" : selfSet ? "The circle hook set itself!" : "Hook set!");
             }
             else
             {
-                LoseBiter(s, bobberPos, tooBig ? "Missed. The hook's too big for a fish that small." : "Missed the hook.");
+                LoseBiter(s, bobberPos, tooBig ? "Missed. The hook's too big for a fish that small."
+                    : selfSet ? "The fish turned away - the circle hook didn't catch."
+                    : early && string.Equals(s.Hook?.Style, HookStyles.Circle, StringComparison.OrdinalIgnoreCase) ? "Struck too soon - the circle hook pulled free." : "Missed the hook.");
             }
         }
 
@@ -477,7 +483,7 @@ namespace ValheimDeepWaters
                 height *= big; duration *= Mathf.Sqrt(big);
                 s.LeapEnd = Time.time + duration;
                 s.HookedFish?.Leap(height, duration);
-                s.Tension += 8f; // head shake at the top of the leap
+                s.Tension += 8f * HookStyles.ShakeMult(s.Hook); // head shake at the top of the leap (a circle or EWG hook holds through it better)
                 FishingFx.FishSplash(FishPos(player, s), 0.5f + s.FishWeight / 20f);
                 AnglerSync.Fx(player, FishFx.Leap, height);   // last, so watchers get the leap (it splashes there too)
             }
@@ -560,7 +566,7 @@ namespace ValheimDeepWaters
 
             // A fish heavier than the hook is rated for can straighten it; the harder it pulls, the likelier.
             float overload = HookOverload(s.Hook, s.FishWeight);
-            float straighten = s.Hook != null && s.Hook.NeverStraightens ? 0f : HookStraightenRate * Mathf.Max(0f, 1f - FishingBuffs.Total(player, BuffStat.HookStraighten));
+            float straighten = s.Hook != null && s.Hook.NeverStraightens ? 0f : HookStraightenRate * HookStyles.StraightenMult(s.Hook) * Mathf.Max(0f, 1f - FishingBuffs.Total(player, BuffStat.HookStraighten));
             if (overload > 0f && UnityEngine.Random.value < straighten * overload * (s.Tension / 50f) * dt)
             {
                 FishingFx.LineSnap(FishPos(player, s));

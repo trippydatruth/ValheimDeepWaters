@@ -120,6 +120,7 @@ namespace ValheimDeepWaters
         public float KeepChance = 0f;     // chance the hook survives a snapped line or broken rod
         public float HookBonus = 0f;      // + chance the strike sets the hook (added like a rod's or bait's)
         public float HookWindow = 0f;     // +x: longer to strike after the bite
+        public string Style = "J";        // J | Circle | EWG | Treble: how it fishes (HookStyles)
         public FindDefinition? Find;      // for non-craftable hooks: where they turn up
     }
 
@@ -217,6 +218,7 @@ namespace ValheimDeepWaters
         public FishingPhase Phase = FishingPhase.Waiting;
 
         public float HookDeadline;
+        public float BiteTime;          // when the fish took the bait (a circle hook struck in the first moment pulls free)
 
         public float FishStamina;
         public float FishStaminaMax;
