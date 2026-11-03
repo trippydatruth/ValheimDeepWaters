@@ -108,6 +108,11 @@ namespace ValheimDeepWaters
                 ItemIcons.Apply(prefab, baseName);
                 return true;
             }
+            if (baseName.StartsWith("leister_") && ApplyFittedToVanilla(prefab, baseName))
+            {
+                ItemIcons.Apply(prefab, baseName);
+                return true;
+            }
             if (ApplyPieceModel(prefab, baseName) || ApplyWholeItemModel(prefab, baseName))
             {
                 ItemIcons.Apply(prefab, baseName);
@@ -173,6 +178,70 @@ namespace ValheimDeepWaters
         /// shrink it, most of all on an item stand (the stand keeps the "attach" copy's scale). Undo them, so the
         /// dish is as big as its model on the ground and on a stand.
         /// </summary>
+        /// <summary>
+        /// A long held item (a leister) put in place of the vanilla weapon it's cloned from: for each vanilla mesh (held,
+        /// dropped, on a stand) ours is laid along the same long axis with its head (the wider end) at the same end, its
+        /// flat side (the fan of tines) along the blade's, and scaled to the same length - so it sits in the hand, and is
+        /// thrown, just as the vanilla spear is. The vanilla renderers are hidden.
+        /// </summary>
+        private static bool ApplyFittedToVanilla(GameObject prefab, string baseName)
+        {
+            if (!TryGetCustom(baseName, out var mesh, out var mat)) return false;
+            var (oa, os, op) = LongAxis(mesh);
+            var ob = mesh.bounds;
+            int fitted = 0;
+            foreach (var vf in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var vm = vf.sharedMesh; var vr = vf.GetComponent<MeshRenderer>();
+                if (vm == null || vr == null || vf.name == "vdw_fitted") continue;
+                var (va, vs, vp) = LongAxis(vm);
+                var vb = vm.bounds;
+                Vector3 Axis(int i, float sign) { var v = Vector3.zero; v[i] = sign; return v; }
+                var q = Quaternion.LookRotation(Axis(va, vs), Axis(vp, 1f)) * Quaternion.Inverse(Quaternion.LookRotation(Axis(oa, os), Axis(op, 1f)));
+                float k = vb.size[va] / Mathf.Max(0.0001f, ob.size[oa]);
+                var go = new GameObject("vdw_fitted");
+                go.transform.SetParent(vf.transform, false);
+                go.transform.localRotation = q;
+                go.transform.localScale = Vector3.one * k;
+                go.transform.localPosition = vb.center - q * (ob.center * k);
+                go.layer = vf.gameObject.layer;
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+                vr.enabled = false;
+                fitted++;
+                Plugin.Log.LogInfo($"Custom models: '{baseName}' fitted to {vf.name} (vanilla long axis {va}{(vs > 0 ? "+" : "-")}, ours {oa}{(os > 0 ? "+" : "-")}, x{k:0.###}).");
+            }
+            return fitted > 0;
+        }
+
+        /// <summary>A mesh's long axis (0/1/2), which end of it the head is at (+1/-1: the wider end, read from the
+        /// vertices when they're readable, else +), and its wider cross axis (the flat side).</summary>
+        private static (int axis, float head, int flat) LongAxis(Mesh m)
+        {
+            var s = m.bounds.size;
+            int a = s.x >= s.y && s.x >= s.z ? 0 : s.y >= s.z ? 1 : 2;
+            int c1 = (a + 1) % 3, c2 = (a + 2) % 3;
+            int flat = s[c1] >= s[c2] ? c1 : c2;
+            float head = 1f;
+            try
+            {
+                if (m.isReadable)
+                {
+                    float lo = m.bounds.min[a], len = s[a];
+                    float wLo = 0f, wHi = 0f;
+                    foreach (var v in m.vertices)
+                    {
+                        float t = (v[a] - lo) / Mathf.Max(0.0001f, len);
+                        float w = Mathf.Abs(v[flat] - m.bounds.center[flat]);
+                        if (t < 0.2f) wLo = Mathf.Max(wLo, w); else if (t > 0.8f) wHi = Mathf.Max(wHi, w);
+                    }
+                    head = wHi >= wLo ? 1f : -1f;
+                }
+            }
+            catch { }
+            return (a, head, flat);
+        }
+
         /// <summary>The longest side (metres) small tackle shows at on the ground: baits and lures 9-20 cm, hooks their own
         /// size (7-19 cm), weights and the leader at least 6 cm. Null: not small tackle.</summary>
         private static (float, float)? GroundSize(string k) =>

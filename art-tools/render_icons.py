@@ -90,7 +90,7 @@ def material(name, m, glow=0.0, fade=False):
         t = img(m["Emission"]); L(t.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = glow * 2.0
     return mat
 
-PLANKS = r"C:\Users\tripp\Desktop\Valheim_DeepWaters\FishingRod\ExportedProject\Assets\3rd party\ADG_Textures\Plank Textures\Planks5\textures\Planks5c_worn.png"
+PLANKS = r"C:\Users\tripp\Desktop\Valheim_DeepWaters\Rip\ExportedProject\Assets\3rd party\ADG_Textures\Plank Textures\Planks5\textures\Planks5c_worn.png"
 def planks_material(dark):
     """Stand-in for Valheim's worn_shipplank (the rip's low-res copy), tiled per metre like the mod does (0.4, 0.7)."""
     mat = bpy.data.materials.new("planks_dark" if dark else "planks"); mat.use_nodes = True; mat.use_backface_culling = True
@@ -164,7 +164,7 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
         return np.concatenate(pts)
     c = world_pts(); centre = (c.min(0) + c.max(0)) / 2
 
-    look = "rod" if key.startswith("rod_") else key   # every rod lies and shows like the wooden one
+    look = "rod" if key.startswith(("rod_", "leister_")) else key   # every rod (and leister) lies and shows like the wooden one
     fr = FRAME.get(look, DEFAULT)
     if key.startswith(("tackle_reel_", "tackle_line_")):   # a reel or spool on its side: three-quarters on, the crank side toward you, from a little above
         R = Matrix.Rotation(math.radians(22), 4, 'X') @ Matrix.Rotation(math.radians(-52), 4, 'Z')

@@ -802,6 +802,52 @@ if LURE == "flare":
              [0.0009] * 7, "thread", seg=6, caps=False)                                                       # round the rocket too
     ring((0, 0, 0.262), (1, 0, 0), 0.0035, 0.0009, "iron", seg=10)                                            # a loop to hang it by
 
+# ---------------------------------------------------------------- the leisters (SpearFishing.cs): the Norse fish spear
+# A shaft (~1.75 m) with a butt ferrule and a grip wrap, a socket, a crossbar, and a fan of tines, each barbed on its inner
+# edge near the tip so a fish can't slide off. Built along +Z, head up, ~2.05 m long; one look per tier.
+LEISTERS = {
+    #            shaft      metal (socket, bar, ferrule)  tines        barbs       wrap        n   spread  tine len
+    "flint":     ("wood",   "leather",    "wood",      "flint",    "leather",  3, 0.034, 0.24),
+    "bronze":    ("wood",   "bronze",     "bronze",    "bronze",   "leather",  3, 0.040, 0.25),
+    "iron":      ("bark",   "iron",       "iron",      "iron",     "leather",  4, 0.050, 0.26),
+    "silver":    ("bark",   "silver",     "silver",    "bone",     "leather",  4, 0.052, 0.27),
+    "blackmetal":("wood",   "blackmetal", "blackmetal","blackmetal","linen",   5, 0.060, 0.28),
+    "carapace":  ("wood",   "blackmetal", "chitin",    "chitin",   "linen",    5, 0.062, 0.29),
+    "flametal":  ("charred","gold",       "gold",      "gold",     "linen",    5, 0.064, 0.30),
+    "frostcore": ("barka",  "silver",     "frostcore", "ice",      "leather",  5, 0.066, 0.31),
+}
+if LURE.startswith("leister_"):
+    shaft, metal, tine, barb, wrap, n, spread, tl = LEISTERS[LURE[len("leister_"):]]
+    Z0, ZS = 0.0, 1.74                                                                                         # shaft from the butt to the socket
+    body([(Z0, 0.012), (0.03, 0.0155), (0.9, 0.0165), (ZS, 0.0155)], shaft, seg=10)
+    body([(-0.035, 0.004), (-0.025, 0.0135), (0.0, 0.0168), (0.045, 0.0168), (0.05, 0.0162)], metal, seg=10)  # butt ferrule
+    band(0.78, 1.12, 0.0178, wrap, seg=10)                                                                      # the grip
+    for z in np.arange(0.79, 1.11, 0.022): band(z, z + 0.006, 0.0186, "thread" if wrap != "thread" else "leather", seg=10)
+    body([(ZS - 0.06, 0.0158), (ZS - 0.05, 0.0185), (ZS + 0.04, 0.0175), (ZS + 0.055, 0.0135)], metal, seg=10)  # socket
+    zb = ZS + 0.06                                                                                               # the crossbar
+    bar = [((t - 0.5) * 2 * spread * 1.15, 0, zb + 0.012 * (1 - (2 * t - 1) ** 2)) for t in np.linspace(0, 1, 9)]
+    tube(bar, [0.0072] * 9, metal, seg=8, squash=0.7)
+    tube([(0, 0, ZS + 0.05), (0, 0, zb + 0.01)], [0.011, 0.009], metal, seg=8)                                  # its stem
+    for k in range(n):
+        u = (k / (n - 1)) * 2 - 1 if n > 1 else 0.0                                                             # -1 .. 1 across the fan
+        x0 = u * spread
+        length = tl * (1.0 - 0.12 * abs(u))                                                                      # the middle tine longest
+        x1 = x0 * 0.82                                                                                            # tines lean in a little
+        path = [(x0 + (x1 - x0) * s + 0.006 * u * math.sin(math.pi * s), 0, zb + length * s) for s in np.linspace(0, 1, 9)]
+        rad = [0.0068 * (1 - s) + 0.0012 * s for s in np.linspace(0, 1, 9)]
+        rad[-1] = 0.0004
+        tube(path, rad, tine, seg=6, squash=0.55)
+        # the barb on the inner edge near the tip, pointing back toward the shaft (the middle tine gets two, one each side)
+        for side in ((-1, 1) if abs(u) < 0.01 else (-1 if u > 0 else 1,)):
+            zt = zb + length * 0.86; xt = x0 + (x1 - x0) * 0.86
+            spike((xt, 0, zt), (xt + side * 0.016, 0, zt - 0.03), 0.0034, barb, seg=4)
+        if LURE == "leister_flint":                                                                              # a knapped flint point lashed on
+            crystal((x1, 0, zb + length - 0.055), (x1, 0, zb + length + 0.02), 0.0075, "flint", sides=5)
+    if wrap in ("leather", "linen"):                                                                             # lashing where the tines meet the bar
+        band(zb - 0.012, zb + 0.022, 0.0135, wrap, seg=10)
+    if LURE == "leister_flametal": blob((0, 0, ZS + 0.02), 0.012, "core", seg=10, rings=6, scale=(1.4, 1.4, 1.0))   # ember set in the socket
+    if LURE == "leister_frostcore": blob((0, 0, ZS + 0.02), 0.012, "frostcore", seg=10, rings=6, scale=(1.4, 1.4, 1.0))
+
 # the hook shapes side by side, for a look (not a bait): J, treble, circle, EWG - in a row along Z, each in its own Y-Z plane
 if LURE == "hooks_demo":
     hook((0, -0.03, 0), 0.04, "steel", up=1)

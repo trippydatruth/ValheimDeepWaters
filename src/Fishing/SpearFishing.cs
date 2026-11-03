@@ -113,6 +113,9 @@ namespace ValheimDeepWaters
                     $"{l.Desc}\n\nSpear fish swimming near the surface: stab them, or throw it. Takes fish up to {l.MaxKg:0} kg; they go straight into your bag.");
                 shared.m_damages.Modify(CombatFactor);
                 shared.m_damagesPerLevel.Modify(CombatFactor);
+                // its own model (build_lures.py leister_<tier>), fitted to where the vanilla spear sits in the hand, and its icon
+                string modelKey = "leister_" + l.Prefab.Substring("VDW_Leister_".Length);
+                CustomModels.ApplyToPrefab(custom.ItemPrefab, modelKey);
                 ItemManager.Instance.AddItem(custom);
                 ByPrefab[l.Prefab] = l;
             }

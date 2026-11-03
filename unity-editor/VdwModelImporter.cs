@@ -239,6 +239,15 @@ public static class VdwModelImporter
         new Entry("buff_ember_float", "buffs", Kind.Static, 1.5f),
         new Entry("buff_rime_float", "buffs", Kind.Static, 1.5f),
         new Entry("buff_angler_flare", "buffs", Kind.Static, 0f),   // the Angler's Flare (build_lures.py flare)
+        // the leisters, spear fishing (build_lures.py leister_<tier>; fitted onto the vanilla spear in the game)
+        new Entry("leister_flint", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_bronze", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_iron", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_silver", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_blackmetal", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_carapace", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_flametal", "leisters", Kind.Static, 1.5f),
+        new Entry("leister_frostcore", "leisters", Kind.Static, 1.5f),
         new Entry("buff_regalia_njord", "buffs", Kind.Static, 1.5f),   // Njord's Regalia crown (roadmap #24, build_cleaning_table.py)
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
