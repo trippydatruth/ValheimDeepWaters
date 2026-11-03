@@ -59,7 +59,7 @@ Goal: a grind that lasts to the end of the game and uses every biome's items. In
 24. **Endgame.** *Done 2026-10-19 (Endgame.cs), boss lure ingredients +1 per landing of their boss up to 3x, Bog Witch price +50% a landing up to 3x; Leviathan 2 of each of 7 boss materials; Allfather's Rod (Leviathan + 3 of each, every boss landed once; its own model, build_rod_model.py allfather); Njord's Regalia crown (the four relics + 2 of each, every boss landed 3 times; its own crown model worn on the head, RelicVisuals.cs). Models and icons for both still to make.* Boss lures cost more each time; the Leviathan needs 2-3 of each boss material; a final rod and the
     "Njord's Regalia" relic set need all seven boss fish several times and every relic.
 25. **Floats.** A float is a buff item (Buffs.json `FloatModel`, optional `FloatLight`): use it and the line wears that
-    float model for its Duration - no slot, one float at a time. *The Lantern Float is the first (2026-10-18).* Planned,
+    float model for its Duration - no slot, one float at a time. *The Lantern Float is the first (2026-10-18).* *Built 2026-11-03, being tested: all eight below, with models and icons (build_lures float_<k>), and FreshBite / ColdBite / DeepBite / AshBite stats; the Eitr and Ember floats light up in their own colours.* Planned,
     one or two per era, each with its own model and a small effect suited to it:
     - **Quill Float** (Meadows: feathers, resin) - light and twitchy, fewer missed nibbles (Nibbles).
     - **Cork-and-Antler Float** (Black Forest: hard antler, fine wood) - sits steady in current (river fish keener).
@@ -86,7 +86,7 @@ Improvements first, new content last, in this order:
 33. **Catch sea serpents.** Vanilla sea serpents near your bait can take it and be hooked, in the Queen Eel's serpent fight. Could become another source of Jörmungandr's Scale.
 34. **Ice fishing.** Fishing through a hole in the ice on frozen water, with fish that only bite there.
 35. **Fly fishing.** A fly rod and flies, cast and worked on the surface for river fish.
-36. **Different hooks.** More kinds of hook with their own uses, alongside the sizes already in.
+36. **Different hooks.** More kinds of hook with their own uses, alongside the sizes already in. *Built 2026-11-03, being tested: circle (sets itself), EWG (holds big fish) and treble (soft baits, on the bottom) hooks, Small to Giant.*
 37. **Terminal tackle and depth.** *Done 1.0.1: Tackle.json weights (split shot, bullet/Texas, egg/Carolina, pyramid) and the leader, Weight and Leader slots, leader length on the tackle panel, fish feeding depths (FeedMinDepth/FeedMaxDepth/Bottom), water dragging light weights.* Sinker weights, leaders and leader length, and a way to choose the depth you fish
     at (float stop or sinker), with fish that hold at different depths.
 38. **Tackle inventory.** *Started 1.0.1: a rod slot (rod takes no inventory space, Alt+F to use it), rod stats on the panel, and the panel can be dragged anywhere.* A Fishing Planet-style tackle screen: the rod in the middle with a slot for each piece

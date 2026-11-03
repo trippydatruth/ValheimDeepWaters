@@ -68,6 +68,9 @@ MATS = {
     "eitr":    ((0.55, 0.30, 1.0), (0.80, 0.62, 1.0), 0.2, 0.0, 1.0, "flat", (0.62, 0.42, 1.0)),    # eitr, glowing violet
     "fat":     ((0.86, 0.55, 0.56), (0.74, 0.42, 0.44), 0.5, 0.0, 0.0, "noise"),                      # the pale marbling in meat
     "snow":    ((0.90, 0.94, 0.98), (0.78, 0.86, 0.95), 0.8, 0.0, 0.0, "noise"),                      # clumps of snow
+    "cork":    ((0.72, 0.55, 0.36), (0.42, 0.28, 0.16), 0.85, 0.0, 0.0, "noise"),                      # a float's cork body
+    "sight":   ((1.0, 0.38, 0.05), (0.95, 0.22, 0.03), 0.3, 0.0, 0.0, "flat"),                        # a float's bright orange sight tip
+    "charred": ((0.07, 0.06, 0.055), (0.30, 0.12, 0.04), 0.75, 0.0, 0.0, "noise"),                    # charred bone
 }
 G = 7    # 7 x 7 tiles (6 x 6 ran out with the designed baits' materials)
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
@@ -669,6 +672,109 @@ elif LURE == "rune_bait":
 if LURE == "hook_circle": circle_hook((0, -0.035, 0), 0.07, "steel", axis=(0, 1, 0), side=(0, 0, 1), r=0.003)
 if LURE == "hook_ewg": ewg_hook((0, -0.035, 0), 0.07, "steel", axis=(0, 1, 0), side=(0, 0, 1), r=0.003)
 if LURE == "hook_treble": treble((0, -0.035, 0), 0.065, "steel", axis=(0, 1, 0), r=0.0026)
+# ---------------------------------------------------------------- the floats (Buffs.json Kind Float, roadmap #25)
+# At item size, 13-16 cm tall, standing up (+Z) with the line's eye at the top (the game ties the line to the top of the
+# model); the export scales the copy that rides on the line up 2.6x, as the Lantern Float's
+def body(zr, mat, seg=16, smooth=True):
+    """A turned float body from (z, radius) pairs up its axis."""
+    tube([(0, 0, z) for z, r in zr], [r for z, r in zr], mat, seg=seg, smooth=smooth)
+def band(z0, z1, r, mat, seg=16):
+    """A painted or whipped band round a body, a hair proud of it."""
+    tube([(0, 0, z0), (0, 0, z1)], [r, r], mat, seg=seg, caps=False)
+
+if LURE == "float_quill":
+    # Quill Float (Meadows): a long quill banded light and dark, its tip dipped in orange, whipped with thread at the foot
+    Q = [(0.0, 0.0014), (0.006, 0.0034), (0.03, 0.0056), (0.07, 0.0064), (0.105, 0.0056), (0.122, 0.0047)]
+    body(Q, "feather", seg=14)
+    for z in np.arange(0.034, 0.112, 0.016): band(z, z + 0.004, float(np.interp(z + 0.002, *zip(*Q))) + 0.0003, "thread", seg=14)   # the quill's dark bands
+    body([(0.122, 0.0047), (0.132, 0.0043), (0.146, 0.0034), (0.153, 0.0022), (0.157, 0.0008)], "sight", seg=14)
+    band(0.119, 0.124, 0.0052, "thread", seg=14)
+    band(0.006, 0.02, 0.0049, "thread", seg=14)
+    ring((0, 0, -0.002), (1, 0, 0), 0.0034, 0.0008, "steel", seg=10)                                          # the eye at its foot
+elif LURE == "float_cork":
+    # Cork-and-Antler Float (Black Forest): a pear of cork on a stem of hard antler, its shoulder painted red, a tine at the foot
+    stem = [(0.0022 * math.sin(math.pi * t), 0, -0.045 + 0.163 * t) for t in np.linspace(0, 1, 14)]
+    tube(stem, [0.0036 - 0.0016 * t for t in np.linspace(0, 1, 14)], "bone", seg=10)
+    blob((0, 0, -0.045), 0.0048, "bone", seg=10, rings=6, scale=(1, 1, 0.6), bump=0.35, seed=2)               # the antler's burr
+    tube([(0.002, 0, -0.03), (0.009, 0, -0.022), (0.015, 0, -0.01)], [0.0022, 0.0014, 0.0004], "bone", seg=8)  # a tine
+    f0 = len(bm.faces)
+    body([(0.008, 0.0034), (0.013, 0.012), (0.024, 0.0195), (0.04, 0.0215), (0.056, 0.018), (0.068, 0.011), (0.075, 0.0042)], "cork", seg=20)
+    repaint(f0, "red", lambda c: c.z > 0.054)
+    band(0.055, 0.057, 0.0188, "black", seg=20)
+    ring((0.0, 0, 0.122), (1, 0, 0), 0.0032, 0.0008, "iron", seg=10)
+elif LURE == "float_bone":
+    # Bone Float (Swamp): a withered bone, knobbed at both ends, with a lump of guck bound on with thread to float it
+    body([(-0.032, 0.0032), (-0.024, 0.0042), (0.0, 0.0036), (0.06, 0.0038), (0.088, 0.0046), (0.096, 0.0034)], "bone", seg=12)
+    for s in (-1, 1):
+        blob((s * 0.0032, 0, 0.096), 0.0052, "bone", seg=10, rings=6, bump=0.15, seed=s)
+        blob((s * 0.003, 0, -0.033), 0.0046, "bone", seg=10, rings=6, bump=0.15, seed=s + 3)
+    blob((0, 0, 0.035), 0.016, "guck", seg=18, rings=12, scale=(1, 1, 1.6), bump=0.18, seed=7)
+    for z in (0.02, 0.035, 0.05):
+        R = 0.016 * math.sqrt(max(0.0, 1 - ((z - 0.035) / 0.0256) ** 2)) + 0.0012
+        ring((0, 0, z), (0, 0, 1), R, 0.0009, "thread", seg=18)
+    ring((0, 0, 0.106), (1, 0, 0), 0.003, 0.0008, "iron", seg=10)
+elif LURE == "float_frost":
+    # Frost Float (Mountain): a long shard of ice crystal bound in silver, a freeze gland set on its point for a sight
+    crystal((0, 0, 0.0), (0, 0, 0.105), 0.013, "ice", sides=6)
+    for k, a in enumerate((0.4, 2.5, 4.4)):
+        crystal((0.006 * math.cos(a), 0.006 * math.sin(a), 0.01), (0.016 * math.cos(a), 0.016 * math.sin(a), 0.036 + 0.006 * k), 0.0032, "ice", sides=5)
+    ring((0, 0, 0.05), (0, 0, 1), 0.0118, 0.0011, "silver", seg=6)
+    ring((0, 0, 0.075), (0, 0, 1), 0.0098, 0.0011, "silver", seg=6)
+    tube([(0, 0, -0.04), (0, 0, -0.008)], [0.0018, 0.0026], "silver", seg=8)
+    blob((0, 0, 0.113), 0.0068, "gland", seg=12, rings=8, scale=(1, 1, 1.3), bump=0.12, seed=4)
+    for k in range(4):
+        a = math.pi / 4 + math.pi / 2 * k
+        tube([(0.004 * math.cos(a), 0.004 * math.sin(a), 0.098), (0.0068 * math.cos(a), 0.0068 * math.sin(a), 0.112)], [0.0009, 0.0006], "silver", seg=5)
+    ring((0, 0, 0.126), (1, 0, 0), 0.003, 0.0008, "silver", seg=10)
+elif LURE == "float_linen":
+    # Linen Bob (Plains): a big round bob of linen stretched over wood, its top half painted red, barley straw bound round
+    # its middle and in a tuft at the top of its peg
+    f0 = len(bm.faces)
+    body([(0.03 - 0.028 * math.cos(a), 0.028 * math.sin(a)) for a in np.linspace(0.06, math.pi - 0.06, 17)], "linen", seg=22)
+    repaint(f0, "red", lambda c: c.z > 0.03)
+    ring((0, 0, 0.03), (0, 0, 1), 0.0285, 0.0019, "belly", seg=26)
+    tube([(0, 0, -0.03), (0, 0, 0.075)], [0.0032, 0.0028], "wood", seg=10)
+    for k in range(9):
+        a = 2 * math.pi * k / 9
+        spike((0, 0, 0.06), (0.011 * math.cos(a), 0.011 * math.sin(a), 0.072 + 0.004 * (k % 2)), 0.0012, "belly", seg=4)
+    ring((0, 0, 0.081), (1, 0, 0), 0.0032, 0.0008, "iron", seg=10)
+elif LURE == "float_eitr":
+    # Eitr Float (Mistlands): a slender float of turned wood in black metal bands, with a glass vial of eitr for its sight
+    body([(-0.002, 0.0022), (0.01, 0.009), (0.035, 0.0135), (0.06, 0.0115), (0.085, 0.0058), (0.092, 0.0044)], "wood", seg=18)
+    band(0.028, 0.032, 0.0137, "blackmetal", seg=18)
+    band(0.064, 0.068, 0.0109, "blackmetal", seg=18)
+    for k, (a, z) in enumerate(((0.5, 0.05), (2.9, 0.042))):                                                  # drips of sap
+        blob((0.0128 * math.cos(a), 0.0128 * math.sin(a), z), 0.0022, "resin", seg=8, rings=5, scale=(1, 1, 1.6))
+    tube([(0, 0, -0.04), (0, 0, 0.0)], [0.0016, 0.0022], "blackmetal", seg=8)
+    body([(0.092, 0.0046), (0.096, 0.0058), (0.113, 0.0058), (0.118, 0.0036)], "eitr", seg=14)
+    band(0.117, 0.122, 0.0042, "blackmetal", seg=14)
+    ring((0, 0, 0.126), (1, 0, 0), 0.003, 0.0008, "blackmetal", seg=10)
+elif LURE == "float_ember":
+    # Ember Float (Ashlands): a glowing ember caged in ribs of charred bone on a charred bone stem, crusted with sulfur
+    body([(-0.04, 0.0018), (-0.01, 0.003), (0.02, 0.0042), (0.024, 0.006)], "charred", seg=10)
+    blob((0, 0, 0.045), 0.0155, "core", seg=16, rings=10, scale=(1, 1, 1.2), bump=0.3, seed=6)
+    for k in range(5):
+        a = 2 * math.pi * k / 5
+        tube([(0.0045 * math.cos(a), 0.0045 * math.sin(a), 0.022), (0.0185 * math.cos(a), 0.0185 * math.sin(a), 0.035),
+              (0.0185 * math.cos(a), 0.0185 * math.sin(a), 0.056), (0.004 * math.cos(a), 0.004 * math.sin(a), 0.07)], [0.0022, 0.0024, 0.0022, 0.0018], "charred", seg=6)
+        blob((0.007 * math.cos(a + 0.6), 0.007 * math.sin(a + 0.6), 0.024), 0.0024, "belly", seg=8, rings=5, bump=0.3, seed=k)   # sulfur crust
+    body([(0.068, 0.0058), (0.078, 0.0042), (0.09, 0.0028), (0.095, 0.0012)], "charred", seg=10)
+    ring((0, 0, 0.1), (1, 0, 0), 0.003, 0.0008, "iron", seg=10)
+elif LURE == "float_rime":
+    # Rime Float (Deep North): a heavy float of frostcore lashed with sinew, snow on its shoulders, an iron keel below
+    f0 = len(bm.faces)
+    body([(0.0, 0.004), (0.008, 0.016), (0.028, 0.025), (0.052, 0.025), (0.072, 0.017), (0.086, 0.007), (0.091, 0.0045)], "frostcore", seg=10, smooth=False)
+    repaint(f0, "snow", lambda c: c.z > 0.068)
+    for z in (0.024, 0.056):
+        ring((0, 0, z), (0, 0, 1), 0.0252, 0.0016, "leather", seg=10)
+    for k in range(4):                                                                                          # the lashing up its sides
+        a = math.pi / 4 + math.pi / 2 * k
+        tube([(0.0255 * math.cos(a), 0.0255 * math.sin(a), 0.024), (0.0262 * math.cos(a), 0.0262 * math.sin(a), 0.04), (0.0255 * math.cos(a), 0.0255 * math.sin(a), 0.056)], [0.0014] * 3, "leather", seg=6)
+    tube([(0, 0, -0.022), (0, 0, 0.002)], [0.0034, 0.0034], "iron", seg=10)
+    body([(-0.042, 0.0), (-0.04, 0.0055), (-0.03, 0.0085), (-0.02, 0.006), (-0.016, 0.003)], "iron", seg=12)
+    tube([(0, 0, 0.088), (0, 0, 0.1)], [0.0025, 0.0022], "iron", seg=8)
+    ring((0, 0, 0.104), (1, 0, 0), 0.0034, 0.0009, "iron", seg=10)
+
 # the hook shapes side by side, for a look (not a bait): J, treble, circle, EWG - in a row along Z, each in its own Y-Z plane
 if LURE == "hooks_demo":
     hook((0, -0.03, 0), 0.04, "steel", up=1)

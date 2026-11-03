@@ -40,6 +40,8 @@ namespace ValheimDeepWaters
         public string FloatModel = "";
         /// <summary>A float with a light in it, lit after dark.</summary>
         public bool FloatLight = false;
+        /// <summary>Its light's colour (#RRGGBB); empty for the Lantern Float's warm candle light.</summary>
+        public string FloatLightColor = "";
 
         public string VanillaFallbackPrefab = "";
         public bool Craftable = true;
@@ -69,9 +71,13 @@ namespace ValheimDeepWaters
         public const string Stealth = "Stealth";               // > 0: fish don't flee from your noise
         public const string NightBite = "NightBite";           // +x: fish bite sooner, at night only (the lantern float)
         public const string DayBite = "DayBite";               // +x: fish bite sooner, by day only (the Sun Angler's Cap)
+        public const string FreshBite = "FreshBite";           // +x: fish bite sooner in rivers and lakes (the Cork-and-Antler Float)
+        public const string ColdBite = "ColdBite";             // +x: fish bite sooner in the Mountain and Deep North (the Frost Float)
+        public const string DeepBite = "DeepBite";             // +x: fish bite sooner in deep water (the Eitr Float)
+        public const string AshBite = "AshBite";               // +x: fish bite sooner in the Ashlands (the Ember Float)
 
         public static readonly string[] All =
-            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite, DayBite };
+            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite, DayBite, FreshBite, ColdBite, DeepBite, AshBite };
 
         public static string Describe(string stat, float v)
         {
@@ -94,6 +100,10 @@ namespace ValheimDeepWaters
                 Stealth => "Fish don't flee from your noise",
                 NightBite => $"At night, fish bite {pct} sooner",
                 DayBite => $"By day, fish bite {pct} sooner",
+                FreshBite => $"In rivers and lakes, fish bite {pct} sooner",
+                ColdBite => $"In the Mountain and Deep North, fish bite {pct} sooner",
+                DeepBite => $"In water {FishingBuffs.DeepWater:0} m or deeper, fish bite {pct} sooner",
+                AshBite => $"In the Ashlands, fish bite {pct} sooner",
                 _ => $"{stat} {v}"
             };
         }
@@ -151,6 +161,24 @@ namespace ValheimDeepWaters
             if (player == Player.m_localPlayer) total += Tackle.GearEffect(player, stat);
             // the lantern float's bite bonus only counts after dark
             if (stat == BuffStat.BiteSpeed && EnvMan.instance != null) total += Total(player, EnvMan.IsNight() ? BuffStat.NightBite : BuffStat.DayBite, at);
+            return total;
+        }
+
+        /// <summary>Water this deep or deeper counts as deep for the Eitr Float.</summary>
+        public const float DeepWater = 10f;
+
+        /// <summary>
+        /// The bite bonus that depends on the water fished: the floats made for rivers and lakes, cold water, deep water
+        /// or the Ashlands. Added to BiteSpeed where the cast's water is known (RollWait).
+        /// </summary>
+        public static float PlaceBite(Player? player, bool ocean, float depth, Heightmap.Biome biome, Vector3? at = null)
+        {
+            if (player == null) return 0f;
+            float total = 0f;
+            if (!ocean) total += Total(player, BuffStat.FreshBite, at);
+            if ((biome & (Heightmap.Biome.Mountain | Heightmap.Biome.DeepNorth)) != 0) total += Total(player, BuffStat.ColdBite, at);
+            if (depth >= DeepWater) total += Total(player, BuffStat.DeepBite, at);
+            if ((biome & Heightmap.Biome.AshLands) != 0) total += Total(player, BuffStat.AshBite, at);
             return total;
         }
 

@@ -249,6 +249,9 @@ LURE_MATS = dict(
     bloodsac=GLASSY((0.30, 0.02, 0.03), rough=0.1, bubbles=0.3),
     serpent=PAINT((0.10, 0.36, 0.32), (0.55, 0.74, 0.55), rough=0.3),
     eitr=GLASSY((0.55, 0.30, 1.0), rough=0.1, bubbles=0.6),
+    cork=SOFT((0.30, 0.19, 0.09), var=0.6, grime=0.2, bump=0.8, dirt=(0.14, 0.08, 0.04)),     # cork, pitted (the base brightens: set dark)
+    sight=PAINT((0.95, 0.28, 0.02), (0.80, 0.60, 0.42), rough=0.3, wear=0.05),               # a float's orange sight tip
+    charred=SOFT((0.03, 0.025, 0.022), var=0.6, grime=0.4, bump=0.7, dirt=_SOOT),            # charred bone
     glow=matte((1.0, 1.0, 1.0), 0.3, (1.0, 1.0, 1.0), 0.0, _D, 0.0),
 )
 _BOSS_GLOW = {"antler": (0.35, 0.9, 1.0), "root": (0.75, 0.95, 0.25), "ooze": (0.45, 1.0, 0.3), "wyrm": (0.4, 0.75, 1.0),
@@ -264,6 +267,14 @@ if KIND == "lure" and TIER not in TIERS:
     T = dict(LURE_MATS, glow=matte(tuple(c * 0.55 for c in _g), 0.3, _g, 0.0, _D, 0.0), glow_keep_albedo=True, marble=(0.42, 0.16, 0.19), glow_slots={"glow": _g, "core": (0.8, 0.3, 0.06), "jewel": (0.55, 0.85, 1.0), "gland": (0.4, 0.7, 0.85),
                                     "eitr": (0.62, 0.42, 1.0), "frostcore": (0.3, 0.6, 0.8), "ooze": (0.2, 0.45, 0.12)})
     if TIER.startswith("hook_"): T["steel"] = _HOOK_METAL.get(TIER.rsplit("_", 1)[-1], T["steel"])
+    # the floats' own looks (roadmap #25; the lures keep theirs): the Eitr Float's vial a deep glowing violet, the Rime
+    # Float's frostcore dark as the real thing with only a faint cold light, the Frost Float's ice blue rather than white
+    if TIER == "float_eitr":
+        T["eitr"] = GLASSY((0.09, 0.01, 0.28), rough=0.1, bubbles=0.5); T["glow_slots"] = dict(T["glow_slots"], eitr=(0.26, 0.03, 0.62))   # (a bright glow washed out to lavender)
+    if TIER == "float_rime":
+        T["frostcore"] = GLASSY((0.015, 0.04, 0.10), rough=0.25, bubbles=0.4, dirt=_RIME, amt=0.05); T["glow_slots"] = dict(T["glow_slots"], frostcore=(0.03, 0.08, 0.16))
+    if TIER == "float_frost":
+        T["ice"] = GLASSY((0.14, 0.38, 0.68), rough=0.06, bubbles=0.6, dirt=_RIME, amt=0.02)
 else:
     T = TIERS[TIER]
 box = bpy.data.objects[PREFIX]; me = box.data

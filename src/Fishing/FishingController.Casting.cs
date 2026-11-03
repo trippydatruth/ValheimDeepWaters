@@ -97,7 +97,7 @@ namespace ValheimDeepWaters
 
             bool quick = DebugQuickBite;
             DebugQuickBite = false;
-            float wait = quick ? 0f : RollWait(baitDef, spot, trailer);
+            float wait = quick ? 0f : RollWait(baitDef, spot, trailer, ocean, depth, biome);
             if (lure != null && !quick) wait *= LureWaitFactor;   // fish come at a lure fast - it's on the move
 
             // Fish/weight/stamina here are placeholders until a fish actually bites (SetBiterFish).
@@ -183,10 +183,11 @@ namespace ValheimDeepWaters
         /// <summary>Boss lures are spent when the fish takes them; other lures, like hooks, only when the line is lost.</summary>
         internal static bool LureUsedOnBite(BaitDefinition lure) => BossFish.ForLure(lure.Id) != null;
 
-        internal static float RollWait(BaitDefinition? bait, Vector3 spot, BaitDefinition? trailer = null)
+        internal static float RollWait(BaitDefinition? bait, Vector3 spot, BaitDefinition? trailer, bool ocean, float depth, Heightmap.Biome biome)
         {
             float attraction = bait != null && bait.IsLure ? Lures.Attraction(bait, trailer) : Mathf.Max(0.5f, bait?.Attraction ?? 1f);
             float biteSpeed = 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.BiteSpeed, spot)
+                              + FishingBuffs.PlaceBite(Player.m_localPlayer, ocean, depth, biome, spot)   // the floats made for a kind of water
                               + (bait != null && EnvMan.instance != null && EnvMan.IsNight() ? bait.NightBite : 0f);   // the Sparkler Popper after dark
             return UnityEngine.Random.Range(BiteMinSeconds, BiteMaxSeconds) / attraction / biteSpeed;
         }

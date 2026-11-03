@@ -42,6 +42,8 @@ LIGHT = {"hook_tiny": (1.6, 3.0, 2.2), "hook_large": (1.3, 2.2, 1.6), "hook_heav
 WARM = {"pickable_worm"}
 FOOD_VIEW = 38                                 # degrees the dishes tip toward the camera
 FOOD_TURN = {"prep_dried": 0}
+_FLOATS = ("quill_float", "cork_float", "bone_float", "frost_float", "linen_bob", "eitr_float", "ember_float", "rime_float")
+UPRIGHT |= {f"buff_{k}" for k in _FLOATS}; GLOW.update({"buff_frost_float": 1.0, "buff_eitr_float": 1.2, "buff_ember_float": 1.2})   # the floats (roadmap #25), standing
 ROLL = {"fish_queen_eel": 62, "fishing_boat": -40, "bait_lure_antler": -35, "bait_lure_wyrm": -35}
 MARGIN = {"rod": 1.0, "fish_queen_eel": 1.0}
 # mirrored across the bottom-left/top-right diagonal after rendering: same diagonal, reel and line on the other side

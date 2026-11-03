@@ -60,6 +60,15 @@ public static class VdwModelImporter
         new Entry("rod_allfather", "rod", Kind.Rigged, 1.5f),   // the endgame rod (roadmap #24, build_rod_model.py allfather)
         new Entry("bobber", "rod", Kind.Static, 1.5f),
         new Entry("float_lantern", "rod", Kind.Static, 1.5f),   // the Lantern Float on the line (a float buff; build_cleaning_table.py float_lantern)
+        // the eight floats on the line (build_lures float_<k>, baked VDW_KIND=lure, exported at 2.6x)
+        new Entry("float_quill", "rod", Kind.Static, 1.5f),
+        new Entry("float_cork", "rod", Kind.Static, 1.5f),
+        new Entry("float_bone", "rod", Kind.Static, 1.5f),
+        new Entry("float_frost", "rod", Kind.Static, 1.5f),
+        new Entry("float_linen", "rod", Kind.Static, 1.5f),
+        new Entry("float_eitr", "rod", Kind.Static, 1.5f),
+        new Entry("float_ember", "rod", Kind.Static, 1.5f),
+        new Entry("float_rime", "rod", Kind.Static, 1.5f),
         new Entry("hook_tiny", "hooks", Kind.Static, 0f),
         new Entry("hook_small", "hooks", Kind.Static, 0f),
         new Entry("hook_medium", "hooks", Kind.Static, 0f),
@@ -220,6 +229,15 @@ public static class VdwModelImporter
         new Entry("buff_chum_seaweed", "buffs", Kind.Static),
         new Entry("buff_spawning_musk", "buffs", Kind.Static, 1.5f),
         new Entry("buff_lantern_float", "buffs", Kind.Static, 1.5f),
+        // the eight floats as items (the same models at 1x)
+        new Entry("buff_quill_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_cork_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_bone_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_frost_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_linen_bob", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_eitr_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_ember_float", "buffs", Kind.Static, 1.5f),
+        new Entry("buff_rime_float", "buffs", Kind.Static, 1.5f),
         new Entry("buff_regalia_njord", "buffs", Kind.Static, 1.5f),   // Njord's Regalia crown (roadmap #24, build_cleaning_table.py)
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)

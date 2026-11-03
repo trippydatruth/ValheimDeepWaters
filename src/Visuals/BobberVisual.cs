@@ -105,7 +105,7 @@ namespace ValheimDeepWaters
                 var mb = ballGo.GetComponent<MeshFilter>().sharedMesh.bounds;
                 lightGo.transform.localPosition = new Vector3(mb.center.x, mb.max.y - mb.size.y * 0.2f, mb.center.z);
                 var light = lightGo.AddComponent<Light>();
-                light.type = LightType.Point; light.range = 6f; light.intensity = 1.4f; light.color = new Color(1f, 0.72f, 0.38f);
+                light.type = LightType.Point; light.range = 6f; light.intensity = 1.4f; light.color = ColorUtility.TryParseHtmlString(floatDef.FloatLightColor, out var lc) ? lc : new Color(1f, 0.72f, 0.38f);
                 light.shadows = LightShadows.None;
                 bobber._light = light;
             }

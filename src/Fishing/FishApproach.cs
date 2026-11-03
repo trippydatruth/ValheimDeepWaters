@@ -237,7 +237,7 @@ namespace ValheimDeepWaters
             if (waiting && biter == null && !AnyActive(s))
             {
                 if (s.NextRespawn <= 0f) s.NextRespawn = now + UnityEngine.Random.Range(4f, 9f);
-                else if (now >= s.NextRespawn) Spawn(s, bobberPos, FishingController.RollWait(s.Bait, s.Spot), false);
+                else if (now >= s.NextRespawn) Spawn(s, bobberPos, FishingController.RollWait(s.Bait, s.Spot, null, s.Ocean, s.Depth, s.Biome), false);
             }
 
             return biter;
