@@ -288,7 +288,7 @@ namespace ValheimDeepWaters
         private static void RegisterItem(BuffDefinition b)
         {
             string basePrefab = ResolvePrefab(b.VanillaFallbackPrefab, DefaultBase(b));
-            // meads and tonics are brewed like vanilla's: a mead base at the cauldron, fermented into the mead
+            // meads and tonics are brewed like vanilla's: a mead base at the Mead Ketill, fermented into the mead
             bool brewed = Is(b, "Mead") && b.Craftable && b.Recipe.Count > 0;
             var item = b.Craftable && b.Recipe.Count > 0 && !brewed
                 ? new CustomItem(PrefabName(b), basePrefab, new ItemConfig
@@ -335,9 +335,13 @@ namespace ValheimDeepWaters
         public const int MeadsPerBase = 6;
 
         /// <summary>
-        /// "Mead base: X" at the cauldron (the mead's own station level), and a fermenter conversion from it to the mead.
+        /// "Mead base: X" at the Mead Ketill, as vanilla's mead bases (the ketill has no upgrades, so level 1), and a fermenter
+        /// conversion from it to the mead.
         /// The mead's recipe makes CraftAmount meads; a base gives MeadsPerBase, so its ingredients are scaled to match.
         /// </summary>
+        /// <summary>The Mead Ketill (Jotunn CraftingStations.MeadKetill), where vanilla makes its mead bases.</summary>
+        private const string MeadKetill = "piece_MeadCauldron";
+
         private static void RegisterMeadBase(BuffDefinition b)
         {
             string meadPrefab = PrefabName(b), basePrefabName = "VDW_MeadBase_" + b.Id;
@@ -347,8 +351,8 @@ namespace ValheimDeepWaters
             var item = new CustomItem(basePrefabName, ResolvePrefab(vanillaBase, "MeadBaseHealthMinor"), new ItemConfig
             {
                 Amount = 1,
-                CraftingStation = b.CraftingStation,
-                MinStationLevel = Math.Max(1, b.StationLevel),
+                CraftingStation = MeadKetill,
+                MinStationLevel = 1,
                 Requirements = b.Recipe.Select(r => new RequirementConfig(r.Item, Math.Max(1, (int)Math.Round(r.Amount * scale)))).ToArray()
             });
             if (item.ItemDrop == null) { Plugin.Log.LogWarning($"Mead base for '{b.Id}' couldn't be made; that mead can't be brewed."); return; }
