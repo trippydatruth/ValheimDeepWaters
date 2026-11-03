@@ -10,9 +10,11 @@
 #        importer's static models want (Hildir's lost tackle boxes)
 import bpy, os
 OUT = os.environ["VDW_OUT"]; KIND = os.environ.get("VDW_KIND", "cooler")
-NAME, RIG = {"tacklebox": ("tacklebox", "TackleBox_Rig"), "gear": ("tackle", "")}.get(KIND, ("cooler", "Cooler_Rig"))   # gear: a reel or line (build_gear.py), static
+NAME, RIG = {"tacklebox": ("tacklebox", "TackleBox_Rig"), "gear": ("tackle", ""), "lure": ("bait", "")}.get(KIND, ("cooler", "Cooler_Rig"))   # gear: a reel or line (build_gear.py), static
 TIERS = os.environ.get("VDW_TIERS", "t1,t2,t3,t4" if KIND == "tacklebox" else "c1,c2,c3").split(",")
-SCALE = float(os.environ.get("VDW_SCALE", "1")); STATIC = os.environ.get("VDW_STATIC") == "1" or KIND == "gear"
+# lures (KIND lure): the axis turn baked into the mesh - the lure on the line uses the bare mesh, and with the turn left
+# on the object the Sparkler Popper stood on end (the other lures' FBXs have it baked in)
+SCALE = float(os.environ.get("VDW_SCALE", "1")); STATIC = os.environ.get("VDW_STATIC") == "1" or KIND in ("gear", "lure")
 ob, rig = bpy.data.objects[NAME], bpy.data.objects.get(RIG)
 me = ob.data
 if "Grain" in me.uv_layers: me.uv_layers.remove(me.uv_layers["Grain"])
@@ -55,7 +57,7 @@ for t in TIERS:
     if STATIC: me.materials[0].name = f"{NAME}_{t}"
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, object_types={'MESH'} if STATIC else {'ARMATURE', 'MESH'},
                              global_scale=1.0, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z', axis_up='Y',
-                             bake_space_transform=False, add_leaf_bones=False, primary_bone_axis='Y', secondary_bone_axis='X',
+                             bake_space_transform=(KIND == "lure" or os.environ.get("VDW_BAKE_SPACE") == "1"), add_leaf_bones=False, primary_bone_axis='Y', secondary_bone_axis='X',
                              mesh_smooth_type='FACE', use_mesh_modifiers=True, bake_anim=False, path_mode='COPY', embed_textures=False)
     print("EXPORTED", path)
 ob.modifiers.remove(tri)

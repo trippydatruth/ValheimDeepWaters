@@ -16,7 +16,7 @@ import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; TIER = os.environ.get("VDW_TIER", "c1")
-KIND = os.environ.get("VDW_KIND", "cooler"); PREFIX = {"tacklebox": "tacklebox", "gear": "tackle"}.get(KIND, "cooler")
+KIND = os.environ.get("VDW_KIND", "cooler"); PREFIX = {"tacklebox": "tacklebox", "gear": "tackle", "lure": "bait", "cap": "fisher"}.get(KIND, "cooler")
 SIZE = int(os.environ.get("VDW_SIZE", "2048")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
 SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
 GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
@@ -119,6 +119,8 @@ _TAN = LN((0.55, 0.45, 0.32), (0.38, 0.29, 0.19), 0.7, _D, 0.15)
 _LINEN = LN((0.78, 0.73, 0.60), (0.60, 0.55, 0.44), 0.75, _D, 0.15)
 _SINEW = LN((0.34, 0.11, 0.075), (0.19, 0.055, 0.037), 0.55, (0.05, 0.03, 0.03), 0.2)
 _MOOSE = LN((0.76, 0.72, 0.64), (0.58, 0.54, 0.47), 0.7, _RIME, 0.35)
+FAB, WOOL, LEATH = r"Fabrics\fabric.blend", r"Fabrics\wool_carpet.blend", r"Fabrics\pu_leather.blend"
+def FB(lib, mat, inputs, worn, wear, dirt, amt): return (lib, mat, inputs, (*worn, 1), 0.0, wear, (*dirt, 1), amt)   # a fabric
 _EITR = matte((0.45, 0.20, 0.85), 0.3, (0.7, 0.5, 1.0), 0.1, (0.2, 0.1, 0.3), 0.1)
 _EMBER = matte((0.9, 0.22, 0.02), 0.5, (1.0, 0.45, 0.1), 0.05, (0.15, 0.03, 0.0), 0.05)
 _ICE = matte((0.55, 0.80, 0.95), 0.1, (0.85, 0.95, 1.0), 0.04, (0.85, 0.93, 1.0), 0.04)
@@ -142,6 +144,37 @@ GEAR_TIERS = {
     "line_sap": dict(flange=WD((0.35, 0.36, 0.30), (0.18, 0.19, 0.15), (0.45, 0.46, 0.40), 0.3, (0.08, 0.07, 0.10), 0.3), metal=_DVERGR,
                      line=LN((0.62, 0.33, 0.06), (0.38, 0.17, 0.02), 0.25, (0.10, 0.08, 0.05), 0.15)),
     "line_morgen": dict(flange=_ASHWOOD, metal=MT((0.08, 0.07, 0.07), 0.6, (0.30, 0.22, 0.18), 0.4, _SOOT, 0.4), line=_SINEW),
+    # the Sparkler Popper (build_popper.py, VDW_KIND=lure): carved finewood painted cream with a red head, worn back to
+    # the wood; steel hooks; linen wraps holding Hildir's sparkler on its back, its tip glowing
+    "lure_sparkler": dict(wood=WD((0.70, 0.55, 0.36), (0.50, 0.36, 0.20), (0.76, 0.62, 0.42), 0.2, _D, 0.2, knots=0.0, scale=40.0),
+                          cream=matte((0.86, 0.80, 0.66), 0.55, (0.62, 0.47, 0.29), 0.35, _D, 0.25),
+                          red=matte((0.62, 0.07, 0.04), 0.5, (0.62, 0.47, 0.29), 0.35, _D, 0.25),
+                          eye=matte((0.02, 0.02, 0.02), 0.1, (0.9, 0.75, 0.2), 0.0, _D, 0.0),
+                          metal=MT((0.55, 0.56, 0.58), 0.3, (0.80, 0.80, 0.82), 0.3, _D, 0.25),
+                          thread=LN((0.80, 0.74, 0.60), (0.62, 0.56, 0.44), 0.8, _D, 0.2),
+                          feather=LN((0.88, 0.85, 0.78), (0.35, 0.28, 0.22), 0.8, _D, 0.1),
+                          spark=matte((0.22, 0.21, 0.20), 0.9, (0.40, 0.38, 0.35), 0.3, _SOOT, 0.4),
+                          glow=_EMBER, glow_slots={"glow": (1.0, 0.75, 0.35)}),
+    # the angler caps (build_caps.py, VDW_KIND=cap; textures fisher_<tier>_Unity_*): the Ice Angler's Watch Cap in deep
+    # blue-grey wool, a leather tag; the Sun Angler's Cap in sun-faded olive cotton, a leather band,
+    # cream stitching and the painted tackle on it
+    "beanie": dict(wool=FB(WOOL, "wool_carpet_04", {"Base Color": (0.05, 0.09, 0.17, 1), "Color": (0.09, 0.14, 0.24, 1), "Scale": float(os.environ.get("VDW_KNIT_SCALE", "3.0")), "Bump Multiplier": 0.6,
+                                                    # the user's tuning in Blender (2026-11-02)
+                                                    "Ambient Occlusion": 0.84, "Roughness": 0.8947, "Intensity": 0.2264, "Subsurface Radius": (1.6, 3.7, 1.5)},
+                      (0.10, 0.15, 0.25), 0.04, (0.045, 0.075, 0.14), 0.0),
+                   leather=FB(LEATH, "pu_leather", {"Base Color": (0.55, 0.32, 0.15, 1), "Roughness": 0.55}, (0.70, 0.48, 0.28), 0.3, _D, 0.1),
+                   metal=MT((0.55, 0.56, 0.58), 0.3, (0.80, 0.80, 0.82), 0.3, _D, 0.25)),
+    "bucket": dict(cloth=FB(FAB, "fabric_02", {"Fabric Color 1": (0.30, 0.32, 0.14, 1), "Fabric Color 2": (0.20, 0.22, 0.09, 1), "Scale": float(os.environ.get("VDW_CLOTH_SCALE", "45.0")), "Thread Count": 2.0, "Bump": 2.0, "Roughness": 0.9},
+                      (0.50, 0.50, 0.30), 0.3, _D, 0.25),
+                   leather=FB(LEATH, "pu_leather", {"Base Color": (0.26, 0.14, 0.06, 1), "Roughness": 0.55}, (0.45, 0.30, 0.17), 0.35, _D, 0.25),
+                   thread=LN((0.80, 0.74, 0.60), (0.62, 0.56, 0.44), 0.8, _D, 0.2),
+                   metal=MT((0.55, 0.56, 0.58), 0.3, (0.80, 0.80, 0.82), 0.3, _D, 0.25),
+                   red=matte((0.70, 0.06, 0.04), 0.35, (0.85, 0.75, 0.70), 0.15, _D, 0.1),
+                   white=matte((0.88, 0.86, 0.80), 0.35, (0.70, 0.65, 0.55), 0.15, _D, 0.15),
+                   lure=matte((0.85, 0.45, 0.08), 0.3, (1.0, 0.85, 0.5), 0.2, _D, 0.1),
+                   black=matte((0.02, 0.02, 0.02), 0.15, (0.2, 0.2, 0.2), 0.05, _D, 0.0),
+                   feather_b=matte((0.04, 0.50, 0.85), 0.8, (0.5, 0.8, 1.0), 0.1, _D, 0.05),
+                   feather_p=matte((0.90, 0.12, 0.50), 0.8, (1.0, 0.6, 0.8), 0.1, _D, 0.05)),
     "line_moose": dict(flange=_FROSTWOOD, metal=MT((0.60, 0.66, 0.74), 0.3, (0.90, 0.93, 0.97), 0.35, _RIME, 0.4), line=_MOOSE),
 }
 PAINT = {"t1": (0.055, 0.14, 0.075), "t2": (0.20, 0.03, 0.02), "t3": (0.62, 0.58, 0.48), "t4": (0.36, 0.22, 0.03),
@@ -154,11 +187,82 @@ if KIND == "tacklebox" and os.environ.get("VDW_PAINT", "1") == "1":     # VDW_PA
         TB_TIERS[k]["paint"] = v
         w = list(TB_TIERS[k]["wood"]); w[5] = PAINT_WEAR[k] * float(os.environ.get("VDW_PAINT_WEAR", "1")); TB_TIERS[k]["wood"] = tuple(w)
 if KIND == "tacklebox": TIERS = TB_TIERS
-elif KIND == "gear": TIERS = GEAR_TIERS
-T = TIERS[TIER]
+elif KIND in ("gear", "lure", "cap"): TIERS = GEAR_TIERS
+# The baits from build_lures.py, restyled (restyle_lure.py, VDW_KIND=lure, tier = the bait id: lure_bone_jig, frost_bait):
+# one Sanctus + Grungit recipe per atlas material, shared by every bait; what glows glows in its own colour, and "glow"
+# in the bait's boss colour (as build_lures.py had it)
+_EYE_D = (0.06, 0.05, 0.04)
+# clean Sanctus bases for what isn't metal (on a bait the worn-metal "matte" kept the metal's scratched wear - meat and
+# paint came out speckled): soft things on rubber, paint on polyethylene, glassy things on resin; Grungit only lightly
+RUBBER, POLY, RESIN = r"Synthetics\rubber.blend", r"Synthetics\polyethylene.blend", r"Synthetics\tr4_resin.blend"
+def SOFT(col, var=0.3, grime=0.15, bump=0.3, dirt=_D, amt=0.1):
+    return (RUBBER, "rubber_04", {"Color": (*col, 1), "Variation": var, "Grime": grime, "Grain": 0.0, "Bump": bump, "Bevel Radius": 0.0, "_no_normal": True},
+            (*[min(1.0, c * 1.15) for c in col], 1), 0.0, 0.03, (*dirt, 1), amt)
+def PAINT(col, damage, rough=0.35, grime=0.25, wear=0.12, amt=0.1):
+    return (POLY, "polyethylene_02", {"Plastic Color": (*col, 1), "Plastic Roughness": rough, "Grimes": grime, "Damage Color": (*damage, 1), "Damage Roughness": 0.6, "Bump": 0.5},
+            (*damage, 1), 0.0, wear, (*_D, 1), amt)
+def GLASSY(col, rough=0.15, bubbles=0.4, grime=0.1, dirt=_D, amt=0.05):
+    return (RESIN, "tr4_resin_04", {"Base Color": (*col, 1), "Roughness": rough, "Surface Bubbles": bubbles, "Grime": grime, "_no_normal": True},
+            (*[min(1.0, c * 1.2) for c in col], 1), 0.0, 0.03, (*dirt, 1), amt)
+LURE_MATS = dict(
+    bone=matte((0.86, 0.80, 0.66), 0.55, (0.96, 0.92, 0.80), 0.25, _D, 0.3),
+    hair=LN((0.42, 0.30, 0.18), (0.25, 0.17, 0.10), 0.85, _D, 0.15),
+    flint=matte((0.30, 0.28, 0.25), 0.3, (0.52, 0.49, 0.44), 0.35, _D, 0.2),
+    bark=WD((0.30, 0.20, 0.12), (0.14, 0.09, 0.05), (0.42, 0.31, 0.20), 0.3, _D, 0.35, scale=20.0, stretch=0.1),
+    moss=SOFT((0.22, 0.38, 0.10), var=0.5, grime=0.3, bump=0.6),
+    ooze=GLASSY((0.30, 0.52, 0.16), rough=0.2, bubbles=0.8, grime=0.25),
+    silver=_SILVER, blackmetal=_BLACK, iron=_IRON, bronze=_BRONZE,
+    steel=MT((0.55, 0.56, 0.58), 0.3, (0.80, 0.80, 0.82), 0.3, _D, 0.25),
+    gold=MT((0.95, 0.75, 0.30), 0.2, (1.0, 0.9, 0.6), 0.3, _D, 0.2, GOLD, "gold_rough"),
+    core=SOFT((0.22, 0.07, 0.03), var=0.5, grime=0.4, bump=0.6, dirt=_SOOT),
+    chitin=PAINT((0.16, 0.08, 0.20), (0.36, 0.20, 0.45), rough=0.2),
+    red=PAINT((0.62, 0.08, 0.05), (0.82, 0.62, 0.44)),
+    feather=LN((0.90, 0.88, 0.82), (0.38, 0.30, 0.24), 0.8, _D, 0.1),
+    wood=WD((0.72, 0.56, 0.36), (0.50, 0.36, 0.20), (0.80, 0.66, 0.46), 0.25, _D, 0.2, knots=0.0, scale=40.0),
+    crank=PAINT((0.025, 0.11, 0.035), (0.30, 0.42, 0.20), wear=0.12),     # a dark green back (the paint base brightens: set dark)
+    belly=PAINT((0.80, 0.60, 0.08), (0.92, 0.84, 0.50), wear=0.08),       # its yellow belly
+    resin=GLASSY((0.85, 0.52, 0.12), rough=0.12, bubbles=0.5),
+    leather=FB(LEATH, "pu_leather", {"Base Color": (0.20, 0.11, 0.05, 1), "Roughness": 0.6}, (0.36, 0.22, 0.12), 0.15, _D, 0.15),
+    guck=SOFT((0.018, 0.038, 0.010), var=0.4, grime=0.3, bump=0.4, dirt=(0.02, 0.04, 0.01)),   # dark guck green (the rubber base brightens: set dark)
+    scales=MT((0.88, 0.91, 0.95), 0.18, (0.98, 0.99, 1.0), 0.1, (0.20, 0.28, 0.40), 0.1),     # bright silver fish skin
+    white=PAINT((0.90, 0.88, 0.82), (0.62, 0.50, 0.34)),
+    linen=_LINEN,
+    rind=SOFT((0.42, 0.24, 0.22), var=0.3, grime=0.2, bump=0.5),      # pork rind (the base brightens: set dark)
+    curly=SOFT((0.72, 0.84, 0.18), var=0.15, grime=0.05, bump=0.2),
+    thread=LN((0.12, 0.10, 0.08), (0.05, 0.04, 0.03), 0.7, _D, 0.1),
+    black=PAINT((0.02, 0.02, 0.02), (0.15, 0.15, 0.15), rough=0.1, wear=0.0),
+    ice=GLASSY((0.60, 0.84, 0.96), rough=0.05, bubbles=0.6, dirt=_RIME, amt=0.1),
+    frostcore=GLASSY((0.06, 0.16, 0.34), rough=0.2, bubbles=0.5, dirt=_RIME, amt=0.1),
+    jewel=GLASSY((0.60, 0.88, 1.0), rough=0.03, bubbles=0.2),
+    blubber=GLASSY((0.62, 0.52, 0.40), rough=0.25, bubbles=0.15, grime=0.15),   # glossy cream fat, oily
+    rim=SOFT((0.62, 0.36, 0.38), var=0.15, grime=0.05, bump=0.2),      # the pale pink ring at the edge of cut fish
+    flesh=SOFT((0.30, 0.09, 0.08), var=0.4, grime=0.2, bump=0.4, dirt=(0.14, 0.02, 0.02), amt=0.2),   # raw fish flesh, bloody pink
+    back=MT((0.16, 0.20, 0.24), 0.3, (0.40, 0.46, 0.52), 0.1, (0.20, 0.28, 0.40), 0.1),               # a baitfish's dark blue-grey back
+    hide=SOFT((0.05, 0.052, 0.058), var=0.9, grime=0.3, bump=0.5, dirt=(0.01, 0.01, 0.012), amt=0.2),   # dark mottled seal hide
+    berry=GLASSY((0.22, 0.008, 0.02), rough=0.22, bubbles=0.2, grime=0.3),   # lingonberries, glossy deep red
+    barka=WD((0.80, 0.78, 0.72), (0.30, 0.23, 0.18), (0.90, 0.88, 0.84), 0.2, _D, 0.2, knots=0.0, scale=20.0),   # birch bark
+    meat=SOFT((0.13, 0.010, 0.020), var=0.5, grime=0.2, bump=0.4, dirt=(0.06, 0.006, 0.01)),   # raw meat, deep crimson (the rubber base brightens: set dark)
+    fat=SOFT((0.36, 0.10, 0.13), var=0.3, grime=0.1, bump=0.3),          # its pale pink marbling
+    snow=SOFT((0.58, 0.64, 0.74), var=0.2, grime=0.0, bump=0.6),        # snow, a soft blue-white (the base brightens: full white flattened it)
+    gland=GLASSY((0.55, 0.85, 1.0), rough=0.1, bubbles=0.5),
+    entrail=SOFT((0.50, 0.22, 0.30), var=0.5, grime=0.3, bump=0.5, dirt=(0.20, 0.06, 0.08)),
+    bloodsac=GLASSY((0.30, 0.02, 0.03), rough=0.1, bubbles=0.3),
+    serpent=PAINT((0.10, 0.36, 0.32), (0.55, 0.74, 0.55), rough=0.3),
+    eitr=GLASSY((0.55, 0.30, 1.0), rough=0.1, bubbles=0.6),
+    glow=matte((1.0, 1.0, 1.0), 0.3, (1.0, 1.0, 1.0), 0.0, _D, 0.0),
+)
+_BOSS_GLOW = {"antler": (0.35, 0.9, 1.0), "root": (0.75, 0.95, 0.25), "ooze": (0.45, 1.0, 0.3), "wyrm": (0.4, 0.75, 1.0),
+              "ember": (1.0, 0.35, 0.12), "chitin": (0.8, 0.35, 1.0), "crown": (0.55, 0.85, 1.0)}
+if KIND == "lure" and TIER not in TIERS:
+    _g = _BOSS_GLOW.get(TIER.replace("lure_", ""), (1.0, 1.0, 1.0))
+    # (glowing parts in the boss's colour, not white)
+    T = dict(LURE_MATS, glow=matte(tuple(c * 0.55 for c in _g), 0.3, _g, 0.0, _D, 0.0), glow_keep_albedo=True, marble=(0.42, 0.16, 0.19), glow_slots={"glow": _g, "core": (0.8, 0.3, 0.06), "jewel": (0.55, 0.85, 1.0), "gland": (0.4, 0.7, 0.85),
+                                    "eitr": (0.62, 0.42, 1.0), "frostcore": (0.3, 0.6, 0.8), "ooze": (0.2, 0.45, 0.12)})
+else:
+    T = TIERS[TIER]
 box = bpy.data.objects[PREFIX]; me = box.data
 # the parts, as the model's materials (a tackle box may have extras: mark, moss, ice, eitr)
-SLOTS = [m.name.split(".")[0] for m in me.materials] if KIND in ("tacklebox", "gear") else ["wood", "grip", "iron", "brass"]
+SLOTS = [m.name.split(".")[0] for m in me.materials] if KIND in ("tacklebox", "gear", "lure", "cap") else ["wood", "grip", "iron", "brass"]
 me.uv_layers.active = me.uv_layers["UVMap"]; me.uv_layers["UVMap"].active_render = True
 co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0); LENGTH = float(hi[0] - lo[0])
 
@@ -238,6 +342,7 @@ def build(slot):
     N, L = m.node_tree.nodes, m.node_tree.links
     grp = next(n for n in N if n.type == 'GROUP' and n.node_tree and any("Bake" in o.name for o in n.outputs))
     inputs = dict(inputs); stretch = inputs.pop("_stretch", None); scale = inputs.pop("_scale", None)   # per-part grain (gear)
+    own_normal = not inputs.pop("_no_normal", False)   # rubber and resin: their normal output carried the faces' flat normals (facets)
     for k, v in inputs.items():
         if k in grp.inputs: grp.inputs[k].default_value = v
     if rel == WOOD:      # the grain along each board's long side: its "Grain" UVs (metres), U along the length
@@ -274,7 +379,46 @@ def build(slot):
     L.new(mtex.outputs["Color"], d.inputs["Grungit Mask"])
     for a in ("Base Color", "Metallic", "Roughness", "Normal"):
         if a in g.outputs and a in d.inputs: L.new(g.outputs[a], d.inputs[a])
-    if "Normal Bake" in grp.outputs and "Normal" in g.inputs: L.new(grp.outputs["Normal Bake"], g.inputs["Normal"])
+    if own_normal and "Normal Bake" in grp.outputs and "Normal" in g.inputs: L.new(grp.outputs["Normal Bake"], g.inputs["Normal"])
+    if slot in ("meat", "blubber", "hide") and T.get("marble"):
+        # fat marbling through raw meat: wavy pale streaks (object space), mixed over the meat's colour - per-face fat
+        # came out blocky on a remeshed slab
+        tc = N.new("ShaderNodeTexCoord")
+        wv = N.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'DIAGONAL'
+        wv.inputs["Scale"].default_value = {"hide": 160.0}.get(slot, 70.0); wv.inputs["Distortion"].default_value = {"hide": 30.0}.get(slot, 10.0); wv.inputs["Detail"].default_value = 3.0
+        wv.inputs["Detail Scale"].default_value = 1.4
+        L.new(tc.outputs["Object"], wv.inputs["Vector"])
+        mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = 0.88; mr.inputs["From Max"].default_value = 0.96
+        L.new(wv.outputs["Fac"], mr.inputs["Value"])
+        mx = N.new("ShaderNodeMix"); mx.data_type = 'RGBA'; L.new(mr.outputs["Result"], mx.inputs["Factor"])
+        L.new(grp.outputs["Color Bake"], mx.inputs[6]); mx.inputs[7].default_value = (*{"meat": T["marble"], "blubber": (0.78, 0.52, 0.48), "hide": (0.16, 0.16, 0.17)}[slot], 1.0)   # meat: fat; blubber: pinkish layers; hide: pale mottling
+        for l in list(g.inputs["Base Color 1"].links): L.remove(l)
+        L.new(mx.outputs[2], g.inputs["Base Color 1"])
+    ribs = box.get("vdw_ribs") if slot == "wool" else None
+    if ribs and "Normal" in g.inputs:
+        # a knitted cap's ribs (build_caps.py): rounded ridges running up round the cap's axis, baked into the normal map
+        # over the wool's own - the angle round the axis worked out per pixel, so no seam where it wraps
+        n_ribs, cx, cy = float(ribs[0]), float(ribs[1]), float(ribs[2])
+        tc = N.new("ShaderNodeTexCoord"); sp = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sp.inputs[0])
+        def rm(op, a, b):
+            n_ = N.new("ShaderNodeMath"); n_.operation = op
+            for i, v in enumerate((a, b)):
+                if isinstance(v, (int, float)): n_.inputs[i].default_value = v
+                else: L.new(v, n_.inputs[i])
+            return n_.outputs[0]
+        ang = rm('ARCTAN2', rm('SUBTRACT', sp.outputs["Y"], cy), rm('SUBTRACT', sp.outputs["X"], cx))
+        # the normal tipped round the cap by each rib's slope (no bump node: its derivatives tilted whole UV islands in
+        # the bake): n + t * a * sin(ribs * angle), t the direction round the cap's axis, on the wool's own normal
+        dx = rm('SUBTRACT', sp.outputs["X"], cx); dy = rm('SUBTRACT', sp.outputs["Y"], cy)
+        ln = rm('MAXIMUM', rm('SQRT', rm('ADD', rm('MULTIPLY', dx, dx), rm('MULTIPLY', dy, dy)), 0.0), 1e-4)
+        cv = N.new("ShaderNodeCombineXYZ"); L.new(rm('DIVIDE', rm('MULTIPLY', dy, -1.0), ln), cv.inputs["X"]); L.new(rm('DIVIDE', dx, ln), cv.inputs["Y"])
+        slope = rm('MULTIPLY', rm('SINE', rm('MULTIPLY', ang, n_ribs), 0.0), float(os.environ.get("VDW_RIB_STRENGTH", "0.45")))
+        tilt = N.new("ShaderNodeVectorMath"); tilt.operation = 'SCALE'; L.new(cv.outputs[0], tilt.inputs[0]); L.new(slope, tilt.inputs["Scale"])
+        geo = N.new("ShaderNodeNewGeometry")
+        add = N.new("ShaderNodeVectorMath"); add.operation = 'ADD'
+        L.new(grp.outputs["Normal Bake"] if "Normal Bake" in grp.outputs else geo.outputs["Normal"], add.inputs[0]); L.new(tilt.outputs[0], add.inputs[1])
+        nrm = N.new("ShaderNodeVectorMath"); nrm.operation = 'NORMALIZE'; L.new(add.outputs[0], nrm.inputs[0])
+        L.new(nrm.outputs[0], g.inputs["Normal"])
     d.inputs["Dirt Base Color"].default_value = dirt_col; d.inputs["Overall Amount"].default_value = min(1.0, dirt + float(os.environ.get("VDW_DIRT_ADD", "0.15"))); d.inputs["AO"].default_value = 0.5
     if slot == "wood" and T.get("char"): char_wood(N, L, grp, g, T["char"])
     bs = N.new("ShaderNodeBsdfPrincipled"); bs.name = "vdw_bsdf"
@@ -452,7 +596,8 @@ for slot, glow in T.get("glow_slots", {}).items():
     set_target(gimg); bpy.ops.object.bake(type='EMIT')
     ga = np.empty(SIZE * SIZE * 4, np.float32); gimg.pixels.foreach_get(ga); gpx = ga.reshape(SIZE, SIZE, 4)[..., 0] > 0.5
     if emit is None: emit = np.zeros_like(col); emit[..., 3] = 1.0
-    emit[gpx, :3] = glow; col[gpx, :3] = np.array(glow) * 0.6
+    emit[gpx, :3] = glow
+    if not T.get("glow_keep_albedo"): col[gpx, :3] = np.array(glow) * 0.6   # (baits keep their texture under the glow: a flat colour lost the gland's detail)
     for m in mats:
         N, L = m.node_tree.nodes, m.node_tree.links
         L.new(N["vdw_bsdf"].outputs["BSDF"], next(n for n in N if n.type == 'OUTPUT_MATERIAL' and n.is_active_output).inputs["Surface"])

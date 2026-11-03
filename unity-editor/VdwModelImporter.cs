@@ -40,6 +40,7 @@ public static class VdwModelImporter
 
     // Bait is shown bigger than its Blender size so it reads in game (on the ground, on the hook, in the world).
     const float BaitScale = 2f;
+    const float DesignedBaitScale = 3.5f;   // the Frost, Abyssal, Northern and Cut baits: at 2 they were specks on the hook
     const float LureScale = 3.5f;   // lures and trailers: at bait size they were barely visible dropped or on the line
 
     static readonly Entry[] Entries =
@@ -74,6 +75,8 @@ public static class VdwModelImporter
         new Entry("fisher_legs", "armor", Kind.Rigged),
         new Entry("fisher_boot_rims", "armor", Kind.Rigged),    // the boots' rims, worn with the overalls painted on (build_boot_rims.py)
         new Entry("fisher_hat", "armor", Kind.Rigged),
+        new Entry("fisher_beanie", "armor", Kind.Rigged),       // the Ice Angler's Watch Cap (build_caps.py beanie, export_cap.py)
+        new Entry("fisher_bucket", "armor", Kind.Rigged),       // the Sun Angler's Cap (build_caps.py bucket)
         // Boss trophies: the material each great fish drops (build_bossmats.py).
         new Entry("bossmat_eikthyr_elver", "bossmats", Kind.Static, 1.5f),
         new Entry("bossmat_elder_bass", "bossmats", Kind.Static, 1.5f),
@@ -151,14 +154,16 @@ public static class VdwModelImporter
         new Entry("bait_lure_bone_jig", "bait", Kind.Static) { Scale = LureScale },
         new Entry("bait_lure_silver_swimbait", "bait", Kind.Static) { Scale = LureScale },
         new Entry("bait_lure_linen_popper", "bait", Kind.Static) { Scale = LureScale },
+        new Entry("bait_lure_sparkler", "bait", Kind.Static, 1.5f) { Scale = LureScale },   // Hildir's sparkler on a popper (build_popper.py, baked VDW_KIND=lure); its tip glows
         // the Deep North (build_lures.py)
         new Entry("bait_lure_crown", "bait", Kind.Static, 1.5f) { Scale = LureScale },
         new Entry("bait_lure_ice_spoon", "bait", Kind.Static, 0.6f) { Scale = LureScale },
         new Entry("bait_lure_frostcore_jig", "bait", Kind.Static, 1.2f) { Scale = LureScale },
-        new Entry("bait_northern_bait", "bait", Kind.Static) { Scale = BaitScale },
+        new Entry("bait_northern_bait", "bait", Kind.Static) { Scale = DesignedBaitScale },
+        new Entry("bait_cut_bait", "bait", Kind.Static) { Scale = DesignedBaitScale * 1.3f },   // a slice of baitfish (build_cut_bait.py, baked VDW_KIND=lure)
         // designed baits (roadmap #7): build_lures.py frost_bait / deep_bait / rune_bait
-        new Entry("bait_frost_bait", "bait", Kind.Static, 1f) { Scale = BaitScale },
-        new Entry("bait_deep_bait", "bait", Kind.Static, 1f) { Scale = BaitScale },
+        new Entry("bait_frost_bait", "bait", Kind.Static, 1f) { Scale = DesignedBaitScale },
+        new Entry("bait_deep_bait", "bait", Kind.Static, 1f) { Scale = DesignedBaitScale },
         new Entry("bait_rune_bait", "bait", Kind.Static, 1.5f) { Scale = LureScale },
         new Entry("bait_trailer_curly_tail", "bait", Kind.Static) { Scale = LureScale },
         new Entry("bait_trailer_boar_rind", "bait", Kind.Static) { Scale = LureScale },

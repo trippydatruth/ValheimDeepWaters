@@ -21,7 +21,9 @@ GLOW.update({"food_ink_noodles": 0.3, "food_ember_fillet": 1.0, "food_rime_salmo
 UPRIGHT |= {"piece_cleaning_table", "piece_cleaning_ext1", "piece_cleaning_ext2", "piece_cleaning_ext3"}; LOOK_DOWN.update({"piece_cleaning_table": 32})
 GLOW.update({"tacklebox_mistlands": 1.0}); UPRIGHT |= {"tacklebox_swamp", "tacklebox_mountain", "tacklebox_mistlands"}; LOOK_DOWN.update({"tacklebox_swamp": 25, "tacklebox_mountain": 25, "tacklebox_mistlands": 25})   # Hildir's tackle boxes
 GLOW.update({"buff_spawning_musk": 1.0, "buff_lantern_float": 1.2, "float_lantern": 1.2}); UPRIGHT |= {"buff_spawning_musk", "buff_chum_seaweed", "buff_lantern_float", "float_lantern"} | {f"piece_feast_{f}" for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}; LOOK_DOWN.update({f"piece_feast_{f}": 42 for f in ("forest", "mountain", "ocean", "plains", "mistlands", "ashlands", "deepnorth")}); LOOK_DOWN.update({"buff_chum_seaweed": 38, "buff_spawning_musk": 12})   # the Bog Witch brews
-GLOW.update({"bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
+GLOW.update({"bait_lure_sparkler": 1.5, "bait_frost_bait": 1.0, "bait_deep_bait": 1.0, "bait_rune_bait": 1.3})   # designed baits
+UPRIGHT |= {"bait_cut_bait"}; LOOK_DOWN.update({"bait_cut_bait": 20})   # the chunk standing, a cut face toward you
+UPRIGHT |= {"bait_frost_bait"}; LOOK_DOWN.update({"bait_frost_bait": 28})   # the frozen slab: upright, so its icicles hang down
 UPRIGHT |= {"piece_plaque"}; LOOK_DOWN.update({"piece_plaque": 0})   # the Gold Trophy Plaque board
 UPRIGHT |= {"buff_regalia_njord"}; LOOK_DOWN.update({"buff_regalia_njord": 28})   # Njord's Regalia crown
 UPRIGHT |= {f"tacklebox_t{i}" for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 25 for i in range(1, 5)}); GLOW.update({"tacklebox_t4": 1.2})   # the tackle boxes
@@ -29,7 +31,7 @@ UPRIGHT |= {f"cooler_c{i}" for i in range(1, 4)}; LOOK_DOWN.update({f"cooler_c{i
 # shown with the lid open (degrees, the "lid" bone): the wooden tackle boxes, their tray of tackle showing, so they don't
 # read as the coolers; seen from higher to look into the tray
 OPEN_LID = {f"tacklebox_t{i}": 100 for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 38 for i in range(1, 5)})
-UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat"}; LOOK_DOWN.update({"buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
+UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher_chest", "fisher_coat", "fisher_legs", "fisher_hat", "fisher_beanie", "fisher_bucket"}; LOOK_DOWN.update({"fisher_beanie": 15, "fisher_bucket": 18, "buff_rune_njord": 10, "buff_chum_blubber": 38, "buff_angler_north": 12})
 # how each model lies in Blender after import: (long axis pointing at the head/tip, its "up")
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,
          "fish_halibut": ((0, -1, 0), (1, 0, 0))}   # lies flat (eyed side +Z): shown from above
