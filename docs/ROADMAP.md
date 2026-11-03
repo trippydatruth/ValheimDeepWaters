@@ -115,3 +115,7 @@ already made (more stylized, better looking). 4. #25 the floats. 5. #27 the cust
     tint them (new icons); model a real straw hat instead?
   - **Angler's Flare** (Basic Fireworks, fish oil): hooking a boss fish while carrying one fires it - a firework over
     you, a map ping for everyone and a shout naming the boss. Open: automatic, or fired by hand.
+
+## Spear fishing (2026-11-03)
+
+41. **Spear fishing.** Stab or throw a spear at fish near the surface. *Built 2026-11-03, being tested: SpearFishing.cs, eight leisters (Flint to Frostcore) on vanilla spear looks; any vanilla spear works on small fish. Leister models and icons in 2026-11-03 (build_lures.py leister_<tier>, fitted onto the vanilla spear). The thrown spear wears the leister model too.*

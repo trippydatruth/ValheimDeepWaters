@@ -68,7 +68,10 @@ namespace ValheimDeepWaters
         /// <summary>Any other spear (another mod's): a small fish now and then.</summary>
         private const float PlainSpearMaxKg = 2.5f, PlainSpearChance = 0.25f;
         /// <summary>How far under the surface a fish can be and still be speared, m.</summary>
-        private const float ShallowDepth = 2.5f;
+        private const float ShallowDepth = 5f;
+        /// <summary>A stab reaches this far past the spear's own attack range (it's thrust down into the water), m; a thrown
+        /// spear takes a fish within this of where it comes down, m.</summary>
+        private const float StabReach = 2f, ThrowReach = 1.5f;
         /// <summary>A stab reaches this far past the spear's own attack range (it's thrust down into the water), m; a thrown
         private const float WeightFactor = 0.85f;
         /// <summary>Leisters hit creatures this hard compared with the spear they're made from: they're for fish.</summary>
@@ -157,7 +160,7 @@ namespace ValheimDeepWaters
                 Vector3 flat = new Vector3(p.x - at.x, 0f, p.z - at.z);
                 float d = flat.magnitude;
                 if (d > bestD) continue;
-                if (facing is Vector3 dir && d > 0.4f && Vector3.Angle(new Vector3(dir.x, 0f, dir.z), flat) > 50f) continue;
+                if (facing is Vector3 dir && d > 0.4f && Vector3.Angle(new Vector3(dir.x, 0f, dir.z), flat) > 60f) continue;
                 float surface = Floating.GetLiquidLevel(p);
                 if (surface < -1000f || surface - p.y > ShallowDepth || p.y - at.y > 1.5f) continue;   // too deep, or not in the water
                 best = f; bestD = d;
@@ -245,7 +248,7 @@ namespace ValheimDeepWaters
                     if (!(Character(__instance) is Player player) || player != Player.m_localPlayer) return;
                     var weapon = Weapon(__instance);
                     if (!IsSpear(weapon)) return;
-                    var fish = FishNear(player.transform.position, __instance.m_attackRange + 0.8f, player.transform.forward);
+                    var fish = FishNear(player.transform.position, __instance.m_attackRange + StabReach, player.transform.forward);
                     if (fish != null) TrySpear(player, fish, weapon, thrown: false);
                 }
                 catch (Exception ex) { Plugin.Log.LogWarning($"Spear fishing (stab): {ex.Message}"); }
@@ -287,7 +290,7 @@ namespace ValheimDeepWaters
             {
                 if (_done || Weapon == null || Player.m_localPlayer == null) return;
                 _done = true;
-                var fish = FishNear(p, 0.9f);
+                var fish = FishNear(p, ThrowReach);
                 if (fish != null) TrySpear(Player.m_localPlayer, fish, Weapon, thrown: true);
                 Destroy(this);
             }

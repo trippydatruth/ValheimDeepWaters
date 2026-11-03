@@ -380,7 +380,7 @@ bank (secondary attack) - the spear has to come down right on it. Every vanilla 
 | Flametal Leister | Black Forge 2 | 80 kg |
 | Frostcore Leister | Black Forge 3 | 100 kg |
 
-A heavier fish tears free. Fish deeper than about 2.5 m, deep-ocean fish, legendaries and boss fish need a rod. A speared
+A heavier fish tears free. Fish deeper than about 5 m, deep-ocean fish, legendaries and boss fish need a rod. A speared
 fish goes straight into your bag (at your feet if it's full) and counts like any catch (catch log, records, mastery, rank,
 Fishing skill); it trains the Spears skill too, which makes you
 surer, but it comes out a little lighter than one landed on a rod. Leisters hit creatures more weakly than their spears.
