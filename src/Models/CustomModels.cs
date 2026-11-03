@@ -138,10 +138,17 @@ namespace ValheimDeepWaters
 
             if (baseName.StartsWith("food_") || baseName.StartsWith("prep_"))
                 ShowTrueSize(prefab, baseName, unbaked == Vector3.zero ? Vector3.one : unbaked);
-            // lures and the designed baits dropped on the ground: the vanilla bait they're cloned from shrank its model child to
-            // a speck; shown at half their bundle size (which is made for the line)
-            if (GroundBaits(baseName))
-                ShowTrueSize(prefab, baseName, (unbaked == Vector3.zero ? Vector3.one : unbaked) * 0.5f);
+            // small tackle dropped on the ground (baits, lures, trailers, hooks, weights): the vanilla items it's cloned from
+            // (the fishing bait, nails) show a little bunch of shrunken copies. Show one copy, its longest side kept between
+            // a minimum you can see and a maximum, so the tiny ones (a curly tail, a split shot) don't vanish.
+            if (GroundSize(baseName) is (float min, float max))
+            {
+                OnlyOneModel(prefab);
+                var u = unbaked == Vector3.zero ? Vector3.one : unbaked;
+                var b = Vector3.Scale(mesh.bounds.size, u);
+                float longest = Mathf.Max(b.x, Mathf.Max(b.y, b.z));
+                if (longest > 0.0001f) ShowTrueSize(prefab, baseName, u * (Mathf.Clamp(longest, min, max) / longest));
+            }
 
             // Vanilla fish (and other creatures) draw a rigged, animated mesh. A custom model is static, so show it
             // in place of each skinned renderer instead.
@@ -166,8 +173,36 @@ namespace ValheimDeepWaters
         /// shrink it, most of all on an item stand (the stand keeps the "attach" copy's scale). Undo them, so the
         /// dish is as big as its model on the ground and on a stand.
         /// </summary>
-        private static bool GroundBaits(string k) => k.StartsWith("bait_lure_") || k.StartsWith("bait_trailer_") ||
-            k == "bait_frost_bait" || k == "bait_deep_bait" || k == "bait_northern_bait" || k == "bait_rune_bait" || k == "bait_cut_bait";
+        /// <summary>The longest side (metres) small tackle shows at on the ground: baits and lures 9-20 cm, hooks their own
+        /// size (7-19 cm), weights and the leader at least 6 cm. Null: not small tackle.</summary>
+        private static (float, float)? GroundSize(string k) =>
+            k.StartsWith("bait_") ? (0.09f, 0.2f) : k.StartsWith("hook_") ? (0.07f, 0.2f) :
+            k.StartsWith("tackle_") && !k.StartsWith("tackle_reel_") && !k.StartsWith("tackle_line_") ? (0.06f, 0.2f) : ((float, float)?)null;
+
+        /// <summary>Of a cloned item's bunch of model copies ("model", "model (1)", ...) keep the first, centred; hide the rest.
+        /// The item-stand copy under "attach" gets the same.</summary>
+        private static void OnlyOneModel(GameObject prefab)
+        {
+            var attach = prefab.transform.Find("attach");
+            // the copies sit side by side under one parent (the root, or a holder): group the models by parent, keep one each
+            var groups = new System.Collections.Generic.Dictionary<Transform, System.Collections.Generic.List<Transform>>();
+            foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var t = mf.transform;
+                if (t == prefab.transform || t.parent == null) continue;
+                if (!groups.TryGetValue(t.parent, out var list)) groups[t.parent] = list = new System.Collections.Generic.List<Transform>();
+                list.Add(t);
+            }
+            foreach (var kv in groups)
+            {
+                var copies = kv.Value;
+                if (copies.Count < 2) continue;
+                bool onStand = attach != null && (kv.Key == attach || kv.Key.IsChildOf(attach));
+                copies[0].localPosition = new Vector3(0f, copies[0].localPosition.y, 0f);
+                for (int i = 1; i < copies.Count; i++) copies[i].gameObject.SetActive(false);
+                Plugin.Log.LogDebug($"Custom models: '{prefab.name}' shows one of {copies.Count} copies{(onStand ? " (on a stand)" : "")}.");
+            }
+        }
 
         private static void ShowTrueSize(GameObject prefab, string baseName, Vector3 want)
         {

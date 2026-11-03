@@ -57,6 +57,19 @@ namespace ValheimDeepWaters
         }
 
         private bool Travelling => Time.time - _castStart < _castDuration;
+
+        /// <summary>While the cast is in the air: where the float is on its arc (the bait and hook ride with it); else null.</summary>
+        public Vector3? InFlight
+        {
+            get
+            {
+                if (!Travelling) return null;
+                float t = Mathf.Clamp01((Time.time - _castStart) / _castDuration);
+                Vector3 arc = Vector3.Lerp(_castFrom, _castTo, t);
+                arc.y += 4f * _arcHeight * t * (1f - t);
+                return arc;
+            }
+        }
         private bool _landed; // splash once when the cast hits the water
 
         /// <summary>A quick tug under and back up, like vanilla's nibble force on the float.</summary>

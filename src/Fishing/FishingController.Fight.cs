@@ -674,7 +674,10 @@ namespace ValheimDeepWaters
 
             if (s.BaitVisual != null)
             {
-                s.BaitVisual.Position = pos + Vector3.down * 0.15f;
+                // in the air with the float until the cast lands (it was in the water the moment the cast was let go)
+                var air = s.Bobber?.InFlight;
+                s.BaitVisual.Flying = air != null;
+                s.BaitVisual.Position = (air ?? pos) + Vector3.down * 0.15f;
                 s.BaitVisual.Intensity = 0.1f;
             }
         }
