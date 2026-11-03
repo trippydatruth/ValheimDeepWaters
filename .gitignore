@@ -21,3 +21,7 @@ docs/CUSTOM_REWARDS.md
 docs/icon-concepts.html
 docs/rod-concepts.html
 docs/icons/
+
+# fal.ai: the API key (never committed) and the client library installed for Blender's Python
+.env
+art-tools/_vendor/
