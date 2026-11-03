@@ -31,7 +31,7 @@ namespace ValheimDeepWaters
         private static readonly float[] CoastalProbeFractions = { 0.3f, 0.6f, 1.0f };
         private const float CoastalProbeDistance = 70f;   // how far out past the landing spot to look for open ocean
         private const float DeepOceanDepth = 15f;         // ocean at least this deep counts as deep ocean
-        private const float MinChargeCastFraction = 0.3f; // an uncharged tap casts this fraction of Cast Distance
+        private const float MinCastDistance = 3f;          // an uncharged tap drops the line just in front of you (metres; just past RetrieveEndDistance and the 2 m a fish lands at); charging reaches the full Cast Distance
         private const float CastReleaseDelay = 0.04f;     // lure leaves on the rod's forward whip, not on release
         internal const float TrophyThreshold = 0.85f;      // this far up the species' weight range = trophy
         private const float MaxChargeSeconds = 1.2f;       // hold this long for a full-power cast

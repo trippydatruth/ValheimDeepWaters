@@ -54,7 +54,7 @@ namespace ValheimDeepWaters
             // ...and a weight carries further still
             float weightCast = 1f + (RigWeight(player, lure)?.CastBonus ?? 0f);
             float fullCast = Mathf.Min(rod.CastDistance * (lure != null ? LureCastFactor : 1f) * weightCast, rod.LineCapacity);
-            float maxDist = fullCast * Mathf.Lerp(MinChargeCastFraction, 1f, Mathf.Clamp01(chargeFraction));
+            float maxDist = Mathf.Lerp(Mathf.Min(MinCastDistance, fullCast), fullCast, Mathf.Clamp01(chargeFraction));   // a tap: just in front of you (to spot fish, or to test)
 
             if (!TryFindWater(player, maxDist, out var dir, out var spot, out var distance, out var depth))
             {
@@ -141,7 +141,11 @@ namespace ValheimDeepWaters
                 s.BaitVisual = HookedFishVisual.Create(baitPrefab, ContentRegistry.BaitModelKey(baitDef.Id));   // the bluegill has no bait model of its own: its fish model
                 if (s.BaitVisual != null)
                 {
-                    s.BaitVisual.StayUnder = s.Weight != null ? 0.6f : lure != null ? 0.3f : 0.05f;   // a lure swims under the surface, below where the line goes in
+                    // a lure swims under the surface, below where the line goes in - but a popper (topwater) rides on top, its back
+                    // just out of the water, level (HookedFishVisual.OnSurface): the Sparkler Popper's fizz was hidden under the
+                    // water, and lifted out by a negative StayUnder it stood on end, facing down as the lure sank
+                    s.BaitVisual.StayUnder = s.Weight != null ? 0.6f : lure != null ? 0.3f : 0.05f;
+                    s.BaitVisual.OnSurface = s.Weight == null && lure != null && Lures.KindOf(lure) == LureKind.Topwater;
                     s.BaitVisual.SetOnHook();
                     // the Sparkler Popper fizzes and lights the water after dark
                     if (baitDef.NightGlow && EnvMan.instance != null && EnvMan.IsNight()) VanillaFx.AttachToLure(s.BaitVisual.gameObject, baitDef.Id);

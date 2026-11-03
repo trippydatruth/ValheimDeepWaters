@@ -16,6 +16,8 @@ namespace ValheimDeepWaters
 
         /// <summary>Metres the top of the model is kept below the actual wave surface. Negative = no limit.</summary>
         public float StayUnder = -1f;
+        /// <summary>A topwater lure (a popper): floats at the waterline, level, instead of swimming under it.</summary>
+        public bool OnSurface;
 
         private float _topOffset;
         private FishModelAnimator? _anim; // set when the model is animated
@@ -160,6 +162,7 @@ namespace ValheimDeepWaters
 
             // Facing comes from the smoothed motion only - including the bob would flip it up/down constantly.
             Vector3 moveDir = _renderPos - oldRenderPos;
+            if (OnSurface) moveDir.y = 0f;   // a popper turns only to face where it's pulled, never nose-down as the lure sinks
             if (moveDir.sqrMagnitude > 0.0000001f)
             {
                 float turnRate = Mathf.Lerp(2.5f, 8f, Mathf.Clamp01(Intensity));
@@ -203,6 +206,9 @@ namespace ValheimDeepWaters
                 displayPos.y = Mathf.Max(displayPos.y, _leapBaseY + 4f * _leapHeight * leap * (1f - leap));
                 rotation *= Quaternion.Euler(Mathf.Lerp(-50f, 50f, leap), 0f, 0f);
             }
+            // A popper floats: held at the waterline, its back just out of the water, bobbing a little with it
+            else if (OnSurface && SurfaceAt(displayPos) is float waterline && displayPos.y < waterline + 0.25f)   // (not while it flies on the cast)
+                displayPos.y = waterline - _topOffset + 0.015f + wob * 0.25f;
             // Fish are positioned against flat sea level, but the water moves; never let one poke out of a wave.
             else if (StayUnder >= 0f && SurfaceAt(displayPos) is float surface)
                 displayPos.y = Mathf.Min(displayPos.y, surface - StayUnder - _topOffset);

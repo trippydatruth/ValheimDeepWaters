@@ -120,9 +120,9 @@ namespace ValheimDeepWaters
             if (ZoneSystem.instance == null) return false;
 
             float water = WaterLevel();
-            float max = Mathf.Max(3.5f, maxDistanceOverride);
+            float max = Mathf.Max(MinCastDistance, maxDistanceOverride);
 
-            for (float d = max; d >= 3f; d -= 1.5f)
+            for (float d = max; d >= MinCastDistance - 0.01f; d -= d > 8f ? 1.5f : 0.5f)   // finer steps close in
             {
                 Vector3 p = player.transform.position + dir * d;
                 float ground = ZoneSystem.instance.GetGroundHeight(p);

@@ -808,11 +808,20 @@ namespace ValheimDeepWaters
                 if (cap != null) cap.gameObject.SetActive(at >= 0);
                 if (at < 0) continue;
                 int c = at % Cols, r = at / Cols;
-                ((RectTransform)el.transform).anchoredPosition = _cell0 + new Vector2(c * _space, -r * _rowH);
+                var ert = (RectTransform)el.transform;
+                ert.anchoredPosition = _cell0 + new Vector2(c * _space, -r * _rowH);
                 if (cap != null)
                 {
                     cap.rectTransform.anchoredPosition = new Vector2(SlotsX + c * _space - 5f, -(SlotsY + r * _rowH + _space + 1f));
                     cap.text = Caption(s, lure);
+                    // The cell's top-left corner snapped to where its caption says it is (the caption sits _space + 1 under
+                    // the cell's top and 5 left of it). Where the grid first put its cells depends on how it was anchored
+                    // when it made them, and once that came out a row low: every cell a row under its caption, the top
+                    // row's cells missing and the rod's off the bottom.
+                    cap.rectTransform.GetWorldCorners(Corners); var capTL = Corners[1];
+                    ert.GetWorldCorners(Corners); var elTL = Corners[1];
+                    float k = _panel != null ? _panel.lossyScale.y : 1f;
+                    ert.position += new Vector3(capTL.x + 5f * k - elTL.x, capTL.y + (_space + 1f) * k - elTL.y, 0f);
                 }
             }
             // the rod reaches from the top row to the bottom one in use
@@ -820,6 +829,8 @@ namespace ValheimDeepWaters
             if (_rodRt != null) _rodRt.sizeDelta = new Vector2(_rodW, RodH(rows));
             _laidOutSeparate = Tackle.Separate;
         }
+
+        private static readonly Vector3[] Corners = new Vector3[4];
 
         private const float Tuck = 14f; // how far the panel slides up under the inventory's top border
 
