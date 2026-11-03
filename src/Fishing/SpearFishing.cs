@@ -116,6 +116,18 @@ namespace ValheimDeepWaters
                 // its own model (build_lures.py leister_<tier>), fitted to where the vanilla spear sits in the hand, and its icon
                 string modelKey = "leister_" + l.Prefab.Substring("VDW_Leister_".Length);
                 CustomModels.ApplyToPrefab(custom.ItemPrefab, modelKey);
+                // thrown, a spear is its attack's projectile, shared with the vanilla spear it's cloned from: give the leister
+                // its own copy, wearing the leister model (where it lands, the projectile drops the leister item itself)
+                var throwAttack = shared.m_secondaryAttack;
+                if (throwAttack?.m_attackProjectile != null)
+                {
+                    var proj = PrefabManager.Instance.CreateClonedPrefab(l.Prefab + "_projectile", throwAttack.m_attackProjectile);
+                    if (proj != null && CustomModels.ApplyFittedToVanilla(proj, modelKey))
+                    {
+                        PrefabManager.Instance.AddPrefab(new CustomPrefab(proj, true));
+                        throwAttack.m_attackProjectile = proj;
+                    }
+                }
                 ItemManager.Instance.AddItem(custom);
                 ByPrefab[l.Prefab] = l;
             }

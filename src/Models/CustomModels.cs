@@ -184,7 +184,7 @@ namespace ValheimDeepWaters
         /// flat side (the fan of tines) along the blade's, and scaled to the same length - so it sits in the hand, and is
         /// thrown, just as the vanilla spear is. The vanilla renderers are hidden.
         /// </summary>
-        private static bool ApplyFittedToVanilla(GameObject prefab, string baseName)
+        internal static bool ApplyFittedToVanilla(GameObject prefab, string baseName)
         {
             if (!TryGetCustom(baseName, out var mesh, out var mat)) return false;
             var (oa, os, op) = LongAxis(mesh);
