@@ -75,6 +75,42 @@ def lathe(profile, height, ring=24, n=32):
     """A round body along +Z: radius profile(t) for t 0 (base) .. 1 (top). UV u round, v up."""
     return tube(curve(lambda t: Vector((0, 0, height * t)), n), profile, ring=ring)
 
+def holed_lathe(profile, height, hole, ring=28, n=36, hole_v=0.99):
+    """A round body along +Z bored straight through: radius profile(t) outside (never under the bore's lip), a bore of
+    radius `hole` down the middle, each end a ring round the hole (the plain lathe capped its ends in a little stub
+    that stuck out like a peg). UV u round, v up; the bore's walls on v = hole_v (the painted dark band)."""
+    me = bpy.data.meshes.new("hl"); bm = bmesh.new(); uvl = bm.loops.layers.uv.new("UVMap")
+    lip = hole * 1.6
+    # the body ends where its taper reaches the lip (not a collar of lip-sized wire standing past it, which still read as
+    # a peg), and each hole is countersunk a little into the end, so it sits flush
+    ts = [i / 400 for i in range(401)]
+    t0 = next(t for t in ts if profile(t) >= lip); t1 = next(t for t in reversed(ts) if profile(t) >= lip)
+    prof0 = profile
+    profile = lambda t: prof0(t0 + (t1 - t0) * t)
+    height_full = height; z0, height = height_full * t0, height_full * (t1 - t0)
+    sink = hole * 0.8
+    def ring_at(z, r):
+        return [bm.verts.new(Vector((r * math.cos(2 * math.pi * k / ring), r * math.sin(2 * math.pi * k / ring), z))) for k in range(ring)]
+    def quad(a, b, c, d, uvs):
+        f = bm.faces.new((a, b, c, d)); f.smooth = True
+        for l, uv in zip(f.loops, uvs): l[uvl].uv = uv
+    outer = [ring_at(height * i / n, max(profile(i / n), lip)) for i in range(n + 1)]
+    for i in range(n):
+        for k in range(ring):
+            k2 = (k + 1) % ring; u0, u1 = k / ring, (k + 1) / ring; v0, v1 = i / n, (i + 1) / n
+            quad(outer[i][k], outer[i][k2], outer[i + 1][k2], outer[i + 1][k], [(u0, v0), (u1, v0), (u1, v1), (u0, v1)])
+    inner = [ring_at(sink + (height - 2 * sink) * j / 6, hole) for j in range(7)]   # the bore starts a little in from each end
+    for j in range(6):                                                                                  # the bore, facing in
+        for k in range(ring):
+            k2 = (k + 1) % ring
+            quad(inner[j][k2], inner[j][k], inner[j + 1][k], inner[j + 1][k2], [(k2 / ring, hole_v)] * 4)
+    for k in range(ring):                                                                               # the ends: rings round the hole
+        k2 = (k + 1) % ring
+        quad(outer[0][k2], outer[0][k], inner[0][k], inner[0][k2], [(k2 / ring, 0.002)] * 4)
+        quad(outer[-1][k], outer[-1][k2], inner[-1][k2], inner[-1][k], [(k / ring, 0.998)] * 4)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me); bm.free(); return me
+
 def remap_uv(me, u0, u1, v0, v1):
     """Squeezes a mesh's whole UV square into a part of the texture (so pieces share one map)."""
     if len(me.uv_layers):
@@ -132,12 +168,12 @@ def split_shot():
 def bullet_weight():
     L = 0.05
     prof = lambda t: max(0.0016, 0.0115 * (1 - t ** 1.7) ** 0.62) if t < 0.995 else 0.0016
-    me = lathe(prof, L, ring=28, n=40)
+    me = holed_lathe(prof, L, 0.0012, ring=28, n=40, hole_v=0.99)        # bored through: the line runs inside
     n = fbm(40, 14, 5); streak = smooth(0.55, 0.85, fbm(64, 4))
     alb = mix((0.74, 0.44, 0.26), (0.52, 0.28, 0.16), n * 0.7)              # copper, darker where handled
     alb = mix(alb, (0.30, 0.52, 0.42), smooth(0.7, 0.9, fbm(20, 6)) * 0.45)   # a little verdigris
     alb = mix(alb, (0.36, 0.20, 0.12), streak * 0.4)
-    hole = smooth(0.94, 0.985, V); base = smooth(0.03, 0.0, V)
+    hole = smooth(0.95, 0.99, V); base = smooth(0.03, 0.0, V)
     alb = mix(alb, (0.06, 0.04, 0.03), hole); alb = mix(alb, (0.40, 0.24, 0.15), base * 0.6)
     return me, write_maps("tackle_bullet_weight", alb, 0.85 - 0.4 * hole, 0.55 - 0.25 * n, 0.3 * n - 0.6 * hole, 3.0)
 
@@ -145,7 +181,7 @@ def bullet_weight():
 def egg_sinker():
     L = 0.052
     prof = lambda t: max(0.0022, 0.0165 * math.sin(math.pi * t) ** 0.75 * (1 + 0.08 * (0.5 - t)))
-    me = lathe(prof, L, ring=28, n=36)
+    me = holed_lathe(prof, L, 0.0014, ring=28, n=36, hole_v=0.01)        # bored end to end
     dents = vnoise(16) * 0.6 + vnoise(36) * 0.4                             # hammer marks
     n = fbm(32, 12, 5)
     alb = mix((0.68, 0.52, 0.30), (0.46, 0.33, 0.18), n * 0.7)              # bronze
