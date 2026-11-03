@@ -138,6 +138,10 @@ namespace ValheimDeepWaters
 
             if (baseName.StartsWith("food_") || baseName.StartsWith("prep_"))
                 ShowTrueSize(prefab, baseName, unbaked == Vector3.zero ? Vector3.one : unbaked);
+            // lures and the designed baits dropped on the ground: the vanilla bait they're cloned from shrank its model child to
+            // a speck; shown at half their bundle size (which is made for the line)
+            if (GroundBaits(baseName))
+                ShowTrueSize(prefab, baseName, (unbaked == Vector3.zero ? Vector3.one : unbaked) * 0.5f);
 
             // Vanilla fish (and other creatures) draw a rigged, animated mesh. A custom model is static, so show it
             // in place of each skinned renderer instead.
@@ -162,6 +166,9 @@ namespace ValheimDeepWaters
         /// shrink it, most of all on an item stand (the stand keeps the "attach" copy's scale). Undo them, so the
         /// dish is as big as its model on the ground and on a stand.
         /// </summary>
+        private static bool GroundBaits(string k) => k.StartsWith("bait_lure_") || k.StartsWith("bait_trailer_") ||
+            k == "bait_frost_bait" || k == "bait_deep_bait" || k == "bait_northern_bait" || k == "bait_rune_bait" || k == "bait_cut_bait";
+
         private static void ShowTrueSize(GameObject prefab, string baseName, Vector3 want)
         {
             static Vector3 Div(Vector3 a, Vector3 b) => new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
