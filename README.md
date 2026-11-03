@@ -362,6 +362,28 @@ A **trailer** (Curly Tail, Boar Rind, Feather Skirt) brings fish of its own and 
 Lures are mid-game tackle: each is made at the forge with a hook in the recipe. Lures and trailers are only used
 up when a fish is hooked. The boss lures work the same way (they need a hook too), but only their boss answers them.
 
+## Spear fishing
+
+Fish swimming near the surface can be speared: **stab** one you're standing over, or **throw** a spear at it from the
+bank (secondary attack) - the spear has to come down right on it. Every vanilla spear works, the later ones a little better
+(the Abyssal Harpoon best of them), but the
+**leisters**, the old Norse fish spears, are made for it:
+
+| Leister | Station | Fish up to |
+|---|---|---|
+| Flint Leister | Workbench 1 | 3 kg |
+| Bronze Leister | Forge 1 | 8 kg |
+| Iron Leister | Forge 2 | 15 kg |
+| Silver Leister | Forge 3 | 25 kg |
+| Black Metal Leister | Forge 5 | 40 kg |
+| Carapace Leister | Black Forge 1 | 60 kg |
+| Flametal Leister | Black Forge 2 | 80 kg |
+| Frostcore Leister | Black Forge 3 | 100 kg |
+
+A heavier fish tears free. Fish deeper than about 2.5 m, deep-ocean fish, legendaries and boss fish need a rod. A speared
+fish goes straight into your bag (at your feet if it's full) and counts like any catch (catch log, records, mastery, rank,
+Fishing skill); it trains the Spears skill too, which makes you
+surer, but it comes out a little lighter than one landed on a rod. Leisters hit creatures more weakly than their spears.
 ## Fishing Boat
 
 A small rowing boat built with the hammer at a workbench (24 wood, 8 resin, 4 deer hide). Use the bench to row

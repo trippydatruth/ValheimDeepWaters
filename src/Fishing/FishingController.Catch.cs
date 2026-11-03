@@ -17,7 +17,21 @@ namespace ValheimDeepWaters
 
         private static void Catch(Player player, FishingSession s)
         {
-            string text = $"Caught {s.Fish.Name}!  ({s.FishWeight:0.0} kg)";
+            string text = Land(player, s, FishPos(player, s), "Caught");
+            RodMotion.Trigger(RodEvent.CatchLift);
+            FishingFx.Landing(FishPos(player, s));
+            Msg(text);
+            EndSession();
+        }
+
+        /// <summary>
+        /// A fish landed, however it was caught (rod or spear, SpearFishing): drops it (weight, size class, variant), any find
+        /// inside it, and credits the Fishing skill, catch log, biome sets, mastery, rank and news. Returns the message.
+        /// <paramref name="at"/>: where it came out of the water (for the splash).
+        /// </summary>
+        internal static string Land(Player player, FishingSession s, Vector3 at, string verb)
+        {
+            string text = $"{verb} {s.Fish.Name}!  ({s.FishWeight:0.0} kg)";
 
             float range = s.Fish.MaxWeightKg - s.Fish.MinWeightKg;
             float rank = range > 0.001f ? (s.FishWeight - s.Fish.MinWeightKg) / range : 0f;
@@ -56,8 +70,8 @@ namespace ValheimDeepWaters
                 data.m_variant = s.Variant;   // golden / albino: picks its tinted icon, and it never stacks with ordinary ones
 
                 Vector3 dropPos = Drops.CatchPos(player);
-                Drops.Give(player, drop, data, 1, dropPos);
-                text += Drops.Aboard(player) ? "\nLanded!" : "\nLanded! Pick it up.";
+                bool inBag = Drops.Give(player, drop, data, 1, dropPos);
+                text += inBag ? (Drops.IntoBag ? "\nInto your bag." : "\nLanded!") : Drops.IntoBag ? "\nYour bag is full - it's at your feet." : "\nLanded! Pick it up.";
                 if (data.m_quality >= FishSize.MaxClass) text += FishMaterials.GiveTrophyFin(player, Drops.CatchPos(player, 0.4f));
 
                 // Legendaries: a trophy the first time; bosses also leave a material and the news goes out.
@@ -112,7 +126,7 @@ namespace ValheimDeepWaters
                 int pts = s.Variant == RareFish.Golden ? RareFish.GoldenPoints : RareFish.AlbinoPoints;
                 Rewards.AddBonusPoints(player, pts);
                 text = $"A {RareFish.Name(s.Variant).ToLowerInvariant()} {s.Fish.Name}!" + (first ? " (new in your catch log)" : "") + $" +{pts} rank points\n" + text;
-                FishingFx.FishSplash(FishPos(player, s), 1.4f);
+                FishingFx.FishSplash(at, 1.4f);
             }
             CatchNews.Send(player, s.Fish, s.FishWeight, s.Variant);
             if (BossFish.IsBoss(s.Fish.Id))
@@ -121,10 +135,7 @@ namespace ValheimDeepWaters
                 string next = Endgame.NextStep(player);
                 if (next.Length > 0) text += "\n" + next;
             }   // players nearby hear of it (a boss: the whole server, in BossFish)
-            RodMotion.Trigger(RodEvent.CatchLift);
-            FishingFx.Landing(FishPos(player, s));
-            Msg(text);
-            EndSession();
+            return text;
         }
 
         private static void Finish(Player player, string reason)
