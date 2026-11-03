@@ -1,14 +1,14 @@
 # Valheim: Deep Waters
 
 A fishing overhaul for Valheim. Fish swim up to your bait, nibble, and then bite, just like vanilla, but now you play the fight with
-line tension, drag, and stamina. There are rods for every era, hook sizes, bait you gather from the world,
-buffs, trophies, and a catch log.
+line tension, drag, and stamina. There are rods for every era, a tackle screen with reels, lines, floats, hooks and
+weights, bait you gather from the world, spear fishing, buffs, trophies, and a catch log.
 
 Requires BepInEx 5 and Jötunn 2.30 or newer. Built for Valheim 1.0.20.
 
 Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippydatruth/ValheimDeepWaters/wiki).
 
-![Setting the hook: the rod bends, the tension gauge, line out and the drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/hook-set.jpg)
+![A fish on: the rod bends, with the tension gauge, line out and the drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fight.jpg)
 
 ## Features
 
@@ -17,18 +17,21 @@ Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippy
 - Fish you can see swim up to your bait, nibble the float, then bite. Strike too early and you spook them;
   make noise and they flee
 - A real fight: line tension, drag on the mouse wheel, sideways runs, leaps and snapped lines
-- Twelve rods, one for each era plus special ones, that wear out with use and upgrade to level 4, and hooks in eight kinds
-- Bait from the world: worms, grubs, flies, leeches and baitfish
-- A tackle panel under the inventory (drag it anywhere) with slots for your rod, bait, hook, weight and leader;
-  the rod in its slot takes no inventory space
+- Twelve rods, one for each era plus special ones, that wear out with use and upgrade to level 4
+- A tackle screen beside the inventory with the whole rod pictured and eight slots - rod, reel, line, float, hook,
+  bait or lure, weight and leader - and three loadouts you can swap between; the rod in its slot takes no space
+- Reels, lines and floats for every era, and hooks in six sizes and four kinds: J, circle (sets itself), EWG
+  (holds big fish) and treble (soft baits, on the bottom)
+- Bait from the world: worms, grubs, flies, leeches and baitfish, and baits you make, each with its own model
 - Weights and leaders: every fish feeds at its own depth, so set your leader to fish the depth you want, or fish the
   bottom with a weight, a Texas rig or a Carolina rig. Light weights get dragged about by waves and storms
 - Tackle boxes in seven tiers (four crafted, three from Hildir): carry your tackle in your hand, open it anywhere, set it down as a chest
 - Coolers in three tiers that keep your catch fresh: fresh fish sell for more and clean into more
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
+- Spear fishing: stab or throw a spear at fish near the surface, with eight leisters (fish spears) made for it
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
-- Fishing meads, chum, totems, rare relics and a Fisherman's armour set
+- Fishing meads (from mead bases, like vanilla's), chum, totems, rare relics, a Fisherman's armour set and two angler caps
 - Seven boss fish you summon with boss lures, each with its own weather, music and fight
 - Angler ranks, species mastery with Gold Trophy Plaques, and rare golden and albino catches
 - A Fish Cleaning Table, fish materials, dishes and feasts, and traders who each buy their own catch
@@ -38,16 +41,21 @@ Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippy
 
 ## How to fish
 
-![Fish on! A bite on a Finewood Crankbait, with the line out and drag dial](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fish-on.jpg)
-
 1. Craft a **Wooden Fishing Rod** (workbench) and some **Tiny hooks**, and dig up worms from wriggling soil
    in the forest.
-2. Put bait and a hook in your **tackle slots** under the inventory (or right-click them there).
-3. Face the water, **hold left click** to charge, and release to cast.
+2. Put the rod, bait and a hook in your **tackle screen** beside the inventory (or right-click them there).
+3. Face the water, **hold left click** to charge, and release to cast. A quick tap drops the bait just in front
+   of you, handy for fish you can see.
 4. Fish come to the bait and **nibble** the float with small dips. Don't strike yet.
 5. On the real bite (**FISH ON!**, a big dip), **right click** to set the hook.
 6. **Hold right click** to reel and use the **mouse wheel** to set the drag. Tighter drag reels faster and
    tires the fish quicker, but risks snapping the line. Reeling costs stamina.
+
+![FISH ON! The float goes under on the real bite](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fish-on.jpg)
+
+![Hook set! The rod bends as the fish runs](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/hook-set.jpg)
+
+![A pike landed on the bank, with its weight and rank points](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/landed.jpg)
 
 Bait is only used up once a fish is hooked.
 
@@ -109,6 +117,8 @@ its three add-ons, built beside it, let it handle the rarer ones:
 | 3 | Brining Barrel | Abyssal Ink, Legendary Scales | Brined Roe (3 roe, 1 oil) | 6 fine wood, 2 iron, 10 Fish Oil |
 | 4 | Drying Line | Cinder Scales, Rime Scales | Dried Fish (3 fillets) | 6 fine wood, 3 red jute, 10 Abyssal Ink |
 
+![The Fish Cleaning Table with its Filleting Knife Rack on the wall and the Brining Barrel beside it](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/cleaning-table.jpg)
+
 Cleaning fish raises your Fishing skill.
 
 The materials go into rod upgrades, every lure (the boss lures take three of their biome's material), the crafted
@@ -161,6 +171,17 @@ You need a hook to cast, and each size suits a range of fish weights.
 - **Too small:** a big fish can straighten it mid-fight, and a fish far too big won't bite at all.
 
 You lose the hook if the line snaps, the rod breaks or the hook straightens.
+
+**Hook kinds.** The hooks above are J hooks, the all-rounder. From Small to Giant each size also comes as a circle,
+EWG or treble hook, made from the same metal (trebles make a few fewer). Each fishes in its own way, and the tooltip
+says how:
+
+| Kind | Made for | How it fishes |
+|---|---|---|
+| J | Anything | Set it yourself when the fish bites |
+| Circle | Live and cut bait | Three times as long to strike, and left alone it sets itself; head shakes pull half as hard. Strike the instant it bites and it can pull free |
+| EWG | Worms and soft baits | Straightens half as easily, holds through head shakes, hooks better with worms, grubs and leeches |
+| Treble | Soft, stinky baits on the bottom | Hooks better, more on a weighted rig and with soft baits (stinkbait, cut bait, blubber, shrimp); bends out sooner on fish too heavy for it |
 
 ## Vanilla fish
 
@@ -238,11 +259,13 @@ Seven legendaries are named after Valheim's bosses, and they're boss fights. The
 summon one with a **lure** carved from that boss's trophy (or, for Kall Fimbulbringer, his Crown Jewel), cast in the
 right water at the right time.
 
-![Casting the Antler Lure: lightning stirs beneath the river](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-summon.jpg)
+![Casting the Chitin Lure: something vast uncoils in the deep](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-summon.jpg)
 
-![Fighting the Eikthyr Elver, with its health bar and phases](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-fight.jpg)
+![The Queen Eel hooked, with its boss bar](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-fight.jpg)
 
-![The Eikthyr Elver landed](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-landed.jpg)
+![The Queen Eel dives for the deep in its last phase, tearing line off the reel](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-phase.jpg)
+
+![The Queen Eel landed: a legendary catch, its trophy and Queen's Fangs](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boss-landed.jpg)
 
 | Boss fish | Lure | Where | When |
 |---|---|---|---|
@@ -295,8 +318,9 @@ way (phases and all), with no bar, music or messages, and drop their trophy the 
 | Flies | Swarms along rivers, lakes and the coast in dry weather (fireflies at night); walk up and use one to catch it |
 | Leeches | Dropped by swamp leeches |
 | Minnows, Large Baitfish, Shrimp, Live Bluegill | Catch them as small fish with worms, grubs or flies on a Tiny hook; they swim in schools where they live (bluegill in Meadows lakes, on worms and grubs) |
-| Abyssal, Frost and Runed bait | Crafted at the cauldron or forge |
+| Abyssal and Frost bait | Crafted at the cauldron |
 | Northern Bait | Crafted at the cauldron (seal blubber and lingonberries); the Deep North's fish want it |
+| Cut Bait | Cut at the Fish Cleaning Table from any one Live Minnow, Large Live Baitfish or Live Bluegill (makes 3) |
 
 Wriggling soil only grows in parts of the world generated after installing the mod.
 
@@ -318,7 +342,8 @@ cast tells you when nothing in that water goes for yours. You need bait (or a lu
 | Abyssal Bait | Anglerfish, Bonemaw, Jotunn Perch, Magmafish, Halibut |
 | Frost Bait | Tetra, Frost Char, Salmon, Fenringfin |
 | Northern Bait | Salmon, Rimejaw Cod, Glacier Grayling, Frost Sculpin |
-| Runed Bait | Odin's Eye, Thor's Hammerhead, Moder Scale Fish, Yagluth Gill, Fenringfin |
+| Cut Bait | Catfish, Bass, Halibut, Lingcod, Sea Bass, Coral Cod |
+| Runed Lure | Odin's Eye, Thor's Hammerhead, Moder Scale Fish, Yagluth Gill, Fenringfin (a lure: it carries its own hook) |
 
 Deep Waters replaces vanilla fishing: the vanilla rod and baits aren't sold or crafted, and the vanilla rod can't be used.
 
@@ -355,12 +380,14 @@ strains the line less); Shift reels at full speed.
 | Bone Jig | Jig, takes a trailer | Lingcod, halibut, grouper (1–30 kg) | Forge 3, Large Hook |
 | Silver Swimbait | Swimbait | Big pike, tuna, grouper, halibut (2–40 kg) | Forge 4, Heavy Hook |
 | Linen Popper | Topwater | Pike, trollfish, mackerel (0.5–20 kg) | Forge 4, Heavy Hook |
+| Sparkler Popper | Topwater; after dark it fizzes and lights the water, and fish come sooner | Pike, trollfish, mackerel (0.3–12 kg) | Forge 1, Hildir's Sparkler, Medium Hook |
 | Ice Spoon | Spoon | Salmon, grayling, char (0.5–20 kg) | Forge 4, Heavy Hook |
 | Frostcore Jig | Jig, takes a trailer | Rimejaw cod, sculpin (1–60 kg) | Black forge 2, Giant Hook |
 
 A **trailer** (Curly Tail, Boar Rind, Feather Skirt) brings fish of its own and makes the lure's fish keener.
 Lures are mid-game tackle: each is made at the forge with a hook in the recipe. Lures and trailers are only used
-up when a fish is hooked. The boss lures work the same way (they need a hook too), but only their boss answers them.
+up when a fish is hooked. The boss lures work the same way, but only their boss answers them. The Runed Lure is
+a lure for legendaries: no hook needed.
 
 ## Spear fishing
 
@@ -384,6 +411,9 @@ A heavier fish tears free. Fish deeper than about 5 m, deep-ocean fish, legendar
 fish goes straight into your bag (at your feet if it's full) and counts like any catch (catch log, records, mastery, rank,
 Fishing skill); it trains the Spears skill too, which makes you
 surer, but it comes out a little lighter than one landed on a rod. Leisters hit creatures more weakly than their spears.
+
+![A Largemouth Bass speared from the shallows: it goes straight into the bag](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/spear-fishing.jpg)
+
 ## Fishing Boat
 
 A small rowing boat built with the hammer at a workbench (24 wood, 8 resin, 4 deer hide). Use the bench to row
@@ -391,22 +421,73 @@ A small rowing boat built with the hammer at a workbench (24 wood, 8 resin, 4 de
 holdfast in the bow to stand braced in rough water, and a ladder on the side to climb in from the water. Fish you
 land while aboard any ship go straight into your inventory.
 
-## Tackle slots
+![Rowing the Fishing Boat](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boat-rowing.jpg)
 
-The tackle panel under your inventory has five slots: **Rod, Bait, Hook, Weight and Leader**. To fill them, drag
-items in, or right-click or Ctrl+click them in your inventory (Ctrl+click a slot to take it back out). Drag the panel
-by its wood to put it anywhere on the screen; double-click it to put it back.
+![Fishing from the boat, braced at the bow holdfast](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/boat-fishing.jpg)
 
-![The tackle panel: rod, bait, hook, weight and leader slots](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-panel.jpg)
+## The tackle screen
+
+The tackle screen opens beside your inventory: the whole rod pictured, with a slot for each part of the rig -
+**rod, reel, line, float, hook, bait (or lure), weight and leader** - and the rig's stats beside it (collapsible).
+To fill a slot, drag the item in, or right-click or Ctrl+click it in your inventory (Ctrl+click a slot to take it back
+out). Drag the screen by its wood to put it anywhere; double-click its title to put it back.
+
+![The tackle screen: the rod pictured with its eight slots, loadouts and stats](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-screen.jpg)
 
 - **Rod:** a rod in the rod slot takes no inventory space. Right-click the slot, or press `Alt+F`, to take it in hand
-  or put it away. It repairs and upgrades from the slot (upgrading moves it into your inventory first). The panel
-  shows its level, line, cast and wear.
+  or put it away. It repairs and upgrades from the slot (upgrading moves it into your inventory first).
+- **Reel and line:** a reel reels faster, eases the tension and saves stamina; a line adds line on top of the rod's
+  own. Each era has its own (below). Without them the rod fishes with its own reel and line.
+- **Float:** the float your line wears (see Floats below).
 - **Bait and hook:** while holding the rod, `B` / `H` swaps in the next bait or hook you're carrying. A slot refills
   from your inventory, then from the tackle box you're wearing, when it runs out.
 - **Weight and leader:** see Weights, leaders and depth below.
+- **Loadouts 1, 2, 3:** Shift+click a loadout to save your tackle to it, click it to put that tackle on again (from
+  what you carry).
+
+| Reel | Made at | Reel speed | Tension | Reeling stamina |
+|---|---|---|---|---|
+| Bronze Reel | Forge 1 | +10% | | -5% |
+| Iron Reel | Forge 2 | +15% | -5% | -8% |
+| Silver Reel | Forge 3 | +20% | -8% | -12% |
+| Black Metal Reel | Forge 5 | +25% | -10% | -15% |
+| Dvergr Reel | Black forge 1 | +30% | -14% | -18% |
+| Flametal Reel | Black forge 2 | +35% | -18% | -22% |
+| Frostcore Reel | Black forge 3 | +40% | -22% | -26% |
+
+| Line | Made at | Extra line |
+|---|---|---|
+| Leather Line | Workbench 2 | 15 m |
+| Guck-Waxed Line | Forge 1 | 30 m |
+| Linen Line | Forge 5 | 60 m |
+| Sap-Coated Line | Black forge 1 | 90 m |
+| Morgen Sinew Line | Black forge 2 | 120 m |
+| Moose Sinew Line | Black forge 3 | 150 m |
+
+Turn off **Reels, Lines and Floats** in the settings to play without them: rods fish with their own reel and line,
+reels and lines can't be crafted, and floats are used like a mead for a while.
 
 Tackle is saved with your character and goes into your tombstone when you die.
+
+### Floats
+
+A float goes in the float slot, and your line wears it until you swap it. Each has a small effect:
+
+![A float riding on the line, waiting for a bite](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/float.jpg)
+
+| Float | Made at | Effect |
+|---|---|---|
+| Quill Float | Workbench 1 | 1 fewer nibble before the bite, +5% hook chance |
+| Lantern Float | Workbench 2 | At night, fish bite 50% sooner; 1 fewer nibble; lit after dark |
+| Cork-and-Antler Float | Workbench 2 | In rivers and lakes, fish bite 35% sooner |
+| Bone Float | Workbench 3 | Fish don't flee from your noise; 1 fewer nibble |
+| Frost Float | Workbench 4 | In the Mountain and Deep North, fish bite 40% sooner; +15% hook window |
+| Linen Bob | Workbench 4 | +35% hook window |
+| Eitr Float | Workbench 5 | In water 10 m or deeper, fish bite 40% sooner; a violet light after dark |
+| Ember Float | Workbench 5 | In the Ashlands, fish bite 45% sooner; an orange light after dark |
+| Rime Float | Workbench 5 | -15% line tension |
+
+The Lantern Float's candle wick comes from the Bog Witch.
 
 ## Weights, leaders and depth
 
@@ -416,7 +497,7 @@ likely to take a bait at its depth - much less far from it. Your rig decides how
 | Rig | On the line | The bait sits |
 |---|---|---|
 | Float | bait + hook | about 1 m down (in shallow water that reaches the bottom) |
-| Float and leader | + Leader Line | as deep as your leader (0.5-40 m, set with - and + on the tackle panel) |
+| Float and leader | + Leader Line | as deep as your leader (0.5-40 m, set with - and + on the tackle screen) |
 | Bottom rig | + any weight, no float | on the bottom; the cast goes further |
 | Carolina rig | Egg Sinker + Leader Line | just off the bottom; fish take it more readily |
 | Texas rig | Bullet Weight + a soft lure | the lure works along the bottom |
@@ -431,9 +512,9 @@ bottom, and nothing bites while it's dragged - only a Pyramid Sinker holds at se
 A tackle box holds tackle - bait, lures, hooks, weights, leaders and floats - and keeps it inside wherever the box
 goes: your inventory, a chest, your grave. It weighs what's in it.
 
-![A tackle box opened, holding weights, leaders and lures](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box.jpg)
+![The seven tackle boxes set down, from the Tackle Box to Hildir's three](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-boxes.jpg)
 
-![A tackle box carried at the hip](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box-hip.jpg)
+![A tackle box carried at the hip, with the rod on the back](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/tackle-box-hip.jpg)
 
 | Box | Biome | Made at | Slots |
 |---|---|---|---|
@@ -456,6 +537,8 @@ wearing.
 
 A cooler holds your catch - fish, raw fish, fillets, roe and dried fish - and keeps it fresh. Like a tackle box it
 keeps what's inside wherever it goes, and weighs what's in it.
+
+![The three coolers set down by the water](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/coolers.jpg)
 
 | Cooler | Made at | Slots | Fresh for | Materials |
 |---|---|---|---|---|
@@ -480,8 +563,8 @@ Tiered items that unlock as you progress:
 - **Lingonberry Angler's Mead** (base at the Mead Ketill): a strong all-rounder for the Deep North - faster bites, easier
   hookset and longer fights. **Spawning Musk** is brewed the same way.
 - **Rune of Njord** (forge, worn as a belt): bigger fish, more legendaries.
-- **Chum** (cauldron): set the bucket down on the bank to draw more, less picky fish to the water around it for
-  5 minutes, for anyone fishing there.
+- **Chum** (cauldron, with 2 Cut Bait): set the bucket down on the bank to draw more, less picky fish to the water
+  around it for 5 minutes, for anyone fishing there.
   **Blubber Chum** (seal blubber, lingonberries) is the strongest and lasts 6 minutes.
 - **Totems** (hammer): the Fisherman's Totem and Shrine of Njord buff anyone fishing nearby.
 - **Relics** (can't be crafted, and each takes a slot of its own - they don't stack). Each comes from one place:
@@ -503,8 +586,8 @@ Her wares go into fishing:
 |---|---|
 | Pungent Pebbles | **Stinkbait** (cauldron): catfish, trollfish, pike, mistfin and bass love it |
 | Fresh Seaweed | **Seaweed Chum** (cauldron 2): more, keener fish for 6 minutes |
-| Candle Wick | **Lantern Float** (workbench 2): use it and your line wears a candle-lit float for 20 minutes; fish bite 50% sooner at night |
-| Love Potion | **Spawning Musk** (cauldron 3): legendary fish 50% more likely for 10 minutes |
+| Candle Wick | **Lantern Float** (workbench 2): a candle-lit float; fish bite 50% sooner at night (see Floats) |
+| Love Potion | **Spawning Musk** (a mead base at the Mead Ketill, fermented): legendary fish 50% more likely for 10 minutes |
 | Powdered Dragon Eggshell | Major Steady-Hand Tonic |
 | Toadstool | Major Troll-Grip Mead |
 | Her herb blends | The fish feasts |
@@ -525,12 +608,6 @@ everyone to eat from:
 She also sells Stinkbait, Lantern Floats and (after Bonemass) Spawning Musk, and each **boss lure** once you've
 beaten that boss, so a failed summoning doesn't mean hunting a new trophy.
 
-### Floats
-
-Some items are floats: use one like a mead and your line wears that float instead of the usual one until it runs
-out. There's no slot to fill, and only one float at a time. The Lantern Float is the first; its candle lights up
-after dark.
-
 ## Hildir
 
 **Fishing bounties.** Hildir posts one bounty a day for a species you've caught: at least so heavy, sometimes caught in
@@ -548,6 +625,15 @@ the trade panel) and her shop gains more:
 
 The dyed gear is bought, not crafted, but repairs at the workbench (level 2) like the rest of the set.
 
+**Her stock in recipes.** Some of what she sells makes fishing gear:
+
+| Made from her | Makes | Where |
+|---|---|---|
+| Sparkler | **Sparkler Popper**: a topwater lure that fizzes and lights the water after dark | Forge 1 |
+| Basic Fireworks | **Angler's Flare** (with fish oil): carry one and it goes up by itself when you hook a boss fish - a firework over you, a ping on everyone's map and a shout naming the boss | Workbench 2 |
+| Grey Fur Cap | **Ice Angler's Watch Cap** (wolf pelt, rime scales): +15% hook window, and it keeps the frost off | Workbench 2 |
+| Simple Red Cap | **Sun Angler's Cap** (feathers, fish scales): by day, fish bite 25% sooner | Workbench 2 |
+
 ## Fisherman's gear
 
 A light armour set made at the workbench (level 2): the **Sou'wester**, **Oilskin Coat** (worn as a cape), **Striped
@@ -557,6 +643,9 @@ and makes reeling cheaper and the hookset window longer.
 ![The Oilskin Coat with its belt and cuffs, over the striped shirt, with the Sou'wester](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fisherman-coat.jpg)
 
 ![The Striped Fisher's Shirt and Oilskin Overalls with rubber boots, carrying a tackle box](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/fisherman-overalls.jpg)
+
+Two **angler caps** made from Hildir's caps (above) can be worn instead of the Sou'wester: the Ice Angler's Watch Cap
+and the Sun Angler's Cap. They aren't part of the set.
 
 ## Your catch
 
@@ -626,6 +715,7 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Show Fishing HUD / HUD Scale | on / 0.85 | The bait, tension, line and drag display |
 | Reel Sound Volume | 0.5 | |
 | Rod Wear | 1 | 0 = rods never wear out |
+| Reels, Lines and Floats | on | Off: rods fish with their own reel and line, and floats are used like a mead |
 | Spawn Swimming Fish / Swimming Fish Density | on / 1 | Deep Waters fish in the world |
 | Spawn Worm Mounds / Worm Mound Density | on / 0.5 | Compared to red mushrooms; new areas only |
 | Rain Worms | on | |
@@ -633,7 +723,7 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Cycle Bait / Cycle Hook / Catch Log keys | B / H / J | |
 | Rod Key | Alt + F | Takes the rod in your rod slot in hand, or puts it away |
 | Tackle Box Key / Set Down Key | K / Shift + K | Opens the tackle box you're wearing / sets it down as a chest |
-| Tackle Panel Position | (under the inventory) | Set by dragging the panel; empty puts it back |
+| Tackle Screen Position | (beside the inventory) | Set by dragging the screen; empty, or double-clicking its title, puts it back |
 | Drag Control / Reel Speed Control | Mouse Wheel / Alt + Mouse Wheel | Either can be the mouse wheel, Alt + mouse wheel or the mouse side buttons (Mouse 5 up, Mouse 4 down) |
 
 ## Console commands (server admins)
@@ -652,7 +742,7 @@ These need `devcommands`, like Valheim's own spawn command.
 
 ### Fish, bait, rods, hooks and buffs
 
-These are defined in `Fish.json`, `Baits.json`, `Rods.json`, `Hooks.json`, `Tackle.json` (weights and leaders) and `Buffs.json` in
+These are defined in `Fish.json`, `Baits.json`, `Rods.json`, `Hooks.json`, `Tackle.json` (reels, lines, weights and leaders) and `Buffs.json` (meads, chum, floats and relics) in
 `BepInEx/config/ValheimDeepWaters/`. They're created on first run, and your edits are never overwritten. When
 an update adds new fish, bait, rods, hooks or buffs, they're added to your files automatically (each one only
 once, so an entry you delete stays deleted). Delete a whole file to get its defaults back.
@@ -666,6 +756,9 @@ The mod's own models ship in a `Models` folder beside its DLL in `BepInEx/plugin
 | `rod` or `rod_<id>` | Rods (one shared model, or one per rod) |
 | `bobber` | The float |
 | `bait_<id>` / `hook_<id>` / `fish_<id>` | That item (fish models also swim in the world) |
+| `tackle_<id>` / `buff_<id>` | Reels, lines, weights and leaders / floats, meads, chum and relics as items |
+| `float_<id>` | A float on the line |
+| `leister_<tier>` | A leister (fitted onto the vanilla spear it's made from) |
 | `pickable_worm` | Wriggling soil |
 | `fly` | Flies (without one, Valheim's own flies effect is used) |
 
