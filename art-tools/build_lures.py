@@ -775,6 +775,33 @@ elif LURE == "float_rime":
     tube([(0, 0, 0.088), (0, 0, 0.1)], [0.0025, 0.0022], "iron", seg=8)
     ring((0, 0, 0.104), (1, 0, 0), 0.0034, 0.0009, "iron", seg=10)
 
+# ---------------------------------------------------------------- the Angler's Flare (Hildir's Basic Fireworks + fish oil)
+# A signal rocket of rolled birch bark bound with tarred twine, a red-and-white nose like the floats', three carved bone
+# fins at the tail, a waxed fuse curling from the base, and a dried swim bladder of fish oil lashed to its side. ~26 cm, +Z up.
+if LURE == "flare":
+    B = [(0.03, 0.0158), (0.04, 0.0168), (0.12, 0.017), (0.188, 0.0168), (0.193, 0.0172)]
+    body(B, "barka", seg=18)
+    for z in (0.048, 0.098, 0.15):                                                                            # twine bands
+        band(z, z + 0.007, 0.0183, "thread", seg=18)
+        for k in range(3): band(z + 0.0012 + 0.0022 * k, z + 0.0016 + 0.0022 * k, 0.0187, "thread", seg=18)   # the turns of twine
+    f0 = len(bm.faces)
+    body([(0.193, 0.0176), (0.205, 0.0166), (0.222, 0.0124), (0.24, 0.0062), (0.252, 0.0018), (0.256, 0.0004)], "white", seg=18)
+    repaint(f0, "red", lambda c: c.z > 0.214 or c.z < 0.199)                                                  # red tip and collar
+    body([(0.022, 0.0), (0.024, 0.012), (0.03, 0.0158)], "bone", seg=18)                                      # bone end cap
+    for k in range(3):                                                                                        # carved bone fins
+        n0 = mark()
+        plate([(0.0, 0.0), (0.027, -0.022), (0.035, -0.02), (0.022, 0.012), (0.006, 0.062), (0.0, 0.065)], 0.0045, "bone", smooth=False)
+        turn(n0, (0, 0, 0), 'X', 90); shift(n0, (0.0155, 0, 0.034)); turn(n0, (0, 0, 0), 'Z', 120 * k + 30)
+    tube([(0, 0, 0.023), (0, 0, 0.012), (0.004, 0.002, 0.004), (0.011, 0.006, 0.0), (0.017, 0.004, 0.002)], [0.0016, 0.0015, 0.0014, 0.0013, 0.0011], "linen", seg=8)   # the fuse
+    blob((0.0275, 0, 0.112), 0.0125, "resin", seg=16, rings=12, scale=(0.85, 0.9, 2.1), bump=0.06, seed=3)   # the oil bladder
+    tube([(0.0275, 0, 0.083), (0.0275, 0, 0.074)], [0.004, 0.0012], "resin", seg=10)                          # its tied-off neck
+    for z in (0.096, 0.13):                                                                                   # lashed on with twine
+        rz = 0.0125 * 0.85 * math.sqrt(max(0.0, 1 - ((z - 0.112) / (0.0125 * 2.1)) ** 2))
+        ring((0.0275, 0, z), (0, 0, 1), rz + 0.0008, 0.0009, "thread", seg=14)
+        tube([(0.0275 - rz, 0.004, z), (0.012, 0.016, z), (-0.013, 0.012, z), (-0.017, 0.0, z), (-0.013, -0.012, z), (0.012, -0.016, z), (0.0275 - rz, -0.004, z)],
+             [0.0009] * 7, "thread", seg=6, caps=False)                                                       # round the rocket too
+    ring((0, 0, 0.262), (1, 0, 0), 0.0035, 0.0009, "iron", seg=10)                                            # a loop to hang it by
+
 # the hook shapes side by side, for a look (not a bait): J, treble, circle, EWG - in a row along Z, each in its own Y-Z plane
 if LURE == "hooks_demo":
     hook((0, -0.03, 0), 0.04, "steel", up=1)

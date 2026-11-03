@@ -37,6 +37,8 @@ namespace ValheimDeepWaters
             // carried, not fired by hand: no attack, nothing to equip
             shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
             shared.m_maxStackSize = 10;
+            // its own model and icon: a birch-bark signal rocket with a fish-oil bladder lashed on (build_lures.py flare)
+            if (CustomModels.ApplyToPrefab(item.ItemPrefab, "buff_angler_flare")) GroundPose.FitCollider(item.ItemPrefab);
             ItemManager.Instance.AddItem(item);
         }
 

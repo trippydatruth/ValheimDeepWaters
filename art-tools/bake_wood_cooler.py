@@ -273,6 +273,8 @@ if KIND == "lure" and TIER not in TIERS:
         T["eitr"] = GLASSY((0.09, 0.01, 0.28), rough=0.1, bubbles=0.5); T["glow_slots"] = dict(T["glow_slots"], eitr=(0.26, 0.03, 0.62))   # (a bright glow washed out to lavender)
     if TIER == "float_rime":
         T["frostcore"] = GLASSY((0.015, 0.04, 0.10), rough=0.25, bubbles=0.4, dirt=_RIME, amt=0.05); T["glow_slots"] = dict(T["glow_slots"], frostcore=(0.03, 0.08, 0.16))
+    if TIER == "flare":   # the Angler's Flare: a dark amber oil bladder, birch bark with strong dark streaks
+        T["resin"] = GLASSY((0.30, 0.13, 0.02), rough=0.12, bubbles=0.4, grime=0.2); T["barka"] = WD((0.74, 0.70, 0.62), (0.16, 0.12, 0.09), (0.86, 0.84, 0.80), 0.2, _D, 0.3, knots=0.0, scale=14.0, stretch=0.35)
     if TIER == "float_frost":
         T["ice"] = GLASSY((0.14, 0.38, 0.68), rough=0.06, bubbles=0.6, dirt=_RIME, amt=0.02)
 else:
