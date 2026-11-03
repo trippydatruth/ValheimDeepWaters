@@ -69,6 +69,8 @@ namespace ValheimDeepWaters
         public int StationLevel = 1;
         public int CraftAmount = 5;
         public List<RequirementDefinition> Recipe = new List<RequirementDefinition>();
+        /// <summary>Any one of the Recipe's items is enough (Cut Bait: a minnow, a baitfish or a bluegill).</summary>
+        public bool AnyOneIngredient = false;
 
         /// <summary>
         /// A lure carries its own hook: it goes in the hook slot and needs no bait. It suits fish between LureMinKg

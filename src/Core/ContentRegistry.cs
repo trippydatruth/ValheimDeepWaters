@@ -167,6 +167,12 @@ namespace ValheimDeepWaters
         /// </summary>
         private static readonly (string kind, string id, string oldRecipe)[] UpdatedRecipes =
         {
+            // Cut Bait in every chum bucket (1.0.2)
+            ("Buffs", "chum_basic", "NeckTail:2,RawMeat:1,VDW_Mat_scales:2"),
+            ("Buffs", "chum_blood", "Bloodbag:2,Entrails:2,VDW_Mat_oil:2"),
+            ("Buffs", "chum_abyssal", "Bloodbag:2,Sap:2,Ooze:2,VDW_Mat_ink:2"),
+            ("Buffs", "chum_blubber", "SealBlubber:2,Lingonberry:4,VDW_Mat_oil:2"),
+            ("Buffs", "chum_seaweed", "FreshSeaweed:3,VDW_Mat_scales:2,NeckTail:1"),
             // the Leviathan needs two of every boss fish's material, the Fimbul Salmon's too (0.15.0, roadmap #24)
             ("Rods", "leviathan", "VDW_BossMat_eikthyr_elver:1,VDW_BossMat_elder_bass:1,VDW_BossMat_bonemass_catfish:1,VDW_BossMat_moder_scale:1,VDW_BossMat_yagluthgill:1,VDW_BossMat_queen_eel:1,YggdrasilWood:10,FlametalNew:6"),
             // boss lures: the boss's own drops where it gives several, crafted at the biome's station (0.14.0)
@@ -765,6 +771,7 @@ namespace ValheimDeepWaters
                             Amount = Math.Max(1, bait.CraftAmount),
                             CraftingStation = bait.CraftingStation,
                             MinStationLevel = Math.Max(1, bait.StationLevel),
+                            RequireOnlyOneIngredient = bait.AnyOneIngredient,
                             Requirements = bait.Recipe.Select(r => new RequirementConfig(r.Item, r.Amount)).ToArray()
                         })
                         : new CustomItem("VDW_Bait_" + bait.Id, basePrefab);
