@@ -1,8 +1,29 @@
 # Changelog
 
-## Unreleased
+## 1.0.3
+The tackle screen with reels, lines and floats, hook kinds, spear fishing, coolers, Hildir's recipes, and new models
+for the baits, hooks, tackle boxes and coolers.
 
 ### Added
+- **Tackle screen**: the whole rod pictured, with eight slots - rod, reel, line, float, hook, bait (or lure), weight
+  and leader - and the rig's stats beside it in sections you can open and close. New slots are added at the end, so
+  your saved tackle keeps its place.
+  - **Reels** (Bronze to Frostcore, 7 tiers) reel faster, ease the tension and save stamina; **lines** (Leather to
+    Moose Sinew, 6 tiers) add line on top of the rod's own. Haldor and Hildir buy old ones.
+  - **Three loadouts**: Shift+click one to save your tackle to it, click it to put that tackle on again.
+  - **Reels, Lines and Floats** setting (set by the server): turn it off to fish with the rod's own reel and line,
+    with floats used like a mead.
+- **Eight floats**, one per biome, each with its own model, for the float slot: Quill (fewer nibbles), Cork-and-Antler
+  (rivers and lakes), Bone (fish don't flee), Frost (cold water), Linen Bob (longer hook window), Eitr (deep water,
+  a violet light after dark), Ember (the Ashlands, an orange light) and Rime (less tension).
+- **Hook kinds**: from Small to Giant every hook size also comes as a **circle** hook (three times as long to strike,
+  and left alone it sets itself), an **EWG** hook (straightens half as easily, better with worms) and a **treble** hook
+  (better with soft baits and on the bottom, but bends out sooner). The tooltip says what each does.
+- **Spear fishing**: stab a fish near the surface, or throw a spear at it from the bank.
+  - Every vanilla spear works, by its tier (the Abyssal Harpoon best of them); eight **leisters**, the Norse fish
+    spears, one per era (Flint to Frostcore), are made for it and take fish up to 3-100 kg.
+  - A speared fish goes straight into your bag and counts like a rod catch (catch log, mastery, rank, Fishing skill),
+    a little lighter, and trains the Spears skill. Fish deeper than 5 m, legendaries and boss fish need a rod.
 - **Coolers** in three tiers, to keep your catch fresh: Wooden Cooler (workbench 2, 12 slots), Iron-Banded Cooler
   (forge 2, 15) and Frost Cooler (forge 4, 24). They hold only your catch: fish, raw fish, fillets, roe and dried fish.
   - Right-click one in your inventory to set it down. `E` opens it (the lid lifts, and frost curls inside while it's
@@ -11,6 +32,40 @@
     out. A fresh fish sells for 25% more and gives one more material at the Cleaning Table. The tooltip shows how
     long it stays fresh.
   - A cooler weighs what's in it, and keeps its contents wherever it goes.
+- **Hildir's stock in recipes**:
+  - **Sparkler Popper** (forge 1): a topwater lure; after dark it fizzes and lights the water, and fish bite 40% sooner.
+  - **Angler's Flare** (workbench 2): carry one and it goes up by itself when you hook a boss fish - a firework over
+    you, a ping on everyone's map and a shout naming the boss.
+  - **Ice Angler's Watch Cap** (+15% hook window, keeps the frost off) and **Sun Angler's Cap** (fish bite 25% sooner
+    by day), made from her caps and worn on their own.
+- **Cut Bait**: cut at the Fish Cleaning Table from any one baitfish, three at a time. It draws catfish, bass,
+  halibut, lingcod, sea bass and coral cod.
+- **Tackle boxes follow the biomes**: four crafted (Meadows to the Plains, with a new Black-Metal Tackle Box) and three
+  from Hildir (Dvergr-Mended, Charred and Rime-Crusted), each with its own look and a faint biome effect. Her lost
+  boxes turn up in the Mistlands, Ashlands and Deep North.
+
+### Changed
+- **New models**: every bait (restyled, the snowy Frost Bait and a new Northern Bait), lures with real J, treble,
+  circle and EWG hooks, the hooks, the tackle boxes (painted wooden boxes with a tray), the coolers (a wooden ice
+  chest), the reels and lines, the cleaning table, and the Angler's Flare.
+- **Mead bases are made at the Mead Ketill**, like vanilla's (level 1), then fermented as before.
+- **The chum buckets** each need 2 Cut Bait. An existing save's recipes update too, unless you changed them.
+- **Cooked fish** look like their raw fish, browned and grill-marked, and eat like cooked meat. The health a very
+  big fish gives levels off instead of running into the hundreds.
+- **A quick tap of the cast** drops the bait about 3 m in front of you, for fish you can see.
+- **The Fisherman's coat** no longer clips when you crouch, sneak or sit; the overalls and coat have new folds and
+  shaded edges.
+- Faster checks in the code that runs every frame.
+
+### Fixed
+- The bait or lure flies out with the float and goes into the water when the cast lands, not as you let go.
+- Dropped baits, lures, hooks and weights show one model, at a size you can see (they showed a bunch of tiny copies).
+- The **Runed Lure** is a lure: it carries its own hook and no longer asks for one.
+- Topwater lures float level on the surface instead of standing on end under it.
+- The Bullet Weight and Egg Sinker have real holes bored through.
+- Dishes show at their real size on the ground and on item stands, and feasts set side by side no longer push each
+  other around.
+- The tackle screen's slots could come out a row low.
 
 ## 1.0.2
 The Fisherman's gear remade so it no longer clips, and the knife rack goes on walls.
