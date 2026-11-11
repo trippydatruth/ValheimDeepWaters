@@ -1,6 +1,6 @@
 # Generates reference / concept images with fal.ai FLUX [dev] - text to image, or image to image from a local picture.
 # Runs on Blender's own Python, with the client installed in art-tools/_vendor (git-ignored):
-#   "C:\Program Files\Blender Foundation\Blender 5.2\5.2\python\bin\python.exe" -m pip install --target art-tools\_vendor fal-client
+#   "C:\Program Files\Blender Foundation\Blender 5.3\5.3\python\bin\python.exe" -m pip install --target art-tools\_vendor fal-client
 # The key is read from FAL_KEY in the environment or the repo's .env (git-ignored); it is never printed.
 #
 #   python fal_image.py --prompt "..." --out <new folder> [--image ref.png --strength 0.85] [--size square_hd] [--seed 7]

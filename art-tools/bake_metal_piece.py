@@ -3,17 +3,17 @@
 # planks in game: their own UVs are kept and scaled to metres for the planks' tiling. E.g. piece_cleaning_ext1.blend
 # (the Filleting Knife Rack): the knives part is metal, the rack is planks.
 #   blender -b piece.blend --factory-startup --python bake_metal_piece.py
-#   env: VDW_OUT (new folder), VDW_KEY (the painted object = the model key), VDW_SIZE (1024), VDW_SAMPLES (32),
+#   env: VDW_OUT (new folder), VDW_KEY (the painted object = the model key), VDW_SIZE (1024, the most), VDW_SAMPLES (32),
 #        VDW_METAL_COLOR ("0.56,0.57,0.6"), VDW_WEAR (0.2), VDW_DIRT (0.2), VDW_PLANK_ROTATE (0/90/180/270)
 # Writes <out>/<key>/<key>_model.fbx (centred, on the ground, real size) + <key>_Unity_{Albedo,MetallicSmoothness,Normal}.png
 import bpy, os, math
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; KEY = os.environ["VDW_KEY"]
-SIZE = int(os.environ.get("VDW_SIZE", "1024")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))   # textures: 1K at most (low-poly game)
 COLOR = tuple(float(x) for x in os.environ.get("VDW_METAL_COLOR", "0.56,0.57,0.6").split(",")) + (1.0,)
-SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+SANCTUS = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\extensions\user_default\sanctus_library_starter\lib\materials")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 DIR = os.path.join(OUT, KEY)
 if os.path.exists(DIR): raise SystemExit("exists, kept: " + DIR)
 os.makedirs(DIR)

@@ -14,7 +14,7 @@ from mathutils.kdtree import KDTree
 
 BODY, ALBEDO, OUT = os.environ["VDW_BODY_OBJ"], os.environ["VDW_ALBEDO"], os.environ["VDW_OUT"]
 PIECE = os.environ.get("VDW_PIECE", "shirt"); NAME = os.environ.get("VDW_NAME", "fisher_shirt_paint_v1")
-SIZE = int(os.environ.get("VDW_SIZE", "1024"))
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024")))   # textures: 1K at most (low-poly game)
 os.makedirs(OUT, exist_ok=True)
 out_png = os.path.join(OUT, NAME + ".png")
 if os.path.exists(out_png): raise SystemExit("exists, kept: " + out_png)

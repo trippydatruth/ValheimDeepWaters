@@ -4,13 +4,13 @@
 #   - Unity maps at VDW_TEX_SIZE: <name>_Unity_Albedo / _MetallicSmoothness (R metallic, A 1-roughness) / _Normal
 #   - a material wired with those maps (so emission_map.py can run on the saved .blend)
 # env: VDW_OBJ, VDW_TEX_DIR (Tripo textures), VDW_NAME, VDW_OUT_TEX (folder for the Unity maps), VDW_SAVE_TO,
-#      VDW_HEIGHT (1.8), VDW_TEX_SIZE (2048), VDW_TURN (extra degrees about Z if the model faces the wrong way)
+#      VDW_HEIGHT (1.8), VDW_TEX_SIZE (1024, the most), VDW_TURN (extra degrees about Z if the model faces the wrong way)
 import bpy, glob, math, os
 import numpy as np
 from mathutils import Matrix, Vector
 
 NAME = os.environ["VDW_NAME"]; HEIGHT = float(os.environ.get("VDW_HEIGHT", "1.8"))
-SIZE = int(os.environ.get("VDW_TEX_SIZE", "2048")); OUT = os.environ["VDW_OUT_TEX"]; TEX = os.environ["VDW_TEX_DIR"]
+SIZE = min(1024, int(os.environ.get("VDW_TEX_SIZE", "1024"))); OUT = os.environ["VDW_OUT_TEX"]; TEX = os.environ["VDW_TEX_DIR"]   # textures: 1K at most (low-poly game)
 for o in list(bpy.data.objects): bpy.data.objects.remove(o)
 bpy.ops.wm.obj_import(filepath=os.environ["VDW_OBJ"])
 meshes = [o for o in bpy.data.objects if o.type == 'MESH']

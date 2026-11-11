@@ -1,4 +1,4 @@
-// Deep Waters: sets up every model in Assets/DeepWaters/<key>/ (a <key>_model.fbx plus its *_Unity_* maps) as a
+﻿// Deep Waters: sets up every model in Assets/DeepWaters/<key>/ (a <key>_model.fbx plus its *_Unity_* maps) as a
 // prefab named <key>, tags it into its bundle, builds the bundles and installs them in the Test profile.
 //   Menu: Deep Waters > Import Models And Build Bundles
 // It also runs once by itself when Assets/DeepWaters/RUN_IMPORT.txt exists (the file is then deleted).
@@ -58,6 +58,7 @@ public static class VdwModelImporter
         new Entry("rod_leviathan", "rod", Kind.Rigged, 1.5f),
         new Entry("rod_frostwood", "rod", Kind.Rigged, 1.5f),   // the Deep North (build_rod_model.py frostwood)
         new Entry("rod_allfather", "rod", Kind.Rigged, 1.5f),   // the endgame rod (roadmap #24, build_rod_model.py allfather)
+        new Entry("rod_ice", "rod", Kind.Rigged, 0f, 1024),     // the Ice Fishing Rod (build_lures.py ice_rod, rig_rod2.py, fur_cards.py; ice fishing rod_v10): its "fur" hair cards cut out, its "bloodgold" parts take the vanilla Bloodgold material in game
         new Entry("bobber", "rod", Kind.Static, 1.5f),
         new Entry("float_lantern", "rod", Kind.Static, 1.5f),   // the Lantern Float on the line (a float buff; build_cleaning_table.py float_lantern)
         // the eight floats on the line (build_lures float_<k>, baked VDW_KIND=lure, exported at 2.6x)
@@ -184,6 +185,8 @@ public static class VdwModelImporter
         new Entry("bait_lure_crown", "bait", Kind.Static, 1.5f) { Scale = LureScale },
         new Entry("bait_lure_ice_spoon", "bait", Kind.Static, 0.6f) { Scale = LureScale },
         new Entry("bait_lure_frostcore_jig", "bait", Kind.Static, 1.2f) { Scale = LureScale },
+        new Entry("bait_lure_grub_jig", "bait", Kind.Static) { Scale = LureScale },           // ice fishing (build_lures.py grub_jig, the painted look)
+        new Entry("bait_lure_rime_jig", "bait", Kind.Static, 0.8f) { Scale = LureScale },     // ice fishing (rime_jig): its freeze-gland eyes glow
         new Entry("bait_northern_bait", "bait", Kind.Static) { Scale = DesignedBaitScale },
         new Entry("bait_cut_bait", "bait", Kind.Static) { Scale = DesignedBaitScale * 1.3f },   // a slice of baitfish (build_cut_bait.py, baked VDW_KIND=lure)
         // designed baits (roadmap #7): build_lures.py frost_bait / deep_bait / rune_bait
@@ -252,6 +255,13 @@ public static class VdwModelImporter
         new Entry("bait_stinkbait", "bait", Kind.Static) { Scale = BaitScale },
         // the fish feasts: board/pot + food_full / food_half / food_low stages (build_cleaning_table.py)
         new Entry("piece_plaque", "pieces", Kind.Static),   // the Gold Trophy Plaque board (species mastery); the fish is added in game
+        new Entry("piece_rod_holder", "pieces", Kind.Static),   // the Rod Holder: a forked bank stake (build_rod_racks.py rod_holder, v4)
+        new Entry("piece_shelter_igloo", "pieces", Kind.Static),             // the Ice Shelter: meshes "ice" + "snow", given Valheim's own materials in game (build_shelters.py igloo, shelter v4)
+        new Entry("piece_shelter_lavvu", "pieces", Kind.Static, 0f, 2048),   // the Hide Lavvu (build_shelters.py lavvu, shelter v4)
+        new Entry("piece_shelter_ship_tent", "pieces", Kind.Static, 0f, 2048),   // the Ship-Tent (build_shelters.py ship_tent, shelter v4; the dragon heads are the game's, added in game)
+        new Entry("piece_ice_hole", "pieces", Kind.Static, 0f, 1024),   // the Ice Hole (build_lures.py ice_hole, ice fishing v8; the rim is built in game)
+        new Entry("tool_ice_auger", "leisters", Kind.Static, 0f, 2048),   // the Ice Auger (build_lures.py ice_auger, ice fishing v5)
+        new Entry("piece_rod_rack", "pieces", Kind.Static, 0f, 2048),   // the Rod Rack: round, ten rods (build_rod_racks.py rack_round, v2)
         new Entry("piece_feast_forest", "pieces", Kind.Static),
         new Entry("piece_feast_mountain", "pieces", Kind.Static),
         new Entry("piece_feast_ocean", "pieces", Kind.Static),
@@ -259,17 +269,17 @@ public static class VdwModelImporter
         new Entry("piece_feast_mistlands", "pieces", Kind.Static, 1f),
         new Entry("piece_feast_ashlands", "pieces", Kind.Static, 1f),
         new Entry("piece_feast_deepnorth", "pieces", Kind.Static),   // whale blubber in oil (build_chum.py chum_blubber)
-        // Meads and tonics: one bottle, re-coloured per family, the major ones glowing.
-        new Entry("buff_angler_minor", "buffs", Kind.Static),
-        new Entry("buff_angler_medium", "buffs", Kind.Static),
-        new Entry("buff_angler_major", "buffs", Kind.Static, 1.5f),
-        new Entry("buff_angler_north", "buffs", Kind.Static, 1.5f),   // Lingonberry Angler's Mead (build_meads.py EXTRA)
-        new Entry("buff_steady_minor", "buffs", Kind.Static),
-        new Entry("buff_steady_medium", "buffs", Kind.Static),
-        new Entry("buff_steady_major", "buffs", Kind.Static, 1.5f),
-        new Entry("buff_grip_minor", "buffs", Kind.Static),
-        new Entry("buff_grip_medium", "buffs", Kind.Static),
-        new Entry("buff_grip_major", "buffs", Kind.Static, 1.5f),
+        // Meads and tonics (build_lures mead + export_mead.py): see-through glass, the old cork and twine, the mead inside lit enough to keep its colour (at 0.5 it went milky grey), plus the vanilla mead's light and sparkles round the bottle (PieceModels.MeadColour)
+        new Entry("buff_angler_minor", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_angler_medium", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_angler_major", "buffs", Kind.Static, 1.9f),
+        new Entry("buff_angler_north", "buffs", Kind.Static, 1.9f),   // Lingonberry Angler's Mead (build_meads.py EXTRA)
+        new Entry("buff_steady_minor", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_steady_medium", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_steady_major", "buffs", Kind.Static, 1.9f),
+        new Entry("buff_grip_minor", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_grip_medium", "buffs", Kind.Static, 1.4f),
+        new Entry("buff_grip_major", "buffs", Kind.Static, 1.9f),
         new Entry("fish_moder_scale", "fish", Kind.Animated, 2f),
         new Entry("fish_bonemass_catfish", "fish", Kind.Animated, 2f),
         new Entry("fish_eikthyr_elver", "fish", Kind.Animated, 2f),
@@ -368,7 +378,7 @@ public static class VdwModelImporter
                 log.AppendLine($"sound {path} -> buffs");
             }
 
-        // Loose textures (e.g. the Jörmungandr's Scale cape maps put on a vanilla cape): every texture in
+        // Loose textures (e.g. the JÃ¶rmungandr's Scale cape maps put on a vanilla cape): every texture in
         // Assets/DeepWaters/Textures goes into the buffs bundle, found in game by its file name. *_Normal is a normal map,
         // *_MetallicSmoothness linear.
         if (AssetDatabase.IsValidFolder(Root + "/Textures"))
@@ -442,7 +452,14 @@ public static class VdwModelImporter
                     File.Copy(Path.Combine(OutDir, b), dst, true);
                     log.AppendLine($"   installed {dst}");
                 }
-                if (Directory.Exists(backup)) log.AppendLine($"   previous bundles backed up to {backup}");            }
+                if (Directory.Exists(backup)) log.AppendLine($"   previous bundles backed up to {backup}");
+                // only the last two backups are kept (each is a full copy of the bundles: they piled up to 12 GB)
+                foreach (var old in Directory.GetDirectories(ModelsDir, "bundles_backup_*").OrderByDescending(d => Path.GetFileName(d), StringComparer.Ordinal).Skip(2))
+                {
+                    try { Directory.Delete(old, true); log.AppendLine($"   old backup removed: {Path.GetFileName(old)}"); }
+                    catch (Exception ex) { log.AppendLine($"!! couldn't remove {old}: {ex.Message}"); }
+                }
+            }
             else log.AppendLine($"!! Models folder not found, bundles not installed: {ModelsDir}");
         }
         catch (Exception ex) { log.AppendLine($"!! bundle build failed: {ex}"); }
@@ -502,7 +519,7 @@ public static class VdwModelImporter
             if (!(AssetImporter.GetAtPath(p) is TextureImporter ti)) continue;
             ti.textureType = TextureImporterType.Default;
             ti.sRGBTexture = true; ti.alphaIsTransparency = false;
-            ti.maxTextureSize = e.TexSize; ti.mipmapEnabled = true;
+            ti.maxTextureSize = Math.Min(e.TexSize, 1024); ti.mipmapEnabled = true;   // 1K at most: a low-res, low-poly game
             ti.textureCompression = TextureImporterCompression.CompressedHQ;   // colour maps drop to standard below
             setup(ti);
             ti.SaveAndReimport();
@@ -590,7 +607,18 @@ public static class VdwModelImporter
             m.DisableKeyword("_EMISSION");
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
         }
-        if (fade)
+        if (prefix == "fur")
+        {
+            // hair cards (the Ice Fishing Rod's wolf-fur grip, fur_cards.py): cut out by the albedo's alpha
+            m.SetFloat("_Mode", 1f);
+            m.SetFloat("_Cutoff", 0.4f);
+            m.SetInt("_SrcBlend", (int)BlendMode.One);
+            m.SetInt("_DstBlend", (int)BlendMode.Zero);
+            m.SetInt("_ZWrite", 1);
+            m.EnableKeyword("_ALPHATEST_ON"); m.DisableKeyword("_ALPHABLEND_ON"); m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            m.renderQueue = (int)RenderQueue.AlphaTest;
+        }
+        else if (fade)
         {
             // queue first: switching to Fade while still in the opaque queue warns "render queue outside the range"
             m.renderQueue = (int)RenderQueue.Transparent;
@@ -663,7 +691,7 @@ public static class VdwModelImporter
                 // "oar.L" and "oar.R" share the set "oar_Unity_*": the name up to its first dot counts too.
                 string setName = HasSet(e, r.gameObject.name) ? r.gameObject.name : r.gameObject.name.Split('.')[0];
                 var own = HasSet(e, setName)
-                    ? MakeMaterial($"{Folder(e)}/{e.Key}_{setName}.mat", e, false, setName) : null;
+                    ? MakeMaterial($"{Folder(e)}/{e.Key}_{setName}.mat", e, setName == "glass", setName) : null;   // a "glass" part (the mead bottles) is see-through
                 // the fly's wings (see-through) are the slot whose vertices ride the Wing bones - Unity doesn't keep
                 // Blender's slot order, and assuming slot 1 put the see-through material on the body
                 bool IsWing(int i)

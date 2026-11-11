@@ -7,7 +7,7 @@
 import bpy, bmesh, math, os
 import numpy as np
 
-SIZE = int(os.environ.get("VDW_BAKE_SIZE", "2048"))
+SIZE = min(1024, int(os.environ.get("VDW_BAKE_SIZE", "1024")))   # textures: 1K at most (low-poly game)
 NAME = os.environ["VDW_BAKE_NAME"]
 SAVE_TO = os.environ["VDW_SAVE_TO"]
 OUT_DIR = os.environ.get("VDW_TEX_DIR") or os.path.dirname(SAVE_TO)

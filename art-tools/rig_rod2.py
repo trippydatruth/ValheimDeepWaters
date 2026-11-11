@@ -9,7 +9,8 @@
 #      VDW_METAL + VDW_ROUGH; VDW_SPOOL_PARTS (loose-part indices that turn, comma list), VDW_SPOOL_AXIS (x|y|z),
 #      VDW_SPOOL_PIVOT (x,y,z in the OBJ's cm; default the turning parts' centre), VDW_GRIP_Z (cm, where the hand
 #      holds), VDW_SEAT_Z (cm, top of the stiff handle - past the reel and any grip above it), VDW_LENGTH (2.85),
-#      VDW_THICK (2.0), VDW_SEGMENTS (8)
+#      VDW_THICK (2.0), VDW_SEGMENTS (8); VDW_MS (a Unity metallic/smoothness map, in place of ORM or metal + rough);
+#      VDW_SPOOL_SPHERE (x,y,z,r cm: the parts wholly within it turn, in place of VDW_SPOOL_PARTS)
 import bpy, bmesh, os, math
 import numpy as np
 from mathutils import Matrix, Vector
@@ -46,6 +47,10 @@ for v in bm.verts:
     c += 1
 bm.free()
 spool_parts = [int(x) for x in os.environ.get("VDW_SPOOL_PARTS", "").split(",") if x.strip()]
+if os.environ.get("VDW_SPOOL_SPHERE"):   # or: every part lying wholly within r of a point (x,y,z,r in cm) turns
+    sx, sy, sz, sr = (float(x) for x in os.environ["VDW_SPOOL_SPHERE"].split(","))
+    d = np.linalg.norm(co_cm - np.array([sx, sy, sz]), axis=1)
+    spool_parts = [k for k in range(c) if d[comp == k].max() <= sr]
 spool = np.isin(comp, spool_parts)
 print(f"RIG {NAME}: {n} verts, {c} parts; turning parts {spool_parts} = {[int((comp == p).sum()) for p in spool_parts]} verts")
 
@@ -133,7 +138,9 @@ def save(px, w, h, kind):
     path = os.path.join(OUT, f"{NAME}_Unity_{kind}.png"); im.filepath_raw = path; im.file_format = 'PNG'; im.save(); return path
 os.makedirs(OUT, exist_ok=True)
 a, w, h = load(os.environ["VDW_ALB"]); a[..., 3] = 1; p_alb = save(a, w, h, "Albedo")
-if os.environ.get("VDW_ORM"):
+if os.environ.get("VDW_MS"):     # a baked Unity metallic/smoothness map (bake_wood_cooler.py) as it is
+    o, w2, h2 = load(os.environ["VDW_MS"]); met, rough = o[..., 0], 1 - o[..., 3]
+elif os.environ.get("VDW_ORM"):
     o, w2, h2 = load(os.environ["VDW_ORM"]); met, rough = o[..., 2], o[..., 1]
 else:
     m_, w2, h2 = load(os.environ["VDW_METAL"]); r_, _, _ = load(os.environ["VDW_ROUGH"])

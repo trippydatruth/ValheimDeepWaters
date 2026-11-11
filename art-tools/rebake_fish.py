@@ -12,7 +12,7 @@ import numpy as np
 def pixels(img):
     a = np.empty(len(img.pixels), dtype=np.float32); img.pixels.foreach_get(a); return a.reshape(-1, 4)
 
-SIZE = int(os.environ.get("VDW_BAKE_SIZE", "2048"))
+SIZE = min(1024, int(os.environ.get("VDW_BAKE_SIZE", "1024")))   # textures: 1K at most (low-poly game)
 NAME = os.environ.get("VDW_BAKE_NAME", "fish")
 SAVE_TO = os.environ["VDW_SAVE_TO"]
 OUT_DIR = os.path.dirname(SAVE_TO)

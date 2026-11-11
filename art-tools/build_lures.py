@@ -71,8 +71,13 @@ MATS = {
     "cork":    ((0.72, 0.55, 0.36), (0.42, 0.28, 0.16), 0.85, 0.0, 0.0, "noise"),                      # a float's cork body
     "sight":   ((1.0, 0.38, 0.05), (0.95, 0.22, 0.03), 0.3, 0.0, 0.0, "flat"),                        # a float's bright orange sight tip
     "charred": ((0.07, 0.06, 0.055), (0.30, 0.12, 0.04), 0.75, 0.0, 0.0, "noise"),                    # charred bone
+    # the mead bottles (build_lures mead): clear glass (made see-through in game: its faces go in their own "glass" object)
+    "glass":   ((0.80, 0.86, 0.82), (0.62, 0.72, 0.66), 0.05, 0.0, 0.0, "noise"),
+    "mead":    ((0.95, 0.62, 0.15), (0.80, 0.45, 0.08), 0.1, 0.0, 1.0, "flat", (1.0, 0.65, 0.2)),
+    "water":   ((0.02, 0.045, 0.07), (0.01, 0.03, 0.05), 0.05, 0.0, 0.0, "flat"),
+    "fur":     ((0.48, 0.48, 0.50), (0.30, 0.30, 0.32), 0.9, 0.0, 0.0, "noise"),                         # the grey wool under a fur wrap's hair cards                         # dark open water in an ice hole
 }
-G = 7    # 7 x 7 tiles (6 x 6 ran out with the designed baits' materials)
+G = 8    # 8 x 8 tiles (7 x 7 ran out with the ice fishing materials; 6 x 6 with the designed baits')
 TILE = {name: (i % G, i // G) for i, name in enumerate(MATS)}
 def tuv(name, u, v):
     tx, ty = TILE[name]; m = 0.02
@@ -566,6 +571,28 @@ elif LURE == "frostcore_jig":
         tube([(0, -0.022, 0), (tip.x * 0.5, 0.0, tip.z * 0.5), tip], [0.0014, 0.0011, 0.0004], "barka", seg=5)
         if k % 3 == 0: spike((tip.x * 0.5, 0.0, tip.z * 0.5), (tip.x * 0.9, 0.004, tip.z * 0.9 + 0.003), 0.0007, "barka", seg=4)   # side twigs
     hook((0, -0.028, 0), 0.045, "iron", up=1, show_eye=False)
+elif LURE == "grub_jig":
+    # Grub Jig (ice fishing): a little lead ball head with painted eyes on a short hook, a leather grub tail curling off it
+    blob((0, -0.026, 0), 0.0062, "iron", seg=12, rings=8, scale=(0.95, 1.0, 0.95), bump=0.05, seed=2)       # lead head
+    for s in (-1, 1): eye(s * 0.005, -0.029, 0.002, 0.0017)
+    ring((0, -0.027, 0.0068), (1, 0, 0), 0.0021, 0.0006, "iron")                                              # line tie on top
+    tube([(0, -0.02 + 0.026 * i / 8, 0) for i in range(9)], fish_radii(9, 0.0032, 0.0042, 0.0028, 0.3), "leather", seg=10)   # the grub
+    for k in range(4): ring((0, -0.016 + 0.005 * k, 0), (0, 1, 0), 0.0041, 0.0005, "leather", seg=10)        # its ribs
+    curl = [(0, 0.006 + 0.012 * (1 - 0.4 * t) * math.sin(t * 1.6 * math.pi), -0.012 * (1 - 0.4 * t) * (1 - math.cos(t * 1.6 * math.pi))) for t in np.linspace(0, 1, 16)]
+    tube([(c[0], c[1], c[2]) for c in curl], [0.0034 * (1 - 0.75 * i / 15) for i in range(16)], "leather", seg=8, squash=0.32)   # curly tail
+    hook((0, -0.024, 0), 0.034, "iron", up=1, show_eye=False)
+elif LURE == "rime_jig":
+    # Rime Jig (the Ice King Trout's): a heavy black-metal jig body crusted with rime, a glowing freeze-gland eye, a line
+    # tie on its back and a stout hook - for working slow along the bottom under the ice
+    tube([(0, -0.034 + 0.05 * i / 10, 0) for i in range(11)], fish_radii(11, 0.004, 0.0085, 0.003, 0.3), "blackmetal", seg=10, squash=1.3, smooth=False)
+    rnd = np.random.default_rng(11)
+    for k in range(14):                                                                                        # rime crust
+        t, a = rnd.uniform(0.15, 0.9), rnd.uniform(-1.2, 1.2) + (0 if k % 2 else math.pi)
+        y = -0.034 + 0.05 * t; r = fish_radii(11, 0.004, 0.0085, 0.003, 0.3)[min(10, round(t * 10))]   # on the body's surface
+        blob((r * math.sin(a), y, r * math.cos(a) * 1.3), rnd.uniform(0.0016, 0.0026), "snow" if k % 3 else "ice", seg=6, rings=4, bump=0.3, seed=k)
+    for s in (-1, 1): blob((s * 0.0062, -0.027, 0.003), 0.0028, "gland", seg=8, rings=6)                     # freeze-gland eyes, glowing
+    ring((0, -0.024, 0.0098), (1, 0, 0), 0.0026, 0.0008, "blackmetal")                                         # line tie on its back
+    hook((0, 0.012, 0), 0.04, "steel", up=1, show_eye=False)
 elif LURE == "northern_bait":
     # Northern Bait: a lump of seal blubber studded with crushed lingonberries
     blob((0, 0, 0), 0.012, "blubber", seg=14, rings=10, scale=(0.9, 1.25, 0.7), bump=0.22, seed=9)
@@ -849,6 +876,162 @@ if LURE.startswith("leister_"):
     if LURE == "leister_frostcore": blob((0, 0, ZS + 0.02), 0.012, "frostcore", seg=10, rings=6, scale=(1.4, 1.4, 1.0))
 
 # the hook shapes side by side, for a look (not a bait): J, treble, circle, EWG - in a row along Z, each in its own Y-Z plane
+# ---------------------------------------------------------------- the mead bottles (Buffs.json meads and tonics)
+# A round-bellied glass flask, stoppered with cork and tied with twine. The "fake liquid" way: the mead is a mesh of its
+# own just inside the glass, filled to a level with a flat top, and the glass round it is see-through in game - the
+# empty part of the bottle is clear and the mead glows through it like the vanilla meads. Upright along Z, 30 cm tall.
+if LURE == "mead":
+    # (the cork and twine are the old bottle's own, with their own texture, fitted on at export: export_mead.py - so
+    # the glass follows the old bottle's profile, its neck and lip where the old cork sits)
+    GLASS = [(0.0, 0.0), (0.002, 0.05), (0.01, 0.066), (0.03, 0.083), (0.05, 0.092), (0.08, 0.097), (0.11, 0.093),
+             (0.13, 0.083), (0.15, 0.068), (0.165, 0.05), (0.178, 0.035), (0.19, 0.029), (0.235, 0.028), (0.243, 0.038),
+             (0.256, 0.04), (0.262, 0.033)]
+    body(GLASS, "glass", seg=28)
+    FILL = float(os.environ.get("VDW_FILL", "0.15"))           # how high the mead stands (m)
+    zs, rs = zip(*GLASS[1:])
+    inner = [(z, float(np.interp(z, zs, rs)) - 0.0035) for z in np.linspace(0.006, FILL, 12)]
+    body(inner, "mead", seg=28)                                 # (its caps: the bottom, and the flat top of the mead)
+# ---------------------------------------------------------------- ice fishing (IceFishing.cs, roadmap #34)
+def helix_blade(z0, z1, turns, r_in, r_out, thick, mat, steps=120):
+    """An auger's spiral flighting: a flat steel ribbon wound round the shaft from z0 up to z1 (along Y here: the
+    tool lies along Y, its point at y = 0), r_in to r_out, its outer edge a touch thinner."""
+    rows = []
+    for i in range(steps + 1):
+        t = i / steps; th = 2 * math.pi * turns * t; y = z0 + (z1 - z0) * t
+        c, s = math.cos(th), math.sin(th)
+        rows.append([bm.verts.new((r * c, y + dy, r * s)) for r, dy in ((r_in, thick / 2), (r_out, thick / 4), (r_out, -thick / 4), (r_in, -thick / 2))])
+    # UVs: each turn laid out flat as seen from above, in its own quarter of the tile (one strip along the whole
+    # ribbon squeezed metres of blade into one tile, and the bake came out in streaks)
+    def puv(v, cell):
+        cx, cy = cell % 2, cell // 2
+        return tuv(mat, (cx + 0.5 + 0.49 * v.co.x / r_out) / 2, (cy + 0.5 + 0.49 * v.co.z / r_out) / 2)
+    for i in range(steps):
+        a, b = rows[i], rows[i + 1]; cell = min(3, int(turns * i / steps))
+        for k in range(3):
+            q = [a[k], b[k], b[k + 1], a[k + 1]]
+            face(q, [puv(v, cell) for v in q], smooth=(k != 1))   # (flat, each twisted strip caught the light apart)
+        q = [a[3], b[3], b[0], a[0]]
+        face(q, [puv(v, cell) for v in q], smooth=False)
+
+if LURE == "ice_auger":
+    # The Ice Auger: a broad spiral bit of steel on an iron shaft - as wide as the hole it cuts (0.5 m, big enough to
+    # land a fish through) - a forged point and two cutting lips at its foot reaching the bit's full width, an iron
+    # collar, and an oak T-handle with leather-wrapped grips. Lying along Y, point at y = 0, 1.4 m long.
+    tube([(0, 0.02, 0), (0, 0.52, 0)], [0.032, 0.032], "steel", seg=16)                         # the bit's core
+    helix_blade(0.045, 0.48, 2.25, 0.03, 0.235, 0.008, "steel", steps=420)
+    spike((0, 0.045, 0), (0, -0.05, 0), 0.032, "steel", seg=12)                                  # the point
+    for s in (-1, 1):                                                                            # the cutting lips
+        n0 = mark(); plate([(0, 0), (0.245, 0.012), (0.25, 0.034), (0.0, 0.045)], 0.008, "steel")
+        turn(n0, (0, 0, 0), 'X', 90); turn(n0, (0, 0, 0), 'Y', 90 if s > 0 else -90); shift(n0, (0, 0.03, 0))
+    tube([(0, 0.515, 0), (0, 0.565, 0)], [0.044, 0.044], "iron", seg=16)                        # the collar
+    tube([(0, 0.565, 0), (0, 1.33, 0)], [0.027, 0.027], "iron", seg=14)                         # the shaft
+    blob((0, 1.355, 0), 0.04, "iron", seg=14, rings=8, scale=(1.0, 0.9, 0.9))                   # the hub
+    tube([(-0.27, 1.36, 0), (0.27, 1.36, 0)], [0.025, 0.025], "wood", seg=14)                  # the T-handle
+    for s in (-1, 1):
+        tube([(s * 0.255, 1.36, 0), (s * 0.275, 1.36, 0)], [0.026, 0.021], "wood", seg=14)     # rounded ends
+        for x0 in np.arange(0.08, 0.24, 0.012):                                                 # leather wraps
+            tube([(s * x0, 1.36, 0), (s * (x0 + 0.01), 1.36, 0)], [0.0275, 0.0275], "leather", seg=14, caps=False)
+elif LURE == "ice_hole":
+    # The Ice Hole: dark open water a hand below the ice, the hole's wall of clear ice, a heaped ring of slush and ice
+    # chips round it. Flat in XY (Z up), the ice's top at z = 0, about 1.2 m across; the open water 0.5 m, the width
+    # the Ice Auger's bit cuts.
+    W = 0.25
+    # (the ice in game is solid: nothing can show below its top, so the water lies a hair over it, like a pool)
+    n0 = mark(); plate(disc(W, 28), 0.004, "water"); shift(n0, (0, 0, 0.006))                   # the water
+    # the rim: broken ice heaved up at the water's edge, sloping away on the outside back down into the ice (its outer
+    # edge, uneven, a hair under the ice's top so there's no seam where it meets it)
+    if os.environ.get("VDW_RIM", "0") == "1":   # (off: the game builds the rim itself, in the vanilla ice's own material - IceHole)
+        SEG = 56
+        prof = [(0.0, 0.010), (0.006, 0.022), (0.03, 0.026), (0.08, 0.020), (0.15, 0.011), (0.24, 0.002), (0.32, -0.008), (0.40, -0.022)]   # (the hole sits 1 cm over the ice in game: the edge ends under it)
+        rows = []
+        for j in range(SEG):
+            th = 2 * math.pi * j / SEG
+            wob = 0.025 * math.sin(th * 5 + 1.3) + 0.015 * math.sin(th * 11 + 0.4)
+            rows.append([bm.verts.new(((W + d * (1 + 2.5 * wob * (d / 0.4))) * math.cos(th), (W + d * (1 + 2.5 * wob * (d / 0.4))) * math.sin(th), z + (0.004 * math.sin(th * 7) if 0 < d < 0.3 else 0))) for d, z in prof])
+        for j in range(SEG):
+            a_, b_ = rows[j], rows[(j + 1) % SEG]; u0, u1 = j / SEG, min((j + 1) / SEG, 0.9999)
+            for i in range(len(prof) - 1):
+                v0, v1 = i / (len(prof) - 1), (i + 1) / (len(prof) - 1)
+                face([a_[i], a_[i + 1], b_[i + 1], b_[i]], [tuv("ice", u0, v0), tuv("ice", u0, v1), tuv("ice", u1, v1), tuv("ice", u1, v0)])
+    for k in range(18):                                                                         # the slush heaped round it
+        a = 2 * math.pi * k / 18 + 0.1 * math.sin(k * 2.3)
+        r = W + 0.12 + 0.05 * math.sin(k * 1.7)
+        blob((r * math.cos(a), r * math.sin(a), 0.0), 0.075 + 0.025 * math.sin(k * 3.1), "snow", seg=10, rings=6,
+             scale=(1.3, 1.0, 0.35), bump=0.35, seed=k)
+    rng = np.random.default_rng(7)
+    for k in range(14):                                                                         # chips and slabs of ice
+        a = rng.uniform(0, 2 * math.pi); r = rng.uniform(W + 0.18, W + 0.36); s = rng.uniform(0.02, 0.055)
+        c = (r * math.cos(a), r * math.sin(a), 0.004)
+        if k % 3 == 0:
+            crystal(c, (c[0] + rng.uniform(-0.02, 0.02), c[1] + rng.uniform(-0.02, 0.02), s * 1.4), s * 0.6, "ice", sides=5)
+        else:
+            n0 = mark(); plate([(-s, -s * 0.6), (s * 0.9, -s * 0.7), (s * 1.1, s * 0.5), (-s * 0.6, s * 0.8)], s * 0.35, "ice")
+            turn(n0, (0, 0, 0), 'Z', math.degrees(a)); turn(n0, (0, 0, 0), 'X', rng.uniform(-15, 15)); shift(n0, c)
+elif LURE == "lure_grub_jig":
+    # Grub Jig: a round lead head with painted eyes on a J hook, a leather grub tail curled behind it
+    blob((0, -0.022, 0), 0.0068, "iron", seg=14, rings=10, scale=(0.95, 1.0, 1.0))
+    for s in (-1, 1): eye(s * 0.0058, -0.024, 0.002, 0.0017)
+    ring((0, -0.024, 0.0072), (1, 0, 0), 0.0022, 0.0006, "iron")
+    tube([(0, -0.016 + 0.024 * i / 8, 0) for i in range(9)], fish_radii(9, 0.0034, 0.0042, 0.0028, 0.3), "leather", seg=12)
+    curl = [(0, 0.008 + 0.009 * (1 - 0.4 * t) * math.sin(t * 1.6 * math.pi), -0.009 * (1 - 0.4 * t) * (1 - math.cos(t * 1.6 * math.pi))) for t in np.linspace(0, 1, 16)]
+    tube(curl, [0.0034 * (1 - 0.75 * i / 15) for i in range(16)], "leather", seg=10, squash=0.32)
+    hook((0, -0.02, 0), 0.034, "steel", up=1, show_eye=False)
+elif LURE == "lure_rime_jig":
+    # Rime Jig: a heavy black-metal head crusted with rime, a glowing freeze-gland eye each side, a heavy hook
+    blob((0, -0.026, 0), 0.0095, "blackmetal", seg=16, rings=12, scale=(0.85, 1.25, 1.0), bump=0.08, seed=3)
+    for s in (-1, 1): blob((s * 0.0072, -0.031, 0.002), 0.0028, "gland", seg=10, rings=6)
+    rng = np.random.default_rng(11)
+    for k in range(9):                                                                          # the rime crust
+        a = rng.uniform(0, 2 * math.pi); y = rng.uniform(-0.03, -0.015)
+        b = (0.0078 * math.cos(a), y, 0.0078 * math.sin(a) * 0.95)
+        crystal(b, (b[0] * 1.35, y + rng.uniform(-0.002, 0.002), b[2] * 1.35), 0.0016, "ice", sides=5)
+    ring((0, -0.036, 0.008), (1, 0, 0), 0.0027, 0.0008, "blackmetal")
+    hook((0, -0.02, 0), 0.05, "steel", up=1, show_eye=False, r=0.0015)
+elif LURE == "ice_rod":
+    # The Ice Fishing Rod: a short Norse jigging rod, 1 m, laid out like the other rods for rig_rod2.py (along +Z, butt at
+    # z = 0, the reel and guides on the +Y side). An antler knob at the butt, a grip wrapped in Elaking fur with leather
+    # lashings, a bloodgold reel seat with a little bloodgold spool reel under it (the turning parts all within 4 cm of its
+    # axle, which the rig reads - VDW_SPOOL_SPHERE), a tapered ash blank with three big bloodgold guides (big so ice doesn't
+    # choke them), a bright orange tip to see a bite by, and the line run up through the guides.
+    RL = 1.0
+    blob((0, 0, 0.026), 0.025, "bone", seg=16, rings=10, scale=(1.0, 1.0, 0.75), bump=0.18, seed=4)      # antler knob (a burr)
+    tube([(0, 0, 0.012), (0, 0, 0.04)], [0.0215, 0.0195], "bone", seg=16)                                # its neck into the grip
+    tube([(0, 0, 0.035), (0, 0, 0.215)], [0.018, 0.018], "wood", seg=14)                               # the handle's core
+    tube([(0, 0, 0.055 + 0.15 * i / 10) for i in range(11)], [0.0205 + 0.001 * math.sin(i * 1.9) for i in range(11)], "fur", seg=16)   # the wool under the fur
+    # (the Elaking fur over it: hair cards, added after rigging - fur_cards.py, with their own texture set)
+    for z0 in (0.048, 0.205):                                                                           # leather lashings, solid
+        for j in range(3):                                                                              # (capped: open rings looked to float)
+            tube([(0, 0, z0 + j * 0.0045), (0, 0, z0 + j * 0.0045 + 0.004)], [0.0225, 0.0225], "leather", seg=16)
+    tube([(0, 0, 0.212), (0, 0, 0.30)], [0.0165, 0.0165], "gold", seg=16)                              # the reel seat
+    tube([(0, 0, 0.30), (0, 0, 0.318)], [0.0135, 0.0095], "gold", seg=14)                              # ferrule
+    P = (0, 0.058, 0.256)                                                                               # the reel's axle
+    tube([(0, 0.014, 0.256), (0, 0.032, 0.256)], [0.006, 0.0055], "gold", seg=10)                      # its foot
+    def spool_disc(x0, x1, r, mat, seg=24):
+        tube([(x0, P[1], P[2]), (x1, P[1], P[2])], [r, r], mat, seg=seg)
+    spool_disc(-0.012, 0.012, 0.019, "linen")                                                           # the line wound on
+    for s in (-1, 1): spool_disc(s * 0.012, s * 0.017, 0.031, "gold")                                   # the spool's rims
+    tube([(0.017, P[1], P[2]), (0.021, P[1] + 0.017, P[2])], [0.0028, 0.0028], "gold", seg=8)          # the crank arm, on the right (+X) like every rod: the reeling animation turns it with the right hand
+    tube([(0.021, P[1] + 0.017, P[2]), (0.032, P[1] + 0.017, P[2])], [0.0055, 0.006], "bone", seg=10)    # bone knob
+    # the blank: ash, tapering, the last 12 cm orange
+    zs = np.linspace(0.318, RL, 40); rs = np.linspace(0.0085, 0.0026, 40)
+    tip_z = 0.88
+    cut = int(np.searchsorted(zs, tip_z))
+    tube([(0, 0, z) for z in zs[:cut + 1]], list(rs[:cut + 1]), "wood", seg=12)
+    tube([(0, 0, z) for z in zs[cut:]], list(rs[cut:]), "sight", seg=12)
+    # three big guides and a tip-top, on stilts, each whipped on with thread
+    GUIDES = [(0.45, 0.013), (0.64, 0.010), (0.80, 0.0075)]
+    line = [(0, P[1] + 0.019, P[2])]
+    for gz, R in GUIDES:
+        br = float(np.interp(gz, zs, rs)); cy = br + 0.006 + R
+        ring((0, cy, gz), (0, 0, 1), R, 0.0016, "gold", seg=18)
+        for s in (-1, 1):
+            tube([(0, br * 0.8, gz + s * 0.012), (0, cy - R, gz)], [0.0013, 0.0013], "gold", seg=6)
+        tube([(0, 0, gz - 0.016), (0, 0, gz + 0.016)], [br + 0.0009, br + 0.0009], "thread", seg=12, caps=False)
+        line.append((0, cy - R * 0.35, gz))
+    ring((0, 0.0026 + 0.0045, RL - 0.004), (0, 0, 1), 0.0035, 0.0012, "gold", seg=12)                 # tip-top
+    tube([(0, 0, RL - 0.012), (0, 0.004, RL - 0.004)], [0.0016, 0.0012], "gold", seg=6)
+    line.append((0, 0.0026 + 0.0045, RL - 0.004))
+    tube(line, [0.0007] * len(line), "linen", seg=5, caps=False)                                         # the line
 if LURE == "hooks_demo":
     hook((0, -0.03, 0), 0.04, "steel", up=1)
     n0 = mark(); treble((0, -0.03, 0), 0.036, "steel", axis=(0, 1, 0)); shift(n0, (0, 0, 0.045))

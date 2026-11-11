@@ -11,7 +11,7 @@ bpy.context.preferences.filepaths.save_version = 0          # no .blend1 backups
 
 index = {}
 # the texture-library add-ons' own images (Grungit's grunge maps, Sanctus), linked by absolute path
-ADDONS = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\scripts\addons")
+ADDONS = os.path.expandvars(rf"%APPDATA%\Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons")
 addon_idx = {}
 for d, _, fs in os.walk(ADDONS):
     for f in fs:

@@ -10,14 +10,14 @@
 #   - writes <NAME>_Unity_Albedo / _MetallicSmoothness (wet scales) / _Normal and wires them the way seam_unwrap reads
 #   - saves a new .blend with only "lo" (named VDW_NAME), sized VDW_LENGTH metres, plus side/top check renders
 #   blender -b source.blend --python prep_sourced_fish.py
-#   env: VDW_NAME, VDW_LENGTH, VDW_TEX_DIR, VDW_SAVE_TO, VDW_PREVIEW (png prefix), VDW_FACES, VDW_BAKE_SIZE (2048)
+#   env: VDW_NAME, VDW_LENGTH, VDW_TEX_DIR, VDW_SAVE_TO, VDW_PREVIEW (png prefix), VDW_FACES, VDW_BAKE_SIZE (1024, the most)
 import bpy, bmesh, math, os, re
 import numpy as np
 from mathutils import Vector, Matrix
 
 NAME = os.environ["VDW_NAME"]; L = float(os.environ["VDW_LENGTH"]); TEX = os.environ["VDW_TEX_DIR"]
 SAVE_TO = os.environ["VDW_SAVE_TO"]; PREV = os.environ.get("VDW_PREVIEW", "")
-FACES = int(os.environ.get("VDW_FACES", "12000")); SIZE = int(os.environ.get("VDW_BAKE_SIZE", "2048"))
+FACES = int(os.environ.get("VDW_FACES", "12000")); SIZE = min(1024, int(os.environ.get("VDW_BAKE_SIZE", "1024")))   # textures: 1K at most (low-poly game)
 KEEP = os.environ.get("VDW_KEEP"); DROP = os.environ.get("VDW_DROP")
 os.makedirs(TEX, exist_ok=True)
 # VDW_SAVE_HI=path: only save the joined, oriented, sized full-detail source ("hi", exactly as the bake saw it) to that

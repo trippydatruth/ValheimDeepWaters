@@ -25,6 +25,8 @@ GLOW.update({"bait_lure_sparkler": 1.5, "bait_frost_bait": 1.0, "bait_deep_bait"
 UPRIGHT |= {"bait_cut_bait"}; LOOK_DOWN.update({"bait_cut_bait": 20})   # the chunk standing, a cut face toward you
 UPRIGHT |= {"bait_frost_bait"}; LOOK_DOWN.update({"bait_frost_bait": 28})   # the frozen slab: upright, so its icicles hang down
 UPRIGHT |= {"piece_plaque"}; LOOK_DOWN.update({"piece_plaque": 0})   # the Gold Trophy Plaque board
+UPRIGHT |= {"piece_shelter_igloo", "piece_shelter_lavvu", "piece_shelter_ship_tent"}; LOOK_DOWN.update({"piece_shelter_igloo": 22, "piece_shelter_lavvu": 12, "piece_shelter_ship_tent": 18})   # the ice-fishing shelters (build_shelters.py)
+TURN = {k: 180 for k in ("piece_shelter_igloo", "piece_shelter_lavvu", "piece_shelter_ship_tent")}   # upright models turned about Z before the usual -28: the shelters show their doors (+Y)
 UPRIGHT |= {"buff_regalia_njord"}; LOOK_DOWN.update({"buff_regalia_njord": 28})   # Njord's Regalia crown
 UPRIGHT |= {f"tacklebox_t{i}" for i in range(1, 5)}; LOOK_DOWN.update({f"tacklebox_t{i}": 25 for i in range(1, 5)}); GLOW.update({"tacklebox_t4": 1.2})   # the tackle boxes
 UPRIGHT |= {f"cooler_c{i}" for i in range(1, 4)}; LOOK_DOWN.update({f"cooler_c{i}": 25 for i in range(1, 4)})   # the coolers
@@ -36,6 +38,7 @@ UPRIGHT |= {"buff_rune_njord", "buff_chum_blubber", "buff_angler_north", "fisher
 FRAME = {"rod": ((0, 0, 1), (0, 1, 0)), "bobber": ((0, 0, 1), (0, -1, 0)), "pickable_worm": None,
          "fish_halibut": ((0, -1, 0), (1, 0, 0))}   # lies flat (eyed side +Z): shown from above
 DEFAULT = ((0, -1, 0), (0, 0, 1))
+FRAME["tool_ice_auger"] = ((0, 1, 0), (0, 0, 1))   # the Ice Auger: handle up-right, the bit down-left (it stands on its bit)
 # per-icon touches: LIGHT = (key/fill, rim, ambient) multipliers for dark items; WARM = warmer key light;
 # ROLL = how far it turns toward the viewer (default 28 degrees); MARGIN = frame around it (default 1.12)
 LIGHT = {"hook_tiny": (1.6, 3.0, 2.2), "hook_large": (1.3, 2.2, 1.6), "hook_heavy": (1.5, 2.6, 2.0), "hook_giant": (1.8, 3.4, 2.6)}
@@ -45,6 +48,8 @@ FOOD_TURN = {"prep_dried": 0}
 _FLOATS = ("quill_float", "cork_float", "bone_float", "frost_float", "linen_bob", "eitr_float", "ember_float", "rime_float")
 UPRIGHT |= {f"buff_{k}" for k in _FLOATS}; GLOW.update({"buff_frost_float": 1.0, "buff_eitr_float": 1.2, "buff_ember_float": 1.2})   # the floats (roadmap #25), standing
 UPRIGHT |= {"buff_angler_flare"}; LOOK_DOWN.update({"buff_angler_flare": 10})   # the Angler's Flare, standing
+UPRIGHT |= {"piece_rod_holder", "piece_rod_rack"}; LOOK_DOWN.update({"piece_rod_holder": 12, "piece_rod_rack": 22})   # the rod holder and rod rack
+GLOW.update({f"buff_{f}_{t}": (1.2 if t == "major" else 0.8) for f in ("angler", "steady", "grip") for t in ("minor", "medium", "major")}); GLOW["buff_angler_north"] = 1.2   # the meads all glow (v4 bottles)
 ROLL = {"fish_queen_eel": 62, "fishing_boat": -40, "bait_lure_antler": -35, "bait_lure_wyrm": -35}
 MARGIN = {"rod": 1.0, "fish_queen_eel": 1.0}
 # mirrored across the bottom-left/top-right diagonal after rendering: same diagonal, reel and line on the other side
@@ -56,6 +61,11 @@ DIAGONAL_MIRROR = {"rod"}
 COIL = {"bait_worm": (560, 35), "fish_queen_eel": (600, 30)}
 COIL_VIEW = float(os.environ.get("VDW_COIL_VIEW", "55"))
 os.makedirs(OUT, exist_ok=True)
+
+# parts the mod gives a vanilla material in game (RodRig.UseVanillaMaterials): shown with that material's texture
+# the igloo wears Valheim's ice and snow in game; its folder's maps are the hide's and fur's
+PLAIN = {("piece_shelter_igloo", "ice"): (0.62, 0.80, 0.95), ("piece_shelter_igloo", "snow"): (0.94, 0.96, 1.0)}
+VANILLA_LOOK = {"bloodgold": r"C:\Users\tripp\Desktop\Valheim_DeepWaters\Rip\ExportedProject\Assets\GameElements\Items\_res\BloodGold\model\bloodgold_bar_d.png"}
 
 def maps(folder, prefix=None):
     out = {}
@@ -77,7 +87,9 @@ def material(name, m, glow=0.0, fade=False):
     if "Albedo" in m:
         a = img(m["Albedo"]); L(a.outputs["Color"], b.inputs["Base Color"])
         if fade:
-            L(a.outputs["Alpha"], b.inputs["Alpha"]); mat.blend_method = 'BLEND'
+            L(a.outputs["Alpha"], b.inputs["Alpha"])
+            if hasattr(mat, "surface_render_method"): mat.surface_render_method = 'BLENDED'   # (Blender 5: blend_method is gone)
+            else: mat.blend_method = 'BLEND'
     if "MetallicSmoothness" in m:
         t = img(m["MetallicSmoothness"], False)
         sep = nt.nodes.new("ShaderNodeSeparateColor"); L(t.outputs["Color"], sep.inputs["Color"]); L(sep.outputs["Red"], b.inputs["Metallic"])
@@ -142,10 +154,18 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     for o in meshes:
         if o.name.startswith(("vdw_wood", "vdw_darkwood")):     # the mod dresses these in Valheim's tiling ship planks
             o.data.materials.clear(); o.data.materials.append(planks_material(o.name.startswith("vdw_darkwood"))); continue
+        part = o.name.split(".")[0]
+        if (key, part) in PLAIN:   # parts the game dresses in its own material and the folder has no maps for: a plain colour
+            pm = bpy.data.materials.new(key + "_" + o.name); pm.use_nodes = True
+            pm.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = PLAIN[key, part] + (1.0,)
+            pm.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.35 if part == "ice" else 0.8
+            o.data.materials.clear(); o.data.materials.append(pm); continue
         own = maps(folder, o.name.split(".")[0])
         m = own or maps(folder, key) or maps(folder)   # the model's own set first (the folder may hold other parts' sets too)
+        if o.name.split(".")[0] in VANILLA_LOOK:      # parts the mod dresses in a vanilla material: its texture, from the rip
+            m = dict(m, Albedo=VANILLA_LOOK[o.name.split(".")[0]])
         o.data.materials.clear()
-        o.data.materials.append(material(key + "_" + o.name, m, glow))
+        o.data.materials.append(material(key + "_" + o.name, m, glow, fade=o.name.split(".")[0] in ("glass", "fur")))   # a mead bottle's glass, a rod's fur cards: see-through
         if key == "bait_fly":     # second slot: see-through wings
             o.data.materials.append(material(key + "_wings", m, 0, fade=True))
             for poly in o.data.polygons: pass
@@ -169,7 +189,7 @@ for entry in [k.strip() for k in os.environ["VDW_KEYS"].split(",") if k.strip()]
     if key.startswith(("tackle_reel_", "tackle_line_")):   # a reel or spool on its side: three-quarters on, the crank side toward you, from a little above
         R = Matrix.Rotation(math.radians(22), 4, 'X') @ Matrix.Rotation(math.radians(-52), 4, 'Z')
     elif key in UPRIGHT:
-        R = Matrix.Rotation(math.radians(LOOK_DOWN.get(key, 0)), 4, 'X') @ Matrix.Rotation(math.radians(-28), 4, 'Z')
+        R = Matrix.Rotation(math.radians(LOOK_DOWN.get(key, 0)), 4, 'X') @ Matrix.Rotation(math.radians(-28 + TURN.get(key, 0)), 4, 'Z')
     elif key.startswith(("food_", "prep_")):   # dishes and prepared food: level, long side across, seen from the front and above
         R = Matrix.Rotation(math.radians(FOOD_VIEW), 4, 'X') @ Matrix.Rotation(math.radians(FOOD_TURN.get(key, 0)), 4, 'Z')
     elif coiled:       # lying in a coil: seen from above at an angle

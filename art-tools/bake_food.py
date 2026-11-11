@@ -6,17 +6,17 @@
 #     (edges, scratches, dirt in the cavities); plain and painted materials (the food) are baked as they are
 #   - writes <out>/<key>/<key>_model.fbx + <key>_Unity_{Albedo,MetallicSmoothness,Normal}.png, the model at real size,
 #     standing on the origin; plus <key>_baked.blend. Never touches the source file. New folders only.
-#   blender -b Stew.blend --factory-startup --python bake_food.py   env: VDW_OUT (new folder), VDW_KEY, VDW_SIZE (1024),
+#   blender -b Stew.blend --factory-startup --python bake_food.py   env: VDW_OUT (new folder), VDW_KEY, VDW_SIZE (1024, the most),
 #   VDW_SAMPLES (32), VDW_WEAR (0.12), VDW_DIRT (0.15)
 import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; KEY = os.environ.get("VDW_KEY", "food_fishermans_stew")
-SIZE = int(os.environ.get("VDW_SIZE", "1024")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))   # textures: 1K at most (low-poly game)
 DIR = os.path.join(OUT, KEY)
 if os.path.exists(DIR): raise SystemExit("exists, kept: " + DIR)
 os.makedirs(DIR)
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 
 sc = bpy.context.scene
 meshes = [o for o in sc.objects if o.type == 'MESH' and not o.hide_render and o.visible_get()]

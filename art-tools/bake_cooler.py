@@ -6,14 +6,14 @@
 #   c2 Iron-Banded Cooler: dark tarred planks, worn iron lid and handles
 #   c3 Frost Cooler: Sanctus ice body, worn silver lid and handles
 # Writes <out>/cooler_<tier>/cooler_<tier>_Unity_{Albedo,MetallicSmoothness,Normal}.png (+ the Grungit mask). New files only.
-#   blender -b cooler_rig.blend --factory-startup --python bake_cooler.py   env: VDW_OUT, VDW_TIER, VDW_SIZE (1024), VDW_SAMPLES (64)
+#   blender -b cooler_rig.blend --factory-startup --python bake_cooler.py   env: VDW_OUT, VDW_TIER, VDW_SIZE (1024, the most), VDW_SAMPLES (64)
 import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; TIER = os.environ.get("VDW_TIER", "c1")
-SIZE = int(os.environ.get("VDW_SIZE", "1024")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "64"))
-SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "64"))   # textures: 1K at most (low-poly game)
+SANCTUS = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\extensions\user_default\sanctus_library_starter\lib\materials")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 TEXDIR = os.path.join(OUT, f"cooler_{TIER}")
 if os.path.exists(os.path.join(TEXDIR, f"cooler_{TIER}_Unity_Albedo.png")): raise SystemExit("exists, kept: " + TEXDIR)
 os.makedirs(TEXDIR, exist_ok=True)

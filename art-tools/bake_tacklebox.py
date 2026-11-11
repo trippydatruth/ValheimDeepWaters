@@ -8,7 +8,7 @@
 # Writes <out>/Textures/tacklebox_<tier>/tacklebox_<tier>_Unity_{Albedo,MetallicSmoothness,Normal}.png, the mask, and
 # <out>/tacklebox_<tier>_baked.blend. Never overwrites a map unless VDW_REDO=1.
 #   blender -b tacklebox_rigged.blend --factory-startup --python bake_tacklebox.py
-#   env: VDW_OUT, VDW_TIER (t1), VDW_LENGTH (0.6), VDW_SIZE (1024), VDW_SAMPLES (64), VDW_REDO
+#   env: VDW_OUT, VDW_TIER (t1), VDW_LENGTH (0.6), VDW_SIZE (1024, the most), VDW_SAMPLES (64), VDW_REDO
 #   VDW_BANDS=0: leave off the painted metal straps and rim (t2-t4); VDW_BANDS=rim: only the thin rim along the seam
 #   VDW_EDITED=1: run on a tackle box edit blend (make_tacklebox_edit.py) to bake the user's edited materials as they are
 import bpy, os, math
@@ -16,9 +16,9 @@ import numpy as np
 from mathutils import Vector
 
 OUT = os.environ["VDW_OUT"]; TIER = os.environ.get("VDW_TIER", "t1"); LENGTH = float(os.environ.get("VDW_LENGTH", "0.6"))
-SIZE = int(os.environ.get("VDW_SIZE", "1024")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "64")); REDO = os.environ.get("VDW_REDO") == "1"
-SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "64")); REDO = os.environ.get("VDW_REDO") == "1"   # textures: 1K at most (low-poly game)
+SANCTUS = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\extensions\user_default\sanctus_library_starter\lib\materials")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 TEXDIR = os.path.join(OUT, "Textures", f"tacklebox_{TIER}"); os.makedirs(TEXDIR, exist_ok=True)
 
 # per tier: (Sanctus file, material, inputs) for wood / metal / handle, and the worn colours Grungit wears them to

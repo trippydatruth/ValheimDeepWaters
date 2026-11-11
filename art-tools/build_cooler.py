@@ -14,7 +14,7 @@ OUT = os.environ["VDW_OUT"]
 if os.path.exists(OUT): raise SystemExit("exists, kept: " + OUT)
 os.makedirs(OUT)
 WIDTH = float(os.environ.get("VDW_WIDTH", "0.6"))
-SIZE = int(os.environ.get("VDW_SIZE", "1024"))
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024")))   # textures: 1K at most (low-poly game)
 
 src = [o for o in bpy.data.objects if o.type == 'MESH'][0]
 for o in list(bpy.data.objects):

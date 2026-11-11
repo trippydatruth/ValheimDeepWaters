@@ -10,17 +10,17 @@
 # fisher_gear_ingame_v2.blend with it all applied, and preview_front/back/side.png.
 #   blender -b <user's fisher_gear_ingame_v1.blend> --python bake_gear_trim.py
 #   env: VDW_OLD (the blend with the installed pieces, e.g. the .blend1), VDW_OUT, VDW_UNITY (Assets\DeepWaters),
-#        VDW_SIZE (1024), VDW_CUFF_DARK (1.05), VDW_PAINT_VER (v4)
+#        VDW_SIZE (1024, the most), VDW_CUFF_DARK (1.05), VDW_PAINT_VER (v4)
 import bpy, os, math, numpy as np
 from mathutils import Vector
 
 OLD, OUT, U = os.environ["VDW_OLD"], os.environ["VDW_OUT"], os.environ["VDW_UNITY"]
-SIZE = int(os.environ.get("VDW_SIZE", "1024")); DARK = float(os.environ.get("VDW_CUFF_DARK", "1.05"))   # the weave and wear darken it a little more
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); DARK = float(os.environ.get("VDW_CUFF_DARK", "1.05"))   # the weave and wear darken it a little more
 VER = os.environ.get("VDW_PAINT_VER", "v4")
 if os.path.exists(OUT): raise SystemExit("exists, kept: " + OUT)
 os.makedirs(OUT)
-SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+SANCTUS = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\extensions\user_default\sanctus_library_starter\lib\materials")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 
 for o in list(bpy.data.objects):
     if o.mode != 'OBJECT' and o.name in bpy.context.view_layer.objects:

@@ -11,19 +11,21 @@
 # Writes <out>/cooler_<tier>/cooler_<tier>_Unity_{Albedo,MetallicSmoothness,Normal}.png, the mask, and
 # <out>/cooler_<tier>_baked.blend (the live materials, for editing and rebaking). New files only.
 #   blender -b cooler_wood_v1.blend --factory-startup --python bake_wood_cooler.py
-#   env: VDW_OUT, VDW_TIER (c1), VDW_SIZE (2048), VDW_SAMPLES (32)
+#   env: VDW_OUT, VDW_TIER (c1), VDW_SIZE (1024, the most), VDW_SAMPLES (32)
 import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; TIER = os.environ.get("VDW_TIER", "c1")
 KIND = os.environ.get("VDW_KIND", "cooler"); PREFIX = {"tacklebox": "tacklebox", "gear": "tackle", "lure": "bait", "cap": "fisher"}.get(KIND, "cooler")
-SIZE = int(os.environ.get("VDW_SIZE", "2048")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
-SANCTUS = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\extensions\user_default\sanctus_library_starter\lib\materials")
-GRUNGIT = os.path.join(os.environ["APPDATA"], r"Blender Foundation\Blender\5.2\scripts\addons\Grungit\grungit_data\Materials.blend")
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))   # textures: 1K at most (low-poly game)
+SANCTUS = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\extensions\user_default\sanctus_library_starter\lib\materials")
+GRUNGIT = os.path.join(os.environ["APPDATA"], rf"Blender Foundation\Blender\{bpy.app.version[0]}.{bpy.app.version[1]}\scripts\addons\Grungit\grungit_data\Materials.blend")
 TEXDIR = os.path.join(OUT, f"{PREFIX}_{TIER}")
 if os.path.exists(os.path.join(TEXDIR, f"{PREFIX}_{TIER}_Unity_Albedo.png")): raise SystemExit("exists, kept: " + TEXDIR)
 os.makedirs(TEXDIR, exist_ok=True)
 
+RILEY = "rileyb3d"   # a texture set from rileyb3d.com (CC0, downloaded at 1K into Mesh/_library_cache/rileyb3d): see riley_material
+ACG = "ambientcg"   # a material from ambientCG (Blender 5.3's online library), not Sanctus: see acg_material
 WOOD, METAL, GOLD = r"Wood\generic_wood.blend", r"Metals Worn\basic_worn_metal.blend", r"Metals Worn\gold_rough.blend"
 COPPER = r"Metals Worn\hammered_copper.blend"
 # per material slot: (Sanctus file, material, its inputs, the worn colour Grungit wears edges to, metallic of the wear,
@@ -252,6 +254,10 @@ LURE_MATS = dict(
     cork=SOFT((0.30, 0.19, 0.09), var=0.6, grime=0.2, bump=0.8, dirt=(0.14, 0.08, 0.04)),     # cork, pitted (the base brightens: set dark)
     sight=PAINT((0.95, 0.28, 0.02), (0.80, 0.60, 0.42), rough=0.3, wear=0.05),               # a float's orange sight tip
     charred=SOFT((0.03, 0.025, 0.022), var=0.6, grime=0.4, bump=0.7, dirt=_SOOT),            # charred bone
+    glass=GLASSY((0.16, 0.21, 0.18), rough=0.04, bubbles=0.3, grime=0.15),   # the mead bottles' clear glass (made see-through in game)
+    mead=GLASSY((0.80, 0.45, 0.08), rough=0.08, bubbles=0.7),
+    water=GLASSY((0.008, 0.02, 0.032), rough=0.02, bubbles=0.05, grime=0.0),   # dark open water (the Ice Hole)
+    fur=FB(WOOL, "wool_carpet_04", {"Base Color": (0.30, 0.30, 0.32, 1), "Color": (0.55, 0.55, 0.57, 1), "Scale": 6.0, "Bump Multiplier": 1.0}, (0.70, 0.70, 0.72), 0.1, _D, 0.2),   # grey wool, under hair cards
     glow=matte((1.0, 1.0, 1.0), 0.3, (1.0, 1.0, 1.0), 0.0, _D, 0.0),
 )
 _BOSS_GLOW = {"antler": (0.35, 0.9, 1.0), "root": (0.75, 0.95, 0.25), "ooze": (0.45, 1.0, 0.3), "wyrm": (0.4, 0.75, 1.0),
@@ -277,6 +283,68 @@ if KIND == "lure" and TIER not in TIERS:
         T["resin"] = GLASSY((0.30, 0.13, 0.02), rough=0.12, bubbles=0.4, grime=0.2); T["barka"] = WD((0.74, 0.70, 0.62), (0.16, 0.12, 0.09), (0.86, 0.84, 0.80), 0.2, _D, 0.3, knots=0.0, scale=14.0, stretch=0.35)
     if TIER == "float_frost":
         T["ice"] = GLASSY((0.14, 0.38, 0.68), rough=0.06, bubbles=0.6, dirt=_RIME, amt=0.02)
+    # the rod rack and rod holder (build_rod_racks.py): sized like furniture, so the tackle boxes' oak (grain per metre)
+    # rather than the baits' fine grain; a bark-on stake for the holder
+    if TIER == "ice_rod":   # the Ice Fishing Rod: a pale ash blank and grip core, its reel and fittings in bloodgold (the
+        # Deep North's red-orange gold), the Elaking's sandy grey-tan wool under its fur grip (the hair cards: fur_cards.py)
+        T.update(wood=WD((0.66, 0.55, 0.40), (0.46, 0.36, 0.24), (0.78, 0.69, 0.54), 0.3, _D, 0.35),
+                 gold=MT((0.72, 0.20, 0.035), 0.2, (1.0, 0.50, 0.16), 0.06, (0.30, 0.10, 0.04), 0.05),   # (the worn metal, not gold_rough: its mottle read as rust)
+                 fur=FB(WOOL, "wool_carpet_04", {"Base Color": (0.11, 0.09, 0.075, 1), "Color": (0.30, 0.24, 0.18, 1), "Scale": 6.0, "Bump Multiplier": 1.0}, (0.45, 0.38, 0.30), 0.1, _D, 0.2))
+    if TIER == "ice_auger":   # a 1.2 m tool: the oak at furniture scale, like the rod rack
+        T.update(wood=WD((0.36, 0.22, 0.11), (0.19, 0.11, 0.05), (0.50, 0.36, 0.22), 0.3, _D, 0.35), iron=_IRON)
+    if TIER in ("rack_round", "rod_holder"):
+        T.update(wood=WD((0.36, 0.22, 0.11), (0.19, 0.11, 0.05), (0.50, 0.36, 0.22), 0.3, _D, 0.35), darkwood=_DARKOAK, iron=_IRON, linen=_LINEN,
+                 bark=WD((0.20, 0.15, 0.10), (0.09, 0.065, 0.04), (0.42, 0.32, 0.20), 0.35, _D, 0.35, knots=0.4, scale=6.0, stretch=0.2),
+                 leather=FB(LEATH, "pu_leather", {"Base Color": (0.16, 0.09, 0.04, 1), "Roughness": 0.65}, (0.32, 0.20, 0.11), 0.2, _D, 0.2))
+    # the ice-fishing shelters (build_shelters.py): sized like buildings. The Hide Lavvu: smoked reindeer-brown hides,
+    # peeled weathered poles, bark-on logs, grey-brown fur rugs. The Ship-Tent: the Elaking's sandy grey-tan hide,
+    # dark tarred oak carved into the heads, red paint, Elaking hair along the ridge, linen guy ropes.
+    if TIER in ("lavvu", "ship_tent"):
+        tent = TIER == "ship_tent"
+        # patchwork: two hides (tent: a grey-brown and a darker brown; lavvu: tanned brown and a pale reindeer hide),
+        # darkened with the fire's smoke from smoke[0] m up to the vent at smoke[1] (object Z)
+        hide_col = (0.36, 0.31, 0.23) if tent else (0.32, 0.22, 0.13)
+        hide2_col = (0.24, 0.16, 0.09) if tent else (0.46, 0.40, 0.31)
+        T["smoke"] = (2.0, 3.6) if tent else (2.4, 4.1)
+        # the hides, lashings, bark and guy ropes from ambientCG (VDW_SHELTER_LIB=0: Sanctus as before): real tanned and
+        # distressed leathers, a furrowed bark and laid rope, tinted to the colours above
+        if os.environ.get("VDW_SHELTER_LIB", "1") == "1":
+            T.update(hide=FB(ACG, "Leather002", {"_tint": hide_col, "_keep": 0.08, "_tile": 0.7, "Roughness": 0.78}, tuple(min(1.0, c * 1.35) for c in hide_col), 0.15, (0.07, 0.05, 0.035), 0.3) if tent else
+                          FB(RILEY, "WesternDistressedLeather", {"_tint": hide_col, "_keep": 0.3, "_tile": 0.8, "Roughness": 0.78}, tuple(min(1.0, c * 1.35) for c in hide_col), 0.15, (0.07, 0.05, 0.035), 0.3),
+                     hide2=FB(ACG, "Leather033B" if tent else "Leather007", {"_tint": hide2_col, "_keep": 0.25, "_tile": 0.7, "Roughness": 0.8}, tuple(min(1.0, c * 1.3) for c in hide2_col), 0.2, (0.07, 0.05, 0.035), 0.35),
+                     bark=FB(ACG, "Bark014", {"_tint": (0.20, 0.15, 0.10), "_keep": 0.45, "_tile": 1.2, "Roughness": 0.85, "_bump": 0.9}, (0.42, 0.32, 0.20), 0.35, _D, 0.35),
+                     leather=FB(ACG, "Leather022", {"_tint": (0.14, 0.08, 0.04), "_keep": 0.2, "_tile": 3.0, "Roughness": 0.65}, (0.30, 0.19, 0.10), 0.2, _D, 0.2),
+                     linen=FB(ACG, "Rope002", {"_tint": (0.78, 0.73, 0.60), "_keep": 0.2, "_tile": 12.0, "Roughness": 0.8}, (0.60, 0.55, 0.44), 0.15, _D, 0.15))
+        else:
+            T.update(hide=FB(LEATH, "pu_leather", {"Base Color": (*hide_col, 1), "Roughness": 0.78}, tuple(min(1.0, c * 1.35) for c in hide_col), 0.15, (0.07, 0.05, 0.035), 0.3),
+                     hide2=FB(LEATH, "pu_leather", {"Base Color": (*hide2_col, 1), "Roughness": 0.8}, tuple(min(1.0, c * 1.3) for c in hide2_col), 0.2, (0.07, 0.05, 0.035), 0.35),
+                     bark=WD((0.20, 0.15, 0.10), (0.09, 0.065, 0.04), (0.42, 0.32, 0.20), 0.35, _D, 0.35, knots=0.4, scale=5.0, stretch=0.2),
+                     leather=FB(LEATH, "pu_leather", {"Base Color": (0.14, 0.08, 0.04, 1), "Roughness": 0.65}, (0.30, 0.19, 0.10), 0.2, _D, 0.2),
+                     linen=_LINEN)
+        if os.environ.get("VDW_SHELTER_LIB", "1") == "1":
+            T.update(wood=FB(RILEY, "HandHewnTimber", {"_tint": (0.22, 0.13, 0.07), "_keep": 0.15, "_uv": "Grain", "_tile": 0.8, "Roughness": 0.7, "_bump": 0.8}, (0.40, 0.28, 0.17), 0.3, _D, 0.35) if tent else
+                          FB(RILEY, "RawHewnWood", {"_tint": (0.58, 0.51, 0.40), "_keep": 0.35, "_uv": "Grain", "_tile": 0.8, "Roughness": 0.75, "_bump": 0.7}, (0.72, 0.66, 0.55), 0.25, _D, 0.3),
+                     snow=FB(RILEY, "CompactedSnow01", {"_tint": (0.62, 0.68, 0.78), "_keep": 0.5, "_tile": 0.5, "Roughness": 0.6, "_bump": 0.6}, (0.95, 0.97, 1.0), 0.0, (0.80, 0.86, 0.95), 0.0))
+        else:
+            T.update(wood=WD((0.28, 0.17, 0.09), (0.12, 0.07, 0.035), (0.40, 0.28, 0.17), 0.3, _D, 0.35, scale=5.0) if tent else
+                          WD((0.62, 0.55, 0.43), (0.42, 0.35, 0.25), (0.72, 0.66, 0.55), 0.25, _D, 0.3, knots=0.25, scale=5.0, stretch=0.2))
+        T.update(iron=_IRON,
+                 fur=FB(WOOL, "wool_carpet_04", {"Base Color": (0.11, 0.09, 0.075, 1), "Color": (0.30, 0.24, 0.18, 1), "Scale": 6.0, "Bump Multiplier": 1.0}, (0.45, 0.38, 0.30), 0.1, _D, 0.2),
+                 red=PAINT((0.50, 0.05, 0.03), (0.28, 0.17, 0.09), rough=0.5, wear=0.2))
+    # the Ice Shelter (igloo): its own ice blocks and packed snow - the game's Ice Cube materials shredded on its mesh
+    if TIER == "igloo":
+        T.update(ice=FB(ACG, "Ice002", {"_tint": (0.55, 0.74, 0.86), "_keep": 0.5, "_tile": 0.9, "Roughness": 0.22, "_bump": 0.5}, (0.80, 0.92, 1.0), 0.05, (0.70, 0.82, 0.92), 0.05),
+                 snow=FB(RILEY, "CompactedSnow02", {"_tint": (0.66, 0.72, 0.82), "_keep": 0.5, "_tile": 0.6, "Roughness": 0.6, "_bump": 0.6}, (0.95, 0.97, 1.0), 0.0, (0.80, 0.86, 0.95), 0.0))
+    # the meads and tonics (build_lures mead, tier = the buff's model key): the mead's colour per family, deeper and
+    # glowing brighter tier by tier, like vanilla meads (Angler's amber, Steady blue, Grip green, the Lingonberry red)
+    if TIER.startswith("buff_"):
+        import colorsys
+        fam, tier = (TIER[5:].rsplit("_", 1) + [""])[:2]
+        hue = 350 if tier == "north" else {"angler": 34, "steady": 205, "grip": 105}.get(fam, 34)
+        val, glow_k = {"minor": (0.55, 0.45), "medium": (0.75, 0.7), "major": (0.9, 1.0), "north": (0.75, 1.0)}.get(tier, (0.75, 0.7))
+        c = colorsys.hsv_to_rgb(hue / 360, 0.88, val); g = colorsys.hsv_to_rgb(hue / 360, 0.8, 1.0)
+        T["mead"] = GLASSY(tuple(x * 0.6 for x in c), rough=0.08, bubbles=0.5, grime=0.0)
+        T["glow_slots"] = dict(T["glow_slots"], mead=tuple(x * glow_k for x in g))
 else:
     T = TIERS[TIER]
 box = bpy.data.objects[PREFIX]; me = box.data
@@ -288,6 +356,95 @@ co = np.array([v.co[:] for v in me.vertices]); lo, hi = co.min(0), co.max(0); LE
 def append_material(rel, name):
     with bpy.data.libraries.load(os.path.join(SANCTUS, rel)) as (src, dst): dst.materials = [name]
     return dst.materials[0]
+
+# ambientCG (CC0, one of Blender 5.3's online asset libraries): a material's packed .blend fetched once from the
+# library's CDN into a local cache; its image maps are the part's base in place of a Sanctus material
+ACG_URL = "https://cdn.extensions.blender.org/asset-libraries/ambientcg/blend/{}_1K-JPG.packed.blend"
+ACG_CACHE = os.environ.get("VDW_LIB_CACHE", os.path.join(os.environ["USERPROFILE"], r"Desktop\Valheim_DeepWaters\Mesh\_library_cache\ambientcg"))
+
+def acg_material(name):
+    import urllib.request
+    os.makedirs(ACG_CACHE, exist_ok=True)
+    fp = os.path.join(ACG_CACHE, name + "_1K-JPG.packed.blend")
+    if not os.path.exists(fp):
+        req = urllib.request.Request(ACG_URL.format(name), headers={"User-Agent": f"Blender/{bpy.app.version_string}"})
+        data = urllib.request.urlopen(req, timeout=180).read()
+        open(fp + ".part", "wb").write(data); os.replace(fp + ".part", fp)
+        print(f"  library: fetched ambientCG {name} ({len(data) / 1e6:.1f} MB)")
+    with bpy.data.libraries.load(fp) as (src, dst):
+        dst.materials = [n for n in src.materials if n.endswith("_NORMAL")][:1]
+        dst.images = [n for n in src.images if "displacement" in n.lower()][:1]   # (only the other variant uses it)
+    m = dst.materials[0]
+    if dst.images: m["vdw_height"] = dst.images[0].name
+    return m
+
+RILEY_DIR = os.environ.get("VDW_RILEY_DIR", os.path.join(os.environ["USERPROFILE"], "Desktop", "Valheim_DeepWaters", "Mesh", "_library_cache", "rileyb3d"))
+
+def riley_material(name):
+    """a material from a rileyb3d.com set (<name>/<name>_diffuse/_roughness/_height_1k.png): image nodes for acg_source"""
+    m = bpy.data.materials.new(f"riley_{name}"); m.use_nodes = True; N = m.node_tree.nodes
+    for kind in ("diffuse", "roughness", "height"):
+        fp = os.path.join(RILEY_DIR, name, f"{name}_{kind}_1k.png")
+        if not os.path.exists(fp):
+            if kind == "diffuse": raise FileNotFoundError(fp)
+            continue
+        n = N.new("ShaderNodeTexImage"); n.image = bpy.data.images.load(fp, check_existing=True)
+        if kind != "diffuse": n.image.colorspace_settings.name = 'Non-Color'
+    return m
+
+class _Source:
+    """stands in for a Sanctus material's group node: the bake outputs build() wires into Grungit"""
+    def __init__(self, outputs): self.outputs = outputs; self.inputs = {}
+
+def acg_source(m, inputs):
+    """An ambientCG material's maps as bake outputs: each projected onto the model from its sides (box, object space,
+    `_tile` repeats a metre - the model's UVs are a packed bake atlas), the colour's light and dark (its luminance
+    over its average) laid on our colour `_tint` with `_keep` of its own hue, its roughness scaled to average
+    "Roughness", and its height map as a bump (a tangent normal map doesn't survive a box projection)."""
+    N, L = m.node_tree.nodes, m.node_tree.links
+    imgs = [n for n in N if n.type == 'TEX_IMAGE' and n.image]
+    def img(*keys): return next((n for n in imgs if any(k in n.image.name.lower() for k in keys)), None)
+    col_n, rough_n, disp_n = img("color", "diff", "albedo"), img("rough"), img("displacement", "height", "disp")
+    if disp_n is None and m.get("vdw_height") in bpy.data.images:
+        disp_n = N.new("ShaderNodeTexImage"); disp_n.image = bpy.data.images[m["vdw_height"]]; disp_n.image.colorspace_settings.name = 'Non-Color'
+        imgs.append(disp_n)
+    mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (inputs.get("_tile", 1.0),) * 3
+    if inputs.get("_uv"):   # along a UV map instead (wood: "Grain", metres, U along each board - the grain runs along U)
+        uvn = N.new("ShaderNodeUVMap"); uvn.uv_map = inputs["_uv"]; L.new(uvn.outputs["UV"], mp.inputs["Vector"])
+    else:
+        tc = N.new("ShaderNodeTexCoord"); L.new(tc.outputs["Object"], mp.inputs["Vector"])
+    for n in imgs:
+        if not inputs.get("_uv"): n.projection = 'BOX'; n.projection_blend = 0.45
+        for l in list(n.inputs["Vector"].links): L.remove(l)
+        L.new(mp.outputs["Vector"], n.inputs["Vector"])
+    def mean(n, lum=True):
+        px = np.array(n.image.pixels[:]).reshape(-1, 4)[:, :3]
+        if n.image.colorspace_settings.name == 'sRGB':   # (stored sRGB; the shader sees it linear)
+            px = np.where(px <= 0.04045, px / 12.92, ((px + 0.055) / 1.055) ** 2.4)
+        return float((px @ np.array([0.2126, 0.7152, 0.0722])).mean() if lum else px[:, 0].mean())
+    tint = inputs.get("_tint", (0.5, 0.5, 0.5)); keep = inputs.get("_keep", 0.25)
+    lum_tint = 0.2126 * tint[0] + 0.7152 * tint[1] + 0.0722 * tint[2]
+    m_col = max(1e-3, mean(col_n))
+    bw = N.new("ShaderNodeRGBToBW"); L.new(col_n.outputs["Color"], bw.inputs[0])
+    rel = N.new("ShaderNodeMath"); rel.operation = 'DIVIDE'; L.new(bw.outputs[0], rel.inputs[0]); rel.inputs[1].default_value = m_col
+    ours = N.new("ShaderNodeMix"); ours.data_type = 'RGBA'; ours.blend_type = 'MULTIPLY'; ours.inputs["Factor"].default_value = 1.0
+    ours.inputs[6].default_value = (*tint, 1.0); L.new(rel.outputs[0], ours.inputs[7])
+    own = N.new("ShaderNodeMix"); own.data_type = 'RGBA'; own.blend_type = 'MULTIPLY'; own.inputs["Factor"].default_value = 1.0
+    L.new(col_n.outputs["Color"], own.inputs[6]); own.inputs[7].default_value = (*(lum_tint / m_col,) * 3, 1.0)
+    col = N.new("ShaderNodeMix"); col.data_type = 'RGBA'; col.name = "vdw_library_colour"; col.inputs["Factor"].default_value = keep
+    L.new(ours.outputs[2], col.inputs[6]); L.new(own.outputs[2], col.inputs[7])
+    out = {"Color Bake": col.outputs[2]}
+    if rough_n is not None:
+        r = N.new("ShaderNodeMath"); r.operation = 'MULTIPLY'; r.use_clamp = True; L.new(rough_n.outputs["Color"], r.inputs[0])
+        r.inputs[1].default_value = inputs.get("Roughness", 0.7) / max(1e-3, mean(rough_n, lum=False))
+        out["Roughness Bake"] = r.outputs[0]
+    else:
+        v = N.new("ShaderNodeValue"); v.outputs[0].default_value = inputs.get("Roughness", 0.7); out["Roughness Bake"] = v.outputs[0]
+    bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = inputs.get("_bump", 0.6); bump.inputs["Distance"].default_value = 0.004
+    L.new((disp_n.outputs["Color"] if disp_n is not None else bw.outputs[0]), bump.inputs["Height"])
+    out["Normal Bake"] = bump.outputs["Normal"]
+    print(f"  library: {m.name} - colour {col_n.image.name}, roughness {rough_n.image.name if rough_n else '-'}, height {disp_n.image.name if disp_n else '(from colour)'}")
+    return _Source(out)
 with bpy.data.libraries.load(GRUNGIT) as (src, dst): dst.node_groups = ["Grungit v1.9.1", "Grungit Dirt v1.9.1", "Baker v1.8.3"]
 G_MAIN, G_DIRT, G_BAKER = dst.node_groups
 mask_img = bpy.data.images.new(f"{PREFIX}_{TIER}_mask", SIZE, SIZE, alpha=False); mask_img.colorspace_settings.name = 'Non-Color'
@@ -357,9 +514,9 @@ def char_wood(N, L, grp, g, C):
 
 def build(slot):
     rel, name, inputs, worn, worn_metal, wear, dirt_col, dirt = T[slot]
-    m = append_material(rel, name).copy(); m.name = f"cool_{slot}_{TIER}"
+    m = (acg_material(name) if rel == ACG else riley_material(name) if rel == RILEY else append_material(rel, name)).copy(); m.name = f"cool_{slot}_{TIER}"
     N, L = m.node_tree.nodes, m.node_tree.links
-    grp = next(n for n in N if n.type == 'GROUP' and n.node_tree and any("Bake" in o.name for o in n.outputs))
+    grp = acg_source(m, inputs) if rel in (ACG, RILEY) else next(n for n in N if n.type == 'GROUP' and n.node_tree and any("Bake" in o.name for o in n.outputs))
     inputs = dict(inputs); stretch = inputs.pop("_stretch", None); scale = inputs.pop("_scale", None)   # per-part grain (gear)
     own_normal = not inputs.pop("_no_normal", False)   # rubber and resin: their normal output carried the faces' flat normals (facets)
     for k, v in inputs.items():
@@ -413,6 +570,35 @@ def build(slot):
         L.new(grp.outputs["Color Bake"], mx.inputs[6]); mx.inputs[7].default_value = (*{"meat": T["marble"], "blubber": (0.78, 0.52, 0.48), "hide": (0.16, 0.16, 0.17)}[slot], 1.0)   # meat: fat; blubber: pinkish layers; hide: pale mottling
         for l in list(g.inputs["Base Color 1"].links): L.remove(l)
         L.new(mx.outputs[2], g.inputs["Base Color 1"])
+    if slot in ("hide", "hide2") and T.get("smoke"):
+        # smoke-stained towards the vent: soot rising up the cover, in uneven drifts (object Z, broken up by noise)
+        z0, z1 = T["smoke"]
+        tc = N.new("ShaderNodeTexCoord"); sp = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sp.inputs[0])
+        nz = N.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 1.6; nz.inputs["Detail"].default_value = 6.0; nz.inputs["Roughness"].default_value = 0.6
+        L.new(tc.outputs["Object"], nz.inputs["Vector"])
+        h = N.new("ShaderNodeMath"); h.operation = 'MULTIPLY_ADD'; L.new(nz.outputs["Fac"], h.inputs[0]); h.inputs[1].default_value = 0.9; L.new(sp.outputs["Z"], h.inputs[2])
+        mr = N.new("ShaderNodeMapRange"); mr.interpolation_type = 'SMOOTHSTEP'; mr.inputs["From Min"].default_value = z0 + 0.45; mr.inputs["From Max"].default_value = z1 + 0.45
+        mr.inputs["To Max"].default_value = 0.85; L.new(h.outputs[0], mr.inputs["Value"])
+        src = g.inputs["Base Color 1"].links[0].from_socket if g.inputs["Base Color 1"].links else grp.outputs["Color Bake"]
+        mx = N.new("ShaderNodeMix"); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.name = "vdw_smoke"
+        L.new(mr.outputs["Result"], mx.inputs["Factor"]); L.new(src, mx.inputs[6]); mx.inputs[7].default_value = (0.13, 0.10, 0.08, 1.0)
+        for l in list(g.inputs["Base Color 1"].links): L.remove(l)
+        L.new(mx.outputs[2], g.inputs["Base Color 1"])
+        # grime along each hide's edges (build_shelters.py "vdw_grime": 1 at an edge, fading in ~10 cm): darker, oily
+        # leather where the hides lap and are sewn, in uneven blotches (noise), and a little shinier from handling
+        at = N.new("ShaderNodeAttribute"); at.attribute_type = 'GEOMETRY'; at.attribute_name = "vdw_grime"
+        gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 14.0; gn.inputs["Detail"].default_value = 8.0; gn.inputs["Roughness"].default_value = 0.65
+        L.new(tc.outputs["Object"], gn.inputs["Vector"])
+        gm = N.new("ShaderNodeMapRange"); gm.inputs["From Min"].default_value = 0.3; gm.inputs["From Max"].default_value = 0.7
+        gm.inputs["To Min"].default_value = 0.45; L.new(gn.outputs["Fac"], gm.inputs["Value"])
+        gf = N.new("ShaderNodeMath"); gf.operation = 'MULTIPLY'; gf.use_clamp = True; L.new(at.outputs["Fac"], gf.inputs[0]); L.new(gm.outputs["Result"], gf.inputs[1])
+        gx = N.new("ShaderNodeMix"); gx.data_type = 'RGBA'; gx.blend_type = 'MULTIPLY'; gx.name = "vdw_seam_grime"
+        L.new(gf.outputs[0], gx.inputs["Factor"]); L.new(mx.outputs[2], gx.inputs[6]); gx.inputs[7].default_value = (0.28, 0.20, 0.13, 1.0)
+        L.remove(g.inputs["Base Color 1"].links[0]); L.new(gx.outputs[2], g.inputs["Base Color 1"])
+        if g.inputs["Roughness 1"].links:
+            rs = g.inputs["Roughness 1"].links[0].from_socket
+            rx = N.new("ShaderNodeMath"); rx.operation = 'MULTIPLY_ADD'; L.new(gf.outputs[0], rx.inputs[0]); rx.inputs[1].default_value = -0.25; L.new(rs, rx.inputs[2])
+            L.remove(g.inputs["Roughness 1"].links[0]); L.new(rx.outputs[0], g.inputs["Roughness 1"])
     ribs = box.get("vdw_ribs") if slot == "wool" else None
     if ribs and "Normal" in g.inputs:
         # a knitted cap's ribs (build_caps.py): rounded ridges running up round the cap's axis, baked into the normal map

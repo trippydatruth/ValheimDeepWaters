@@ -8,12 +8,12 @@
 #     vdw_wood/vdw_darkwood for Valheim's planks; renamed, the baked wood shows)
 #   - writes <out>/<key>/<key>_model.fbx (centred, on the ground, real size) + <key>_Unity_{Albedo,MetallicSmoothness,
 #     Normal}.png, and <key>_baked.blend. Never touches the source file. New folders only.
-#   blender -b piece.blend --factory-startup --python bake_piece.py   env: VDW_OUT, VDW_KEY, VDW_SIZE (2048), VDW_SAMPLES (32)
+#   blender -b piece.blend --factory-startup --python bake_piece.py   env: VDW_OUT, VDW_KEY, VDW_SIZE (1024, the most), VDW_SAMPLES (32)
 import bpy, os
 import numpy as np
 
 OUT = os.environ["VDW_OUT"]; KEY = os.environ["VDW_KEY"]
-SIZE = int(os.environ.get("VDW_SIZE", "2048")); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))
+SIZE = min(1024, int(os.environ.get("VDW_SIZE", "1024"))); SAMPLES = int(os.environ.get("VDW_SAMPLES", "32"))   # textures: 1K at most (low-poly game)
 RENAME = dict(p.split(":") for p in os.environ.get("VDW_RENAME", "").split(",") if ":" in p)
 DIR = os.path.join(OUT, KEY)
 if os.path.exists(DIR): raise SystemExit("exists, kept: " + DIR)
