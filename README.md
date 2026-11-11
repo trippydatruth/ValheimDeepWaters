@@ -787,6 +787,7 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Setting | Default | |
 |---|---|---|
 | Show Fishing HUD / HUD Scale | on / 0.85 | The bait, tension, line and drag display |
+| Weight Unit | Kilograms | Fish weights in kilograms or pounds |
 | Reel Sound Volume | 0.5 | |
 | Rod Wear | 1 | 0 = rods never wear out |
 | Reels, Lines and Floats | on | Off: rods fish with their own reel and line, and floats are used like a mead |
@@ -798,7 +799,15 @@ The config is `BepInEx/config/valheimdeepwaters.cfg`.
 | Rod Key | Alt + F | Takes the rod in your rod slot in hand, or puts it away |
 | Tackle Box Key / Set Down Key | K / Shift + K | Opens the tackle box you're wearing / sets it down as a chest |
 | Tackle Screen Position | (beside the inventory) | Set by dragging the screen; empty, or double-clicking its title, puts it back |
+| Move HUD Key | Alt + U | Moves and resizes the fishing HUD (see below) |
+| HUD Position: Bait and Line / Drag and Reel / Key Hints / Boss Bar | (usual place) | Set in the HUD's move mode; empty puts a part back |
+| HUD Size: Bait and Line / Drag and Reel / Key Hints / Boss Bar | 1 | 0.5 - 2, on top of HUD Scale; also set in the move mode |
 | Drag Control / Reel Speed Control | Mouse Wheel / Alt + Mouse Wheel | Either can be the mouse wheel, Alt + mouse wheel or the mouse side buttons (Mouse 5 up, Mouse 4 down) |
+
+**Moving the HUD.** Press **Alt + U** to move and resize the fishing HUD. Its four parts - the bait, tension and line
+panels, the drag and reel dials, the key hints and the boss bar - show as frames. Drag one to move it, scroll over it
+or drag its corner handle to resize it, and double-click it to put it back. Alt + U or Escape when done. Each part's
+place and size are saved in the config.
 
 ## Console commands (server admins)
 
