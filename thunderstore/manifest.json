@@ -2,7 +2,7 @@
   "name": "Valheim_Deep_Waters",
   "version_number": "1.0.4",
   "website_url": "https://github.com/trippydatruth/ValheimDeepWaters",
-  "description": "A full fishing overhaul: fish that swim up and bite, tension and drag fights, rods for every era, lures, weights and leaders, tackle boxes, seven boss fish, rare catches, ranks, mastery, cleaning and cooking, and an endgame rod and crown.",
+  "description": "A complete fishing overhaul: fight fish with tension and drag, work lures with real retrieves, summon seven boss fish, go ice fishing with custom shelters, spear fish, row a boat, find rare relics, and rig rods and reels for every era.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2351",
     "ValheimModding-Jotunn-2.30.2"
