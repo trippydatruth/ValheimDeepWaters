@@ -165,7 +165,7 @@ if CHECK:
         cam.rotation_euler = (T - cam.location).to_track_quat('-Z', 'Y').to_euler()
         s.render.filepath = f"{CHECK}_{name}.png"; bpy.ops.render.render(write_still=True)
     bpy.data.objects.remove(cam); bpy.data.cameras.remove(cd)
-    s.render.engine = 'BLENDER_EEVEE_NEXT'
+    s.render.engine = ('BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE_NEXT')
 if SAVE_TO:
     bpy.ops.wm.save_as_mainfile(filepath=SAVE_TO)
     print("  saved", SAVE_TO)

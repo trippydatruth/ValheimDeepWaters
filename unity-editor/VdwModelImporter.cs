@@ -304,6 +304,10 @@ public static class VdwModelImporter
         new Entry("fish_thorhammerhead", "fish", Kind.Animated, 1.5f),      // scalloped hammerhead
         new Entry("fish_serpentfin", "fish", Kind.Animated, 1f),          // oarfish
         new Entry("fish_surtling_sardine", "fish", Kind.Animated, 2f),
+        // the ice fish (2026-11-11): only bite through an ice hole
+        new Entry("fish_burbot", "fish", Kind.Animated),                  // burbot (OldYakutHunter, CC-BY; tail fin added, add_tail_fin.py)
+        new Entry("fish_lake_whitefish", "fish", Kind.Animated),          // whitefish (ucdavisterc, CC-BY)
+        new Entry("fish_ice_king_trout", "fish", Kind.Animated, 1.5f),    // lake trout (ucdavisterc, CC-BY-NC), repainted: glowing ice-blue eyes
         // Tripo models made by the user (Mesh/Sourced/<id>, source FBX/maps in the user's own folders)
         new Entry("fish_fenringfin", "fish", Kind.Animated),          // legendary wolffish
         new Entry("fish_rimejaw_cod", "fish", Kind.Animated, 1f),     // atlantic cod (frost-rimed jaw glows)

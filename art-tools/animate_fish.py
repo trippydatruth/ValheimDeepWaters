@@ -117,6 +117,11 @@ if arm.animation_data is None:
 for pb in arm.pose.bones:
     pb.rotation_mode = 'QUATERNION'
 
+def action_fcurves(act):
+    """An action's F-curves: act.fcurves before Blender 5, its layers' channelbags after (layered actions)."""
+    if hasattr(act, "fcurves"): return list(act.fcurves)
+    return [fc for layer in act.layers for strip in layer.strips for cb in strip.channelbags for fc in cb.fcurves]
+
 made = []
 for clip, length in CLIPS.items():
     old = bpy.data.actions.get(clip)
@@ -135,10 +140,10 @@ for clip, length in CLIPS.items():
     act.use_cyclic = True             # Blender treats it as a loop
     act.frame_start, act.frame_end = 0, length
     # Repeat forever in Blender's timeline, with no held pose past the end.
-    for fc in act.fcurves:
+    for fc in action_fcurves(act):
         if not any(m.type == 'CYCLES' for m in fc.modifiers):
             fc.modifiers.new('CYCLES')
-    made.append((clip, length, len(act.fcurves)))
+    made.append((clip, length, len(action_fcurves(act))))
 
 arm.animation_data.action = bpy.data.actions["Swim"]   # Swim is the default
 scene.frame_start, scene.frame_end = 0, 29   # 30 frames; frame 30 is frame 0 again, so 29 -> 0 never repeats a pose

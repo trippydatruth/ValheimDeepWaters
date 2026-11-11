@@ -158,6 +158,16 @@ PRESETS.update({
         frost=dict(color=(0.86, 0.93, 1.0), t=(-0.1, 0.22), h=(0.6, 1.4), noise=0.02, cut=0.45, glow=(0.3, 0.7, 1.0)),
         source_eyes=dict(r=0.016, at=(-0.2495, 0.0159), search_t=(0.06, 0.11), search_h=(0.55, 0.88)),   # at: measured from the scan
         keep=0.5, smooth=0.6),       # half the scan's own spotting and detail shows through, under the frost
+    "ice_king_trout": dict(        # the Ice King Trout (legendary): a lake trout of the Deep North ice - dark slate, pale
+        back=(0.08, 0.11, 0.16), belly=(0.88, 0.91, 0.95), split=(0.22, 0.62), mid=(0.24, 0.30, 0.38),   # frost-white
+        spots=[],                  # worm-like markings, rime on its head, back and fin edges, glowing ice-blue eyes
+        veins=[dict(color=(0.86, 0.93, 1.0), scale=0.06, width=0.075, amount=0.95, h=(0.2, 1.3)),
+               dict(color=(0.74, 0.85, 0.97), scale=0.03, width=0.06, amount=0.7, h=(0.35, 1.3))],
+        line=None,
+        fin=dict(color=(0.10, 0.13, 0.18), amount=0.85, edge=(0.95, 0.97, 1.0)),
+        frost=dict(color=(0.90, 0.95, 1.0), t=(-0.1, 0.75), h=(0.93, 1.4), noise=0.03, cut=0.62, glow=(0.3, 0.6, 0.9)),
+        eye_glow=dict(color=(0.55, 0.85, 1.0), glow=(0.45, 0.85, 1.0)),
+        keep=0.15, smooth=0.6),      # just a trace of the scan's own lake-trout marbling under the paint
 })
 P = PRESETS[SPECIES]
 arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
@@ -459,6 +469,11 @@ if P.get("keep"):     # let some of the species' own colours through
     col = mix(col, spx[..., :3], (P["keep"] * (1 - frost_m)).astype(np.float32))   # the frost stays on top
 col[eye] = spx[eye, :3]
 emit[eye] = 0
+# eye_glow: the loose eye parts themselves lit (a legendary's glowing eyes): their own shading kept, tinted and emitting
+if P.get("eye_glow"):
+    eg = P["eye_glow"]; lum_e = spx[..., :3].mean(-1)
+    col[eye] = np.asarray(eg["color"], np.float32) * (0.55 + 0.45 * lum_e[eye])[..., None]
+    emit[eye] = np.asarray(eg["glow"], np.float32)
 # source_eyes: keep the source texture's own eyes, where the source has them. On each side, the darkest small spot high
 # on the head (luminance blurred over about an eye's width) is the eye; a circle of radius r (share of the length)
 # round it shows the source texture untouched, feathered at the rim.

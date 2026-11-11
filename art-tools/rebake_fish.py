@@ -148,7 +148,7 @@ mesh.data.uv_layers["UVMap"].active = True
 mesh.data.uv_layers["UVMap"].active_render = True
 nmap.uv_map = "UVMap"
 if arm: arm.data.pose_position = 'POSE'
-scene.render.engine = 'BLENDER_EEVEE_NEXT'
+scene.render.engine = ('BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE_NEXT')
 
 bpy.ops.wm.save_as_mainfile(filepath=SAVE_TO)
 print("  saved blend", SAVE_TO)

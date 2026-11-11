@@ -295,7 +295,7 @@ for coll in (bpy.data.meshes, bpy.data.materials, bpy.data.images):
         if d_.users == 0: coll.remove(d_)
 bpy.ops.object.shade_smooth()
 bk.use_selected_to_active = False   # don't leave the high-to-low setting in the file
-scene.render.engine = 'BLENDER_EEVEE_NEXT'
+scene.render.engine = ('BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE_NEXT')
 bpy.ops.wm.save_as_mainfile(filepath=SAVE_TO); print("  saved", SAVE_TO)
 if PREV:
     scene.render.engine = 'BLENDER_WORKBENCH'; scene.render.use_border = False

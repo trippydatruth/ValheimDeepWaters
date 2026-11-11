@@ -68,5 +68,5 @@ for p in mesh.data.polygons:
     if px[int(min(H - 1, u[1] * H)), int(min(W - 1, u[0] * W)), :3].max() < 0.02: blank += 1
 print(f"  faces still blank: {blank} of {len(mesh.data.polygons)}")
 bpy.data.objects.remove(hi); bk.use_selected_to_active = False
-arm.data.pose_position = 'POSE'; sc.render.engine = 'BLENDER_EEVEE_NEXT'
+arm.data.pose_position = 'POSE'; sc.render.engine = ('BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE_NEXT')
 bpy.ops.wm.save_as_mainfile(filepath=os.environ.get("VDW_SAVE_TO") or bpy.data.filepath); print("  saved blend")

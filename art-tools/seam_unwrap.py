@@ -165,7 +165,9 @@ if os.environ.get("VDW_FIX_OVERLAP", "1") == "1":
     try:
         bpy.ops.uv.select_overlap(extend=False)
         _bm = bmesh.from_edit_mesh(mesh.data); _uvl = _bm.loops.layers.uv.active
-        _ov = [f for f in _bm.faces if all(l[_uvl].select for l in f.loops)]
+        # (Blender 5 keeps a loop's UV selection on the loop, not on its UV)
+        _uvsel = (lambda l: l.uv_select_vert) if hasattr(bmesh.types.BMLoop, "uv_select_vert") else (lambda l: l[_uvl].select)
+        _ov = [f for f in _bm.faces if all(_uvsel(l) for l in f.loops)]
         print(f"  overlapping faces after the unwrap: {len(_ov)}")
         if _ov:
             for f in _bm.faces: f.select = f in _ov
@@ -332,7 +334,7 @@ if saved_normals is not None and len(saved_normals) == len(mesh.data.loops):
     mesh.data.normals_split_custom_set(saved_normals)
     print(f"  kept the hand-set normals ({len(saved_normals)} corners)")
 arm.data.pose_position = 'POSE'
-scene.render.engine = 'BLENDER_EEVEE_NEXT'
+scene.render.engine = ('BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items] else 'BLENDER_EEVEE_NEXT')
 bpy.ops.wm.save_as_mainfile(filepath=SAVE_TO)
 print("  saved blend", SAVE_TO)
 print("SEAM UNWRAP DONE")
