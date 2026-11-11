@@ -113,7 +113,7 @@ namespace ValheimDeepWaters
                 var shared = custom.ItemDrop.m_itemData.m_shared;
                 shared.m_name = Loc.Token("vdw_" + l.Prefab.ToLowerInvariant(), l.Name);
                 shared.m_description = Loc.Token("vdw_" + l.Prefab.ToLowerInvariant() + "_desc",
-                    $"{l.Desc}\n\nSpear fish swimming near the surface: stab them, or throw it. Takes fish up to {l.MaxKg:0} kg; they go straight into your bag.");
+                    $"{l.Desc}\n\nSpear fish swimming near the surface: stab them, or throw it. Takes fish up to {Units.Kg(l.MaxKg, "0")}; they go straight into your bag.");
                 shared.m_damages.Modify(CombatFactor);
                 shared.m_damagesPerLevel.Modify(CombatFactor);
                 // its own model (build_lures.py leister_<tier>), fitted to where the vanilla spear sits in the hand, and its icon

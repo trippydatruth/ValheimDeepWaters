@@ -120,6 +120,25 @@ namespace ValheimDeepWaters
             var r = new Rect(right - w, top, w, h);
             Panel(r);
 
+            // A rod taken up from a rod holder: its tackle came off the angler who set it down and is on the line, not
+            // in your slots - show what's on the line until it's reeled in or landed.
+            var s = FishingController.HandSession;
+            if (s != null && s.Prepaid)
+            {
+                var r1 = new Rect(r.x + 14f, r.y + 8f, w - 28f, 30f);
+                var onBait = s.Lure != null ? s.Trailer : s.Bait;
+                bool eaten = s.Lure != null ? s.TrailerUsed : s.BaitUsed;
+                Label(r1, onBait != null && !eaten ? Loc.Text(onBait.Name) : s.Lure != null ? "No trailer" : "Bait taken", _big, onBait == null || eaten ? Dim : Gold, TextAnchor.MiddleLeft);
+                Label(r1, "on the line", _small, Dim, TextAnchor.MiddleRight);
+                var r2 = new Rect(r.x + 14f, r.y + 44f, w - 28f, 24f);
+                string onLine = s.Lure != null
+                    ? (s.Lure.LureMaxKg > 0f ? $"{Loc.Text(s.Lure.Name)}  ·  {Units.Range(s.Lure.LureMinKg, s.Lure.LureMaxKg, "0.#")}" : $"{Loc.Text(s.Lure.Name)}  ·  lure")
+                    : s.Hook != null ? $"{Loc.Text(ContentRegistry.HookDisplayName(s.Hook))}  ·  {Units.Range(s.Hook.MinKg, s.Hook.MaxKg, "0.#")}" : "No hook";
+                Label(r2, onLine, _text, s.Hook == null && s.Lure == null ? Ember : Cream, TextAnchor.MiddleLeft);
+                Label(new Rect(r.x + 14f, r.y + 70f, w - 28f, 22f), s.RigName.Length > 0 ? s.RigName : s.Lure != null ? "Lure" : "Float", _small, Dim, TextAnchor.MiddleLeft);
+                return;
+            }
+
             // Row 1: bait.
             // With a lure on, row 1 is its trailer (optional) and row 2 the lure itself.
             var lure = Tackle.LureOn(player);
@@ -136,9 +155,9 @@ namespace ValheimDeepWaters
             var line2 = new Rect(r.x + 14f, r.y + 44f, w - 28f, 24f);
             string hookText = "No hook";
             if (lure != null)
-                hookText = lure.LureMaxKg > 0f ? $"{Loc.Text(hook!.Name)}  ·  {lure.LureMinKg:0.#}–{lure.LureMaxKg:0.#} kg" : $"{Loc.Text(hook!.Name)}  ·  lure";
+                hookText = lure.LureMaxKg > 0f ? $"{Loc.Text(hook!.Name)}  ·  {Units.Range(lure.LureMinKg, lure.LureMaxKg, "0.#")}" : $"{Loc.Text(hook!.Name)}  ·  lure";
             else if (hook != null && ContentRegistry.HookByItemName.TryGetValue(hook.Name, out var def))
-                hookText = $"{Loc.Text(hook.Name)}  ·  {def.MinKg:0.#}–{def.MaxKg:0.#} kg";
+                hookText = $"{Loc.Text(hook.Name)}  ·  {Units.Range(def.MinKg, def.MaxKg, "0.#")}";
             Label(line2, hookText, _text, hook == null ? Ember : Cream, TextAnchor.MiddleLeft);
             KeyPrompts(new[] { (VdwConfig.CycleHookKey.Value.ToString(), hook != null ? "x" + hook.Count : "-") }, line2.xMax, line2.y, alignRight: true);
 
@@ -533,7 +552,7 @@ namespace ValheimDeepWaters
                 ? $"{e.Count} / {t[tier + 1]} to {Mastery.TierNames[tier + 1]}"
                 : $"{e.Count} caught · {Mastery.TierNames[tier]} ({(Mastery.IsBaitfish(f) ? "top for baitfish" : "top")})";
             Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), progress, _smallClip, Dim, TextAnchor.MiddleLeft);
-            Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), $"best {e.BestKg:0.0} kg", _small, Dim, TextAnchor.MiddleRight);
+            Label(new Rect(inner.x, inner.y + 38f, inner.width, 16f), $"best {Units.Kg(e.BestKg, "0.0")}", _small, Dim, TextAnchor.MiddleRight);
         }
 
         // ------------------------------------------------------------------

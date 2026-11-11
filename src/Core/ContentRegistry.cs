@@ -78,6 +78,9 @@ namespace ValheimDeepWaters
                 RegisterFish();
                 BossFish.Register();
                 try { FishMaterials.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish materials failed: {ex}"); }
+            try { RodHolders.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Rod holders failed: {ex}"); }
+            try { IceFishing.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Ice fishing failed: {ex}"); }
+            try { IceShelters.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Ice shelters failed: {ex}"); }
                 try { FishDishes.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Fish dishes failed: {ex}"); }
                 try { BogWitch.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Bog Witch content failed: {ex}"); }
                 try { Hildir.Register(); } catch (Exception ex) { Plugin.Log.LogError($"Hildir content failed: {ex}"); }
@@ -258,6 +261,8 @@ namespace ValheimDeepWaters
             ("Baits", "lure_linen_popper", "FineWood:2,Feathers:2,LinenThread:2,VDW_Mat_roe:2,VDW_Hook_medium:1"),
             ("Baits", "lure_ice_spoon", "Ice:1,Silver:2,VDW_Mat_rime:2,VDW_Hook_medium:1"),
             ("Baits", "lure_frostcore_jig", "FrostCore:1,Iron:2,BarkaBranch:1,VDW_Mat_rime:2,VDW_Hook_large:1"),
+            // the Cork float no longer takes a boss item (Eikthyr's antler): bone instead (1.0.4)
+            ("Buffs", "cork_float", "HardAntler:1,FineWood:2,VDW_Mat_scales:2"),
         };
 
         /// <summary>
@@ -268,6 +273,8 @@ namespace ValheimDeepWaters
         private static readonly (string kind, string id, string field, string oldText)[] UpdatedText =
         {
             // Njord's Regalia got its own crown model: bronze, runes and stones, not silver (0.15.0)
+            ("Buffs", "cork_float", "Name", "Cork-and-Antler Float"),
+            ("Buffs", "cork_float", "Description", "A pear of cork on a stem of hard antler. It rides steady in a current, and river and lake fish come to it sooner."),
             ("Buffs", "regalia_njord", "Description", "The four relics of the sea - the Pearl, the Scale, the Horn and the Golden Hook - set in one silver crown. Whoever wears it is the sea god's own angler."),
         };
 
@@ -619,7 +626,7 @@ namespace ValheimDeepWaters
                     var shared = item.ItemDrop.m_itemData.m_shared;
                     string name = HookDisplayName(hook);
                     shared.m_name = name;
-                    shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\n{HookStyles.Describe(hook)}\n\nSuits fish of {hook.MinKg:0.#}–{hook.MaxKg:0.#} kg. " +
+                    shared.m_description = Loc.Token("vdw_hook_" + hook.Id + "_desc", $"{hook.Description}\n\n{HookStyles.Describe(hook)}\n\nSuits fish of {Units.Range(hook.MinKg, hook.MaxKg, "0.#")}. " +
                                            (hook.NeverStraightens ? "Never straightens. " : "Smaller fish struggle to take it; bigger ones can straighten it, and much bigger ones won't bite. ") +
                                            (hook.KeepChance > 0f ? $"{hook.KeepChance * 100f:0}% chance to survive a snapped line. " : "") +
                                            (hook.HookBonus > 0f ? $"Hook chance +{hook.HookBonus * 100f:0}%. " : "") +

@@ -441,6 +441,46 @@ namespace ValheimDeepWaters
             Spawned.Clear();
         }
     }
+    /// <summary>A fly at night: its model glows yellow-green and a small light pulses with it, like a firefly.</summary>
+    internal sealed class FireflyGlow : MonoBehaviour
+    {
+        private static readonly Color Glow = new Color(0.85f, 1f, 0.3f);
+        private Light? _light;
+        private Material[] _mats = Array.Empty<Material>();
+        private float _phase;
+
+        public static void Add(GameObject fly, int seed)
+        {
+            var g = fly.AddComponent<FireflyGlow>();
+            g._phase = (seed & 0xffff) / 65535f * Mathf.PI * 2f;
+            var mats = new List<Material>();
+            foreach (var r in fly.GetComponentsInChildren<Renderer>(true))
+            {
+                var m = r.material;   // its own copy, so daytime flies keep the shared material
+                m.EnableKeyword("_EMISSION");
+                if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", Glow * 2.5f);
+                mats.Add(m);
+            }
+            g._mats = mats.ToArray();
+            var lightGo = new GameObject("glow");
+            lightGo.transform.SetParent(fly.transform, false);
+            g._light = lightGo.AddComponent<Light>();
+            g._light.type = LightType.Point;
+            g._light.color = Glow;
+            g._light.range = 1.8f;
+            g._light.shadows = LightShadows.None;
+        }
+
+        private void Update()
+        {
+            float pulse = 0.35f + 0.65f * Mathf.Pow(0.5f + 0.5f * Mathf.Sin(Time.time * 2.2f + _phase), 3f);
+            if (_light != null) _light.intensity = 1.4f * pulse;
+            foreach (var m in _mats) if (m != null && m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", Glow * (0.6f + 3f * pulse));
+        }
+
+        private void OnDestroy() { foreach (var m in _mats) if (m != null) Destroy(m); }
+    }
+
     /// <summary>
     /// Valheim's own ambient flies effect (or fireflies at night) around a swarm, with its wing buzz. It thins out
     /// as flies are caught or fly off, and fades away with the last one.
@@ -629,6 +669,9 @@ namespace ValheimDeepWaters
             {
                 fly.BuildDefaultBody();
             }
+
+            // At night they're fireflies: the model glows and gives off a little pulsing light.
+            if (cloud == null && EnvMan.instance != null && !EnvMan.IsDay()) FireflyGlow.Add(go, id.GetHashCode());
 
             // A generous invisible collider so it's easy to aim at.
             var col = go.AddComponent<SphereCollider>();
@@ -899,7 +942,7 @@ namespace ValheimDeepWaters
         {
             if (_mat == null)
             {
-                _mat = new Material(Shader.Find("Standard")) { color = new Color(0.55f, 0.3f, 0.27f) };
+                _mat = new Material(Shader.Find("Standard") ?? Shader.Find("Sprites/Default")) { color = new Color(0.55f, 0.3f, 0.27f) };
                 if (_mat.HasProperty("_Glossiness")) _mat.SetFloat("_Glossiness", 0.7f); // wet sheen
             }
             _segments = new Transform[7];

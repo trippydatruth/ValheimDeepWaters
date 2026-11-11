@@ -87,7 +87,7 @@ namespace ValheimDeepWaters
         /// <summary>Each frame while waiting: a weight too light for the water is dragged downwind. Returns false if the cast ended.</summary>
         private static bool UpdateDrift(Player player, FishingSession s)
         {
-            if (s.Weight == null || EnvMan.instance == null)
+            if (s.Weight == null || EnvMan.instance == null || s.IceHole)   // (no current under the ice drags a line down a hole)
             {
                 s.Dragged = false;
                 return true;
@@ -121,6 +121,7 @@ namespace ValheimDeepWaters
         /// <summary>The weight and leader go with the line when it snaps, like the hook.</summary>
         private static void LoseRig(Player player, FishingSession s)
         {
+            if (s.Prepaid) { s.RigLost = true; return; }
             if (s.Weight != null && Tackle.WeightOn(player)?.Id == s.Weight.Id) Tackle.UseOne(player, Tackle.WeightSlot);
             if (s.Leader && Tackle.LeaderOn(player) != null) Tackle.UseOne(player, Tackle.LeaderSlot);
         }

@@ -166,7 +166,7 @@ namespace ValheimDeepWaters
             public float MinKg;
             public string Condition = "";          // "", "rain", "night", "trophy"
             public int Coins;
-            public string Text => $"Bring me a {Fish.Name} of at least {MinKg:0.#} kg" + Condition switch
+            public string Text => $"Bring me a {Fish.Name} of at least {Units.Kg(MinKg, "0.#")}" + Condition switch
             {
                 "rain" => ", caught in the rain.",
                 "night" => ", caught at night.",
@@ -223,7 +223,7 @@ namespace ValheimDeepWaters
             if (mine.Count == 0) return "";
             var best = mine[0];
             float kg = WeightOf(best);
-            if (kg < b.MinKg) return $"Your biggest {b.Fish.Name} is {kg:0.##} kg - too light.";
+            if (kg < b.MinKg) return $"Your biggest {b.Fish.Name} is {Units.Kg(kg, "0.##")} - too light.";
             return b.Condition switch
             {
                 "rain" => $"Your {b.Fish.Name} wasn't caught in the rain.",
@@ -270,7 +270,7 @@ namespace ValheimDeepWaters
             {
                 Title = $"Hildir's bounty - day {Day()}",
                 Icon = drop != null ? drop.m_itemData.GetIcon() : null,
-                Body = $"<b>{bounty.Fish.Name}</b>, at least <color=#ffcc55>{bounty.MinKg:0.##} kg</color><color=#9fd4ff>{cond}</color>\n"
+                Body = $"<b>{bounty.Fish.Name}</b>, at least <color=#ffcc55>{Units.Kg(bounty.MinKg, "0.##")}</color><color=#9fd4ff>{cond}</color>\n"
                      + $"Reward: <color=#ffcc55>{bounty.Coins} coins</color> and 10 {baitName}\n{progress}"
             };
             if (player.m_customData.TryGetValue(DoneKey, out var d) && d == Day().ToString(CultureInfo.InvariantCulture))
@@ -282,7 +282,7 @@ namespace ValheimDeepWaters
             var fish = inv.GetAllItems().Where(i => Meets(i, bounty)).OrderBy(WeightOf).FirstOrDefault();   // the lightest that counts
             if (fish != null)
             {
-                sec.Status = $"Your {WeightOf(fish):0.##} kg {bounty.Fish.Name} will do.";
+                sec.Status = $"Your {Units.Kg(WeightOf(fish), "0.##")} {bounty.Fish.Name} will do.";
                 sec.StatusColor = TraderPanel.Good;
                 sec.Button = "Hand it in"; sec.CanPress = true;
                 sec.Press = () => TurnIn(player, trader, bounty, fish);

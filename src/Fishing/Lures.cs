@@ -34,7 +34,7 @@ namespace ValheimDeepWaters
             [LureKind.Spoon] = new[] { "pike", "trout", "salmon", "frostchar", "glacier_grayling", "rimejaw_cod", "herring", "mackerel", "tuna", "serpentfin", "surtling_sardine" },
             [LureKind.Spinner] = new[] { "perch", "trout", "pike", "tetra", "frostchar", "glacier_grayling", "salmon", "greydwarf_goby", "bluegill", "bass", "sea_bass" },
             [LureKind.Crankbait] = new[] { "pike", "perch", "trollfish", "mistfin", "grouper", "magmafish", "bass" },
-            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish", "catfish", "sea_bass" },
+            [LureKind.Jig] = new[] { "coral_cod", "lingcod", "halibut", "rimejaw_cod", "frost_sculpin", "burbot", "lake_whitefish", "ice_king_trout", "grouper", "jotunnperch", "bonemaw", "perch", "pufferfish", "catfish", "sea_bass" },
             [LureKind.SoftPlastic] = new[] { "perch", "trout", "frost_sculpin", "greydwarf_goby", "trollfish", "tetra", "mistfin", "pufferfish", "bass", "bluegill", "catfish" },
             [LureKind.TexasRig] = new[] { "trollfish", "pike", "mistfin", "perch", "anglerfish", "greydwarf_goby", "bass", "catfish" },
             [LureKind.Swimbait] = new[] { "pike", "tuna", "grouper", "lingcod", "halibut", "salmon", "serpentfin", "anglerfish", "fenringfin", "sea_bass" },

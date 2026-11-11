@@ -54,7 +54,7 @@ namespace ValheimDeepWaters
             (new Piece { Prefab = "VDW_IceAnglerCap", Clone = "HelmetHat8", Model = "fisher_beanie", Rigid = "Head",
                 Name = "Ice Angler's Watch Cap", Desc = "Hildir's grey fur cap knitted over into a snug watch cap, rolled up above the ears so you hear the ice creak. Warm through a long wait over a hole in the ice.",
                 Armor = 2f, Weight = 0.5f, Recipe = new[] { ("HelmetHat8", 1), ("WolfPelt", 2), ("VDW_Mat_rime", 2) } },
-             new Dictionary<string, float> { [BuffStat.HookWindow] = 0.15f }, true),
+             new Dictionary<string, float> { [BuffStat.HookWindow] = 0.15f, [BuffStat.IceBite] = 0.3f }, true),
             (new Piece { Prefab = "VDW_SunAnglerCap", Clone = "HelmetHat5", Model = "fisher_bucket", Rigid = "Head",
                 Name = "Sun Angler's Cap", Desc = "Hildir's red cap made over into a wide cotton bucket hat that keeps the sun off your eyes, a fly in its band and a float and a few hooks pinned on for luck.",
                 Armor = 2f, Weight = 0.5f, Recipe = new[] { ("HelmetHat5", 1), ("Feathers", 3), ("VDW_Mat_scales", 3) } },

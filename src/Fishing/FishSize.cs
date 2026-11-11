@@ -134,7 +134,7 @@ namespace ValheimDeepWaters
                     __result = $"<color={(item.m_variant == RareFish.Golden ? "#FFD25A" : "#F2DCDC")}><b>{RareFish.Name(item.m_variant)}</b> - a rare variant</color>\n" + __result;
                 string size = NameOf(item.m_quality);
                 string color = item.m_quality >= MaxClass ? "#FFC34D" : "orange";
-                __result += $"\n\nSize: <color={color}>{size}</color>  ({kg:0.0} kg)";
+                __result += $"\n\nSize: <color={color}>{size}</color>  ({Units.Kg(kg, "0.0")})";
                 if (item.m_stack > 1) __result += $"\n<size=85%>Weight of the first fish in this stack</size>";
                 if (item.m_customData.TryGetValue("vdw_caught_by", out var who) && !string.IsNullOrEmpty(who))
                     __result += $"\nCaught by {who}";

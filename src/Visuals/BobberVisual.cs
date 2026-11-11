@@ -238,6 +238,19 @@ namespace ValheimDeepWaters
             float dist = Vector3.Distance(a, b);
             float sag = (straight ? 0.02f : Slack) * dist * 0.5f;
             float t = Time.time;
+            if (Via is Vector3 via)
+            {
+                // through a point (an Ice Hole): straight from the tip to it, then straight down from it to the end
+                int half = RopePoints / 2;
+                for (int i = 0; i < RopePoints; i++)
+                {
+                    Vector3 pos = i <= half ? Vector3.Lerp(a, via, (float)i / half) : Vector3.Lerp(via, b, (float)(i - half) / (RopePoints - 1 - half));
+                    if (Thrashing && i > half) pos += new Vector3(Mathf.Sin(t * 21f + i * 1.3f), 0f, Mathf.Sin(t * 26f + i * 0.9f)) * 0.015f;
+                    _line.SetPosition(i, pos);
+                }
+                _line.widthMultiplier = _baseWidth * WidthScale * 0.8f;
+                return;
+            }
             for (int i = 0; i < RopePoints; i++)
             {
                 float f = (float)i / (RopePoints - 1);
@@ -248,8 +261,15 @@ namespace ValheimDeepWaters
             }
             // thinner with distance, as vanilla's line (LineConnect: 6..30 m, 0.8..0.2 of its width)
             float far = Mathf.Pow(Mathf.Clamp01(Mathf.InverseLerp(6f, 30f, dist)), 0.2f);
-            _line.widthMultiplier = _baseWidth * Mathf.Lerp(0.8f, 0.2f, far);
+            _line.widthMultiplier = _baseWidth * WidthScale * Mathf.Lerp(0.8f, 0.2f, far);
         }
+
+        /// <summary>A point the line passes through on its way to the end (the mouth of an Ice Hole), or null.</summary>
+        public Vector3? Via;
+
+        /// <summary>The line's thickness against the usual (a short ice rod's is finer).</summary>
+        public float WidthScale = 1f;
+        public const float ShortRodLine = 0.45f;
 
         private float _baseWidth = 1f;
         private static Material? _vanillaLineMat;

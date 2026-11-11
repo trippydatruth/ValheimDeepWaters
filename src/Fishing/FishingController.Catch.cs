@@ -31,7 +31,7 @@ namespace ValheimDeepWaters
         /// </summary>
         internal static string Land(Player player, FishingSession s, Vector3 at, string verb)
         {
-            string text = $"{verb} {s.Fish.Name}!  ({s.FishWeight:0.0} kg)";
+            string text = $"{verb} {s.Fish.Name}!  ({Units.Kg(s.FishWeight, "0.0")})";
 
             float range = s.Fish.MaxWeightKg - s.Fish.MinWeightKg;
             float rank = range > 0.001f ? (s.FishWeight - s.Fish.MinWeightKg) / range : 0f;
@@ -77,14 +77,20 @@ namespace ValheimDeepWaters
                 // Legendaries: a trophy the first time; bosses also leave a material and the news goes out.
                 if (s.Fish.Legendary) text += BossFish.OnLanded(player, s.Fish, dropPos);
 
-                // Vanilla fish keep their own extra drops, like vanilla fishing.
+                // Vanilla fish keep their own extra drops, like vanilla fishing (into the bag too, from a boat).
                 if (s.Fish.IsVanilla && ContentRegistry.FishItems.TryGetValue(s.Fish.Id, out var fishPrefab))
                 {
                     var extras = fishPrefab.GetComponent<global::Fish>()?.m_extraDrops;
                     if (extras != null)
                         foreach (var extra in extras.GetDropList())
-                            UnityEngine.Object.Instantiate(extra, dropPos + Vector3.up * 0.3f, Quaternion.identity);
+                        {
+                            var extraDrop = extra != null ? extra.GetComponent<ItemDrop>() : null;
+                            if (extraDrop != null) Drops.Give(player, extraDrop, 1, dropPos + Vector3.up * 0.3f);
+                            else if (extra != null) UnityEngine.Object.Instantiate(extra, dropPos + Vector3.up * 0.3f, Quaternion.identity);
+                        }
                 }
+
+                CountForAchievements(s, data.m_quality);
             }
             else
             {
@@ -138,6 +144,28 @@ namespace ValheimDeepWaters
             return text;
         }
 
+        /// <summary>
+        /// Counts the catch the way vanilla fishing does (FishingFloat.Catch), so the game's fishing achievements and
+        /// stats see it: the fish's name as a picked-up thing, one FishCaught, and the FishCaughtTier stat for its quality.
+        /// </summary>
+        private static void CountForAchievements(FishingSession s, int quality)
+        {
+            var game = Game.instance;
+            if (game == null) return;
+            try
+            {
+                string? name = ContentRegistry.FishItems.TryGetValue(s.Fish.Id, out var prefab)
+                    ? prefab.GetComponent<global::Fish>()?.m_name : null;
+                game.GetPlayerProfile()?.IncrementStatPickable(string.IsNullOrEmpty(name) ? s.Fish.Name : name);
+                game.IncrementPlayerStat(PlayerStatType.FishCaught);
+                if (quality <= 6) game.IncrementPlayerStat((PlayerStatType)(161 + quality));
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning("Couldn't count the catch for achievements: " + e.Message);
+            }
+        }
+
         private static void Finish(Player player, string reason)
         {
             Msg(reason);
@@ -150,6 +178,12 @@ namespace ValheimDeepWaters
             _session = null;
             _reelingNow = false;
             if (s == null) return;
+            // a line that was set down in a holder: what's left of its tackle goes back (to whoever has it, or the holder)
+            if (s.Prepaid)
+            {
+                if (Quiet) PrepaidEnded?.Invoke(s);
+                else if (Player.m_localPlayer is Player me && !me.IsDead()) GiveBack(me, PrepaidLeft(s));
+            }
             // the pull button held as the fish lands (or the line goes) mustn't start the next cast
             if (ZInput.GetButton("Attack")) _waitAttackRelease = true;
 
@@ -164,6 +198,7 @@ namespace ValheimDeepWaters
 
         private static void Msg(string text)
         {
+            if (Quiet) { ParkedLines.Said(text); return; }   // a rod in a holder: its news is shown by the holder
             MessageHud.instance?.ShowMessage(MessageHud.MessageType.Center, Loc.Text(text));
         }
     }

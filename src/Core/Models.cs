@@ -28,6 +28,7 @@ namespace ValheimDeepWaters
         public float Stamina = 20f;
         public float BiteWeight = 1f;
         public bool Legendary = false;
+        public bool IceOnly = false;       // lives under the ice: bites only through an Ice Hole, never swims free (IceFishing)
         /// <summary>Any | Day | Night. Fish are more likely to bite in their active period.</summary>
         public string ActiveTime = "Any";
         /// <summary>True if the fish bites more in rain/wet weather.</summary>
@@ -164,6 +165,7 @@ namespace ValheimDeepWaters
         public string Description = "";
 
         public float CastDistance = 20f;  // m at full charge
+        public bool IceRod = false;       // a short ice rod: fishes only through an Ice Hole, with a longer hook window there
         public float LineCapacity = 40f;  // m of line on the reel; the fish wins if it takes it all
         public float BreakTension = 85f;  // line snaps at this tension (out of 100)
         public float ReelSpeed = 4.5f;    // m/s base retrieve
@@ -208,6 +210,7 @@ namespace ValheimDeepWaters
         public bool Dragged;              // the water is dragging the weight (nothing bites)
         public float DragWarnedAt = -100f;
         public float LastMoved = -100f;    // when the line was last reeled while waiting (a lure only draws strikes while it moves)
+        public float Worked;               // how far the lure has been worked (reeled, twitched, let down a hole) this cast, m
         public float DragSlip;            // 0..1: how hard the drag is slipping (line pulled out against it, or a loose drag spinning)
         public readonly RetrieveTracker Tracker = new();   // how the lure is being worked (Retrieves.cs)
         public RetrieveStyle Style;                       // the retrieve right now
@@ -277,6 +280,19 @@ namespace ValheimDeepWaters
         public bool RearCrashed;
 
         public float MaxLine => Mathf.Max(StartDistance, Rod.LineCapacity);
+
+        // A line left out on a rod in a rod holder (RodHolders.cs)
+        /// <summary>Where the line runs from when nobody is holding the rod (the holder's rod tip); null: the angler.</summary>
+        public Vector3? Anchor;
+        /// <summary>
+        /// Its tackle was taken off the angler when the rod was set down: what's on the line (prefab names), so whoever
+        /// ends up landing or reeling it in gets back what's left, and nobody's tackle slots are used up again.
+        /// </summary>
+        public bool Prepaid;
+        public string PaidBait = "", PaidTrailer = "", PaidHook = "", PaidWeight = "", PaidLeader = "";
+        public bool BaitUsed, TrailerUsed, HookLost, RigLost;
+        public float UnattendedUntil;      // a fish hooked with nobody holding the rod throws the hook by then
+        public bool IceHole;               // cast down an Ice Hole (IceFishing)
     }
 }
 

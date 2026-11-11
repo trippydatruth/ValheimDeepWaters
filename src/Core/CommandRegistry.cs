@@ -93,6 +93,16 @@ namespace ValheimDeepWaters
                     FishingController.DebugQuickBite = true;
                     Console.instance.Print("Next cast: a fish starts right by the bait and bites with no nibbles.");
                 }
+                else if (args[0].Equals("ice", StringComparison.OrdinalIgnoreCase))
+                {
+                    // What's under you and in front of you: how the frozen lakes are made, and whether an auger would drill
+                    if (Player.m_localPlayer != null)
+                    {
+                        string report = IceFishing.Describe(Player.m_localPlayer);
+                        Console.instance.Print(report);
+                        Plugin.Log.LogInfo("vdw_debug ice\n" + report);
+                    }
+                }
                 else if (args[0].Equals("boss", StringComparison.OrdinalIgnoreCase))
                 {
                     // Skips the lure and the conditions, to try a boss fight anywhere.

@@ -51,6 +51,13 @@ namespace ValheimDeepWaters
         private const float FightSlowest = 0.3f, FightFastest = 1f;          // of the full fight reel rate (Shift = 1)
         private const float LurePause = 1.2f;        // a lure stays alive this long after you stop reeling
         private const float TwitchDistance = 0.35f;  // how far a rod twitch (left click) darts the lure in
+        private const float WorkedBeforeFlutter = 1.5f;   // once a lure has been worked this far (m)...
+        private const float FlutterTime = 6f;             // ...it can still be taken this long after you stop, as it sinks
+        // Down an Ice Hole: left click held lets the line down this fast (m/s); shorter than IceTapTime is a jig instead
+        private const float IceLowerSpeed = 1.6f, IceTapTime = 0.18f;
+        private const float IceStartLength = 0.3f, IceOutLength = 0.12f, IceLandLength = 0.5f;   // line down the hole: at the start, out, a fish landed
+        private static bool _lowering;
+        private static float _lowerStart, _blockStart = -100f;
         private const float RetrieveEndDistance = 2.5f;
         private const float HookWindowSeconds = 1.2f;      // time after the real bite to set the hook
         private const float BaseHookChance = 0.72f;
@@ -121,7 +128,10 @@ namespace ValheimDeepWaters
 
         public static void Shutdown()
         {
+            if (_session != null) _session.Prepaid = false;   // (leaving the game: nothing to give back)
             EndSession();
+            ParkedLines.Shutdown();
+            IceDrill.Shutdown();
             AnimationOverride.Reset();
             KeyHintOverride.Reset();
         }
@@ -137,6 +147,7 @@ namespace ValheimDeepWaters
         public static void LateUpdateVisuals()
         {
             var player = Player.m_localPlayer;
+            if (player == null && VdwConfig.Enabled.Value) RodMotion.PoseMenuRods();   // the main menu's characters
             if (player == null || !VdwConfig.Enabled.Value)
             {
                 RodMotion.Reset();
@@ -155,6 +166,7 @@ namespace ValheimDeepWaters
             AnimationOverride.SetActive(player, rodActive);
             KeyHintOverride.SetActive(rodActive);
             _session?.Bobber?.Refresh(player);
+            ParkedLines.LateUpdate(player);
         }
 
         // ------------------------------------------------------------------
@@ -165,6 +177,7 @@ namespace ValheimDeepWaters
         {
             if (!VdwConfig.Enabled.Value) return;
             if (player == null || player != Player.m_localPlayer) return;
+            ParkedLines.Update(player);   // lines left out in rod holders: they fish whatever's in your hands
 
             _rodEquipped = ContentRegistry.IsRod(player.GetCurrentWeapon());
 
@@ -262,6 +275,7 @@ namespace ValheimDeepWaters
         /// </summary>
         private static void UpdateCastCharge(Player player, bool blocked)
         {
+            if (_session == null) _lowering = false;
             if (_session == null && !blocked)
             {
                 bool attackHeld = ZInput.GetButton("Attack");
@@ -272,6 +286,17 @@ namespace ValheimDeepWaters
                     if (attackHeld) return;
                     _waitAttackRelease = false;
                     attackUp = false;
+                }
+
+                // An ice rod by an Ice Hole isn't cast: pressing left click drops the line straight in, and holding it lets
+                // the line down until you let go (IceLower).
+                if (ZInput.GetButtonDown("Attack") && !_charging && !_pendingCastActive && IceDrop(player)) return;
+                // ...and with no hole there's nothing to do: just say so (no draw, no throw)
+                if (ZInput.GetButtonDown("Attack") && !_charging && !_pendingCastActive && ContentRegistry.GetRod(player.GetCurrentWeapon())?.IceRod == true)
+                {
+                    Msg("An ice rod fishes down a hole in the ice. Drill one with an Ice Auger.");
+                    _waitAttackRelease = true;
+                    return;
                 }
 
                 if (attackHeld && !_charging && !_pendingCastActive)
@@ -307,6 +332,16 @@ namespace ValheimDeepWaters
                 _pendingCastActive = false;
                 TryCast(player, _pendingCastFraction);
             }
+        }
+
+        /// <summary>An ice rod with an Ice Hole in front: the line goes in at once, and keeps going down while the click is held.</summary>
+        private static bool IceDrop(Player player)
+        {
+            var rod = ContentRegistry.GetRod(player.GetCurrentWeapon());
+            if (rod == null || !rod.IceRod || !IceFishing.HoleInFront(player, out _, out _, out _, out _)) return false;
+            TryCast(player, 0f);
+            if (_session != null && _session.IceHole) { _lowering = true; _lowerStart = Time.time - 1f; }   // (already past a tap)
+            return true;
         }
 
         private static bool _logHoldsInput;

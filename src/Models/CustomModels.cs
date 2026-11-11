@@ -108,6 +108,11 @@ namespace ValheimDeepWaters
                 ItemIcons.Apply(prefab, baseName);
                 return true;
             }
+            if (baseName == IceDrill.AugerModel && ApplyHeldAt(prefab, baseName, IceDrill.GripFromPoint))
+            {
+                ItemIcons.Apply(prefab, baseName);
+                return true;
+            }
             if (baseName.StartsWith("leister_") && ApplyFittedToVanilla(prefab, baseName))
             {
                 ItemIcons.Apply(prefab, baseName);

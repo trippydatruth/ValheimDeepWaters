@@ -56,16 +56,25 @@ namespace ValheimDeepWaters
             float fullCast = Mathf.Min(rod.CastDistance * (lure != null ? LureCastFactor : 1f) * weightCast, rod.LineCapacity);
             float maxDist = Mathf.Lerp(Mathf.Min(MinCastDistance, fullCast), fullCast, Mathf.Clamp01(chargeFraction));   // a tap: just in front of you (to spot fish, or to test)
 
-            if (!TryFindWater(player, maxDist, out var dir, out var spot, out var distance, out var depth))
+            // an Ice Hole just in front takes the cast, straight down it; elsewhere, open water (not the ice over it)
+            Vector3 dir, spot; float distance, depth;
+            bool iceHole = IceFishing.HoleInFront(player, out dir, out spot, out distance, out depth);
+            if (rod.IceRod && !iceHole)
+            {
+                Msg("An ice rod fishes down a hole in the ice. Drill one with an Ice Auger.");
+                return;
+            }
+            if (!iceHole && !TryFindWater(player, maxDist, out dir, out spot, out distance, out depth))
             {
                 Msg("There is no water deep enough to fish there.");
                 return;
             }
+            IceContext = iceHole;
 
             BaitDefinition? baitDef = lure;
             if (lure == null && stack != null) ContentRegistry.BaitByItemName.TryGetValue(stack.Name, out baitDef);
 
-            bool ocean = IsOceanAt(spot, dir);
+            bool ocean = !iceHole && IsOceanAt(spot, dir);
             var biome = WorldGenerator.instance != null ? WorldGenerator.instance.GetBiome(spot) : Heightmap.Biome.None;
             // A boss lure only ever brings its boss (if the water, place and time are right); nothing else bites it.
             var lureBoss = baitDef != null ? BossFish.ForLure(baitDef.Id) : null;
@@ -86,6 +95,7 @@ namespace ValheimDeepWaters
             }
             if (fish == null)
             {
+                IceContext = false;
                 Msg("Nothing seems to live in these waters.");
                 return;
             }
@@ -122,15 +132,25 @@ namespace ValheimDeepWaters
                 Ocean = ocean,
                 Spot = spot,
                 FloatPos = spot,
-                Biome = biome
+                Biome = biome,
+                IceHole = iceHole
             };
+            IceContext = false;
             SetBiterFish(s, fish, RollWeight(fish), standIn: true);
             SetUpRig(player, s, lure, depth);
+            if (iceHole)
+            {
+                // down a hole the line hangs straight: it starts just under the water and goes down as it's let out
+                s.LineDistance = s.StartDistance = IceStartLength;
+                s.BaitDepth = IceStartLength;
+            }
             // a weight takes a while to get the bait down: fish come once it's there
             if (s.Weight != null && lureBoss == null && !quick) wait += Mathf.Min(5f, s.BaitDepth / Mathf.Max(0.1f, s.Weight.SinkSpeed));
 
             s.Drag = _dragLevel;
-            s.Bobber = BobberVisual.Create(spot, hidden: lure != null || s.Weight != null);   // no float on a lure or a weighted rig
+            s.Bobber = BobberVisual.Create(spot, hidden: lure != null || s.Weight != null || iceHole);   // no float on a lure, a weighted rig or a line down a hole
+            if (rod.IceRod) s.Bobber.WidthScale = BobberVisual.ShortRodLine;   // the little ice rod's fine line
+            if (iceHole) s.Bobber.Via = new Vector3(spot.x, spot.y + 0.02f, spot.z);   // down through the hole, not the ice
             // Thrown from the rod tip along a throw's arc, longer in the air the further it goes.
             Vector3 throwFrom = RodMotion.TryGetTip(out var tipNow) ? tipNow : player.transform.position + player.transform.forward * 0.6f + Vector3.up * 1.5f;
             s.Bobber.BeginCastTravel(throwFrom, spot);
@@ -165,7 +185,8 @@ namespace ValheimDeepWaters
             FishApproach.Spawn(s, spot, wait + 0.55f, quick);
 
             _session = s;
-            Msg(lure != null ? "Cast... hold right click to work the lure back."
+            Msg(iceHole ? "Down the hole... hold left click to let line out; tap right click to jig, hold it to reel up."
+                : lure != null ? "Cast... hold right click to work the lure back."
                 : s.Weight != null ? $"Cast... the {Loc.Text(s.Weight.Name)} takes your bait down to the bottom ({s.Depth:0} m)."
                 : "Cast...");
         }
@@ -202,8 +223,16 @@ namespace ValheimDeepWaters
         }
 
         /// <summary>Rolls the species of one fish swimming around the cast.</summary>
-        internal static FishDefinition? RollSuitorFish(FishingSession s) => s.ForcedFish ??
-            SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer, s.Style, baitDepth: s.BaitDepth);
+        internal static FishDefinition? RollSuitorFish(FishingSession s)
+        {
+            if (s.ForcedFish != null) return s.ForcedFish;
+            IceContext = s.IceHole;   // down an Ice Hole: the fish under the ice come too
+            try { return SelectFish(s.Bait, s.Ocean, s.Depth, 1f + FishingBuffs.Total(Player.m_localPlayer, BuffStat.Legendary, s.Spot), s.Biome, s.Nearby.Keys, s.Trailer, s.Style, baitDepth: s.BaitDepth); }
+            finally { IceContext = false; }
+        }
+
+        /// <summary>True while fish are picked (or a bite timed) for a cast down an Ice Hole: the IceOnly fish can come, and IceBite counts.</summary>
+        internal static bool IceContext;
 
         /// <summary>
         /// Chance a fish that comes to the bait actually wants it - vanilla's per-bait chance (TestBate). A fish
@@ -264,6 +293,7 @@ namespace ValheimDeepWaters
 
         private static bool Matches(FishDefinition f, bool ocean, bool deepOcean, float depth)
         {
+            if (f.IceOnly && !IceContext) return false;   // they live under the ice
             if (depth < f.MinDepth || depth > f.MaxDepth) return false;
             switch (f.Water)
             {

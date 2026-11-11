@@ -174,6 +174,25 @@ namespace ValheimDeepWaters
         public static ItemDrop.ItemData? WornBox(Player? p) => p != null && UtilityField?.GetValue(p) is ItemDrop.ItemData it && TierOf(it) != null ? it : null;
         public static Inventory? WornContents(Player? p) => Contents(WornBox(p));
 
+        /// <summary>
+        /// Every tackle box the player can take tackle from: the one worn, any carried in the inventory, and a set-down
+        /// box that's open right now. The worn box comes first.
+        /// </summary>
+        public static List<Inventory> Reachable(Player? p)
+        {
+            var list = new List<Inventory>();
+            if (p == null) return list;
+            if (WornContents(p) is Inventory worn) list.Add(worn);
+            foreach (var item in p.GetInventory().GetAllItems())
+                if (Contents(item) is Inventory carried && !list.Contains(carried)) list.Add(carried);
+            var open = InventoryGui.instance != null && InventoryGui.IsVisible() ? OpenContainer?.GetValue(InventoryGui.instance) as Container : null;
+            var openInv = open != null ? open.GetInventory() : null;
+            if (openInv != null && BoxInventories.Contains(openInv) && !list.Contains(openInv)) list.Add(openInv);
+            return list;
+        }
+
+        private static readonly FieldInfo? OpenContainer = AccessTools.Field(typeof(InventoryGui), "m_currentContainer");
+
         /// <summary>Tackle: bait, lures, hooks, weights, leaders (not rods), and floats.</summary>
         public static bool IsTackle(ItemDrop.ItemData? item)
         {

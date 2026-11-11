@@ -75,9 +75,10 @@ namespace ValheimDeepWaters
         public const string ColdBite = "ColdBite";             // +x: fish bite sooner in the Mountain and Deep North (the Frost Float)
         public const string DeepBite = "DeepBite";             // +x: fish bite sooner in deep water (the Eitr Float)
         public const string AshBite = "AshBite";               // +x: fish bite sooner in the Ashlands (the Ember Float)
+        public const string IceBite = "IceBite";               // +x: fish bite sooner through a hole in the ice (the Ice Angler's Watch Cap)
 
         public static readonly string[] All =
-            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite, DayBite, FreshBite, ColdBite, DeepBite, AshBite };
+            { BiteSpeed, Nibbles, BaitInterest, ExtraFish, HookWindow, HookChance, Tension, ReelSpeed, ReelStamina, RodWear, HookStraighten, FishWeight, Legendary, Stealth, NightBite, DayBite, FreshBite, ColdBite, DeepBite, AshBite, IceBite };
 
         public static string Describe(string stat, float v)
         {
@@ -104,6 +105,7 @@ namespace ValheimDeepWaters
                 ColdBite => $"In the Mountain and Deep North, fish bite {pct} sooner",
                 DeepBite => $"In water {FishingBuffs.DeepWater:0} m or deeper, fish bite {pct} sooner",
                 AshBite => $"In the Ashlands, fish bite {pct} sooner",
+                IceBite => $"Through a hole in the ice, fish bite {pct} sooner",
                 _ => $"{stat} {v}"
             };
         }
@@ -179,6 +181,7 @@ namespace ValheimDeepWaters
             if ((biome & (Heightmap.Biome.Mountain | Heightmap.Biome.DeepNorth)) != 0) total += Total(player, BuffStat.ColdBite, at);
             if (depth >= DeepWater) total += Total(player, BuffStat.DeepBite, at);
             if ((biome & Heightmap.Biome.AshLands) != 0) total += Total(player, BuffStat.AshBite, at);
+            if (FishingController.IceContext) total += Total(player, BuffStat.IceBite, at) + IceShelters.BiteBonus(player);   // a cast through an Ice Hole (inside a shelter: sooner still)
             return total;
         }
 

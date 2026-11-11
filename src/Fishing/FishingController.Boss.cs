@@ -34,7 +34,7 @@ namespace ValheimDeepWaters
             if (s.OmenStep == 0)
             {
                 s.OmenStep = 1;
-                s.Swirl = OmenSwirl.Create(bobberPos);
+                s.Swirl = OmenSwirl.Create(bobberPos, BossFish.ScaleFor(s.Boss.FishId));
                 MessageHud.instance?.ShowBiomeFoundMsg(s.Boss.Omen, true);
                 GameCamera.instance?.AddShake(player.transform.position, 30f, 1.2f, false);
                 s.NextSplash = Time.time + 2f;

@@ -83,8 +83,13 @@ namespace ValheimDeepWaters
 
             var attach = prefab.transform.Find("attach");
             // The worn version (a belt's attach_skin) stays as it is.
+            // A mead keeps the vanilla mead's own glow: its sparkles (particle renderers) and its little point light, tinted to
+            // this mead's colour - vanilla's bottles don't glow themselves, the light round them does.
+            Color? meadLight = MeadColour(baseName);
             foreach (var r in prefab.GetComponentsInChildren<Renderer>(true))
-                if (!IsUnder(r.transform, prefab.transform, "attach_skin")) r.enabled = false;
+                if (!IsUnder(r.transform, prefab.transform, "attach_skin") && !(meadLight != null && r is ParticleSystemRenderer)) r.enabled = false;
+            if (meadLight is Color lc)
+                foreach (var l in prefab.GetComponentsInChildren<Light>(true)) l.color = lc;
 
             GameObject Place(Transform parent, string name)
             {
@@ -107,6 +112,19 @@ namespace ValheimDeepWaters
             }
             Plugin.Log.LogDebug($"Custom models: '{baseName}' is a whole model (from '{source}'), {renderers.Length} parts.");
             return true;
+        }
+
+        /// <summary>
+        /// A Deep Waters mead's colour, for the light round it (as the meads are baked: Angler's amber, Steady blue,
+        /// Troll-Grip green, the Lingonberry red); null for anything that isn't one.
+        /// </summary>
+        private static Color? MeadColour(string baseName)
+        {
+            if (!baseName.StartsWith("buff_")) return null;
+            var parts = baseName.Substring(5).Split('_');
+            if (parts.Length != 2 || !(parts[1] is "minor" or "medium" or "major" or "north")) return null;
+            float hue = parts[1] == "north" ? 350f : parts[0] switch { "angler" => 34f, "steady" => 205f, "grip" => 105f, _ => -1f };
+            return hue < 0f ? null : Color.HSVToRGB(hue / 360f, 0.7f, 1f);
         }
 
         private static bool IsUnder(Transform t, Transform root, string name)

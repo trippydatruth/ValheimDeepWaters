@@ -113,25 +113,53 @@ namespace ValheimDeepWaters
             }
             var parts = saved.Split('|');
             var missing = new List<string>();
-            for (int s = 0; s < Slots && s < parts.Length; s++)
+            for (int s = 0; s < Slots; s++)
             {
-                string want = parts[s];
-                if (string.IsNullOrEmpty(want) || !SlotInUse(s)) continue;
+                if (!SlotInUse(s)) continue;
+                string want = s < parts.Length ? parts[s] : "";
                 var cur = ItemIn(player, s);
                 if (cur != null && KeyOf(cur) == want) continue;
+                bool wasHeld = s == RodSlot && cur != null && player.IsItemEquiped(cur);   // the rod coming in is taken up in its place
+                // the loadout is exactly what was saved: anything else in a slot comes out (the inventory, else the
+                // tackle box you're wearing), so a slot saved empty is empty again
+                if (cur != null && !ClearSlot(player, s, cur))
+                {
+                    player.Message(MessageHud.MessageType.Center, $"No room to take the {Loc.Text(cur.m_shared.m_name)} out of your tackle.");
+                    continue;
+                }
+                if (string.IsNullOrEmpty(want)) continue;
+                cur = ItemIn(player, s);
                 var found = Carried(player).Where(i => KeyOf(i) == want && SlotFor(i) == s)
                     .OrderByDescending(i => i.m_quality).ThenByDescending(i => i.m_stack).FirstOrDefault();
                 if (found == null) { missing.Add(PrettyName(want)); continue; }
                 if (s == RodSlot)
                 {
-                    bool held = cur != null && player.IsItemEquiped(cur);
-                    if (held) player.UnequipItem(cur, false);
                     if (!player.GetInventory().ContainsItem(found)) { missing.Add(PrettyName(want) + " (in your tackle box)"); continue; }
-                    PutRodInSlot(player, found, held);
+                    PutRodInSlot(player, found, wasHeld);
                 }
                 else Equip(player, found);
             }
             player.Message(MessageHud.MessageType.Center, missing.Count == 0 ? $"Loadout {n} on." : $"Loadout {n} on. Not carrying: {string.Join(", ", missing)}");
+        }
+
+        /// <summary>Takes an item out of a tackle slot into the inventory (or the worn tackle box). False: nowhere to put it.</summary>
+        private static bool ClearSlot(Player player, int slot, ItemDrop.ItemData item)
+        {
+            if (slot == RodSlot)
+            {
+                if (FishingController.HandSession != null && player.IsItemEquiped(item)) return false;   // not with its line out
+                if (player.IsItemEquiped(item)) player.UnequipItem(item, false);
+                if (!player.GetInventory().CanAddItem(item)) return false;
+                Get(player).RemoveItem(item);
+                player.GetInventory().AddItem(item);
+                return true;
+            }
+            var pack = player.GetInventory();
+            var box = TackleBoxes.WornContents(player);
+            var to = pack.CanAddItem(item) ? pack : box != null && box.CanAddItem(item) ? box : null;
+            if (to == null) return false;
+            to.MoveItemToThis(Get(player), item);
+            return true;
         }
 
         private static string PrettyName(string prefab)
@@ -160,9 +188,10 @@ namespace ValheimDeepWaters
 
             var inv = Get(player);
             var pack = player.GetInventory();
-            var box = TackleBoxes.WornContents(player);
-            // it may come from the inventory or the tackle box you're wearing
-            var from = pack.ContainsItem(item) ? pack : box != null && box.ContainsItem(item) ? box : pack;
+            var boxes = TackleBoxes.Reachable(player);
+            var box = boxes.FirstOrDefault();
+            // it may come from the inventory or any tackle box you can reach
+            var from = pack.ContainsItem(item) ? pack : boxes.FirstOrDefault(b => b.ContainsItem(item)) ?? pack;
             var current = inv.GetItemAt(slot, 0);
             if (current != null && current.m_shared.m_name != item.m_shared.m_name)
             {
@@ -180,7 +209,7 @@ namespace ValheimDeepWaters
 
         /// <summary>Everything that could go in this slot, from the inventory and the tackle box you're wearing.</summary>
         private static IEnumerable<ItemDrop.ItemData> Carried(Player player) =>
-            player.GetInventory().GetAllItems().Concat(TackleBoxes.WornContents(player)?.GetAllItems() ?? Enumerable.Empty<ItemDrop.ItemData>());
+            player.GetInventory().GetAllItems().Concat(TackleBoxes.Reachable(player).SelectMany(b => b.GetAllItems()));
 
         /// <summary>Moves a tackle item back into the player's inventory.</summary>
         public static bool Unequip(Player player, ItemDrop.ItemData item)
@@ -242,19 +271,31 @@ namespace ValheimDeepWaters
             var current = inv.GetItemAt(RodSlot, 0);
             if (current != rod)
             {
-                if (current != null)
+                // The swap moves items between grids: the grave-return hook (GraveReturn, on every inventory change) mustn't
+                // act half way through. A rod still marked from a grave put itself back in the slot - and in your hands -
+                // before the new one got there (a rod taken from a holder came out as the one from your slot). The marks
+                // go, too: they're only for a grave.
+                bool was = _returning;
+                _returning = true;
+                try
                 {
-                    if (!pack.ContainsItem(rod) && !pack.HaveEmptySlot())
+                    foreach (var r in new[] { rod, current }) if (r != null) { r.m_customData.Remove(SlotKey); r.m_customData.Remove(WasEquippedKey); }
+                    if (current != null)
                     {
-                        player.Message(MessageHud.MessageType.Center, "No room in your inventory to swap it out.");
-                        return false;
+                        if (!pack.ContainsItem(rod) && !pack.HaveEmptySlot())
+                        {
+                            player.Message(MessageHud.MessageType.Center, "No room in your inventory to swap it out.");
+                            return false;
+                        }
+                        if (player.IsItemEquiped(current)) player.UnequipItem(current, false);
+                        inv.RemoveItem(current);
+                        pack.RemoveItem(rod);
+                        pack.AddItem(current);
                     }
-                    inv.RemoveItem(current);
-                    pack.RemoveItem(rod);
-                    pack.AddItem(current);
+                    else pack.RemoveItem(rod);
+                    if (!inv.AddItem(rod, new Vector2i(RodSlot, 0))) { pack.AddItem(rod); Plugin.Log.LogWarning("Tackle: couldn't put the rod in the rod slot; it's in your inventory."); }
                 }
-                else pack.RemoveItem(rod);
-                inv.AddItem(rod, new Vector2i(RodSlot, 0));
+                finally { _returning = was; }
             }
             if (hold && !player.IsItemEquiped(rod)) player.EquipItem(rod);
             return true;
@@ -328,7 +369,7 @@ namespace ValheimDeepWaters
 
             // the inventory first, then the tackle box you're wearing
             var refill = player.GetInventory().GetAllItems().Where(i => i.m_shared.m_name == name).OrderByDescending(i => i.m_stack).FirstOrDefault()
-                ?? TackleBoxes.WornContents(player)?.GetAllItems().Where(i => i.m_shared.m_name == name).OrderByDescending(i => i.m_stack).FirstOrDefault();
+                ?? TackleBoxes.Reachable(player).SelectMany(b => b.GetAllItems()).Where(i => i.m_shared.m_name == name).OrderByDescending(i => i.m_stack).FirstOrDefault();
             if (refill != null) Equip(player, refill);
         }
 
@@ -508,8 +549,58 @@ namespace ValheimDeepWaters
             private static void Prefix(Player __instance)
             {
                 if (_owner != __instance || _inv == null) return;
+                // what was worn or held, and which tackle slot each piece of tackle sat in, so looting the grave puts
+                // them all back (GraveReturn)
+                foreach (var item in __instance.GetInventory().GetAllItems())
+                    if (item.m_equipped) item.m_customData[WasEquippedKey] = __instance.GetPlayerID().ToString();
                 foreach (var item in _inv.GetAllItems().ToList())
+                {
+                    item.m_customData[SlotKey] = item.m_gridPos.x.ToString();
+                    if (item.m_equipped) item.m_customData[WasEquippedKey] = __instance.GetPlayerID().ToString();
                     __instance.GetInventory().MoveItemToThis(_inv, item);
+                }
+            }
+        }
+
+        private const string SlotKey = "vdw_tackle_slot", WasEquippedKey = "vdw_was_equipped";
+        [ThreadStatic] private static bool _returning;
+
+        /// <summary>
+        /// Looting your grave puts things back the way they were: tackle into its own tackle slots (the rod too), and
+        /// what you had on (armor, weapons, the tackle box) worn again. Runs whenever the inventory changes, so it
+        /// works for "take all" and for dragging things out of the grave one at a time.
+        /// </summary>
+        [HarmonyPatch(typeof(Inventory), "Changed")]
+        private static class GraveReturn
+        {
+            private static void Postfix(Inventory __instance)
+            {
+                var player = Player.m_localPlayer;
+                if (_returning || player == null || player.IsDead() || __instance != player.GetInventory() || _owner != player || _inv == null) return;
+                var marked = __instance.GetAllItems().Where(i => i.m_customData.ContainsKey(SlotKey) || i.m_customData.ContainsKey(WasEquippedKey)).ToList();
+                if (marked.Count == 0) return;
+                _returning = true;
+                try
+                {
+                    foreach (var item in marked)
+                    {
+                        bool wear = item.m_customData.TryGetValue(WasEquippedKey, out var who) && who == player.GetPlayerID().ToString();
+                        item.m_customData.Remove(WasEquippedKey);
+                        if (item.m_customData.TryGetValue(SlotKey, out var s))
+                        {
+                            item.m_customData.Remove(SlotKey);
+                            if (int.TryParse(s, out int slot) && slot == SlotFor(item) && _inv.GetItemAt(slot, 0) == null)
+                            {
+                                if (slot == RodSlot) { PutRodInSlot(player, item, hold: wear); continue; }
+                                _inv.MoveItemToThis(__instance, item, item.m_stack, slot, 0);
+                                continue;
+                            }
+                        }
+                        if (wear && !item.m_equipped && item.IsEquipable()) player.EquipItem(item, false);
+                    }
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"Tackle: couldn't put your gear back from the grave ({ex.Message})."); }
+                finally { _returning = false; }
             }
         }
 

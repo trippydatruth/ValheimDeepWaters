@@ -297,9 +297,9 @@ namespace ValheimDeepWaters
     internal sealed class OmenSwirl : MonoBehaviour
     {
         private static Material? _material;
-        private float _born;
+        private float _born, _max = 16f;
 
-        public static GameObject Create(Vector3 pos)
+        public static GameObject Create(Vector3 pos, float bossScale = 1f)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = "VDW_OmenSwirl";
@@ -310,14 +310,16 @@ namespace ValheimDeepWaters
             var renderer = go.GetComponent<Renderer>();
             renderer.sharedMaterial = _material ??= MakeMaterial();
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            go.AddComponent<OmenSwirl>()._born = Time.time;
+            var swirl = go.AddComponent<OmenSwirl>();
+            swirl._born = Time.time;
+            swirl._max = 16f * Mathf.Max(1f, bossScale);   // wide enough to read from the shore, wider for the biggest bosses
             return go;
         }
 
         private void Update()
         {
             float age = Time.time - _born;
-            float size = Mathf.Lerp(0.5f, 7f, Mathf.SmoothStep(0f, 1f, age / 3f)) * (1f + 0.04f * Mathf.Sin(age * 3f));
+            float size = Mathf.Lerp(0.5f, _max, Mathf.SmoothStep(0f, 1f, age / 4f)) * (1f + 0.04f * Mathf.Sin(age * 3f));
             transform.localScale = new Vector3(size, size, 1f);
             transform.Rotate(0f, 0f, (40f + age * 12f) * Time.deltaTime, Space.Self); // winds tighter as it builds
         }

@@ -104,7 +104,12 @@ namespace ValheimDeepWaters
         public static void Landed(Vector3 pos) => Play(() => _landSplash, pos, 0.6f);
         // The local angler's are shared (share: true) so players nearby see and hear them at that line too; a watcher's
         // copies (RemoteAnglers) play with share: false.
-        private static void Share(bool share, FishFx kind, float arg = 0f) { if (share) AnglerSync.Fx(Player.m_localPlayer, kind, arg); }
+        private static void Share(bool share, FishFx kind, float arg = 0f)
+        {
+            if (!share) return;
+            if (FishingController.Quiet) { ParkedLines.Fx(kind, arg); return; }   // a rod in a holder: shared through the holder
+            AnglerSync.Fx(Player.m_localPlayer, kind, arg);
+        }
 
         public static void Nibble(Vector3 pos, bool share = true) { Play(() => _nibble, pos); Share(share, FishFx.Nibble); }
         public static void Bite(Vector3 pos, bool share = true) { Play(() => _nibble, pos); Play(() => _landSplash, pos, 0.8f); Share(share, FishFx.Bite); }

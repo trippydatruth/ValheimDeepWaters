@@ -32,6 +32,7 @@ namespace ValheimDeepWaters
         /// <summary>The hook that's on the line goes with it when the line snaps, the rod breaks or the hook gives.</summary>
         private static void LoseHook(Player player, FishingSession s)
         {
+            if (s.Prepaid) { s.RigLost = true; s.HookLost = !(s.Hook != null && s.Hook.KeepChance > 0f && UnityEngine.Random.value < s.Hook.KeepChance); if (s.Trailer != null) s.TrailerUsed = true; return; }
             LoseRig(player, s);
             if (s.Lure != null)
             {
@@ -57,12 +58,56 @@ namespace ValheimDeepWaters
         /// </summary>
         internal static Vector3 LineEnd(Player player, FishingSession s)
         {
-            var pos = s.Phase == FishingPhase.Fighting ? player.transform.position + s.LineDir * s.LineDistance : s.FloatPos;
+            if (s.IceHole) return IceEnd(s);
+            var pos = s.Phase == FishingPhase.Fighting ? From(player, s) + s.LineDir * s.LineDistance : s.FloatPos;
             pos.y = s.WaterY;
             return pos;
         }
 
+        /// <summary>Where the line runs from: the angler, or the rod holder the rod is resting in (s.Anchor).</summary>
+        internal static Vector3 From(Player player, FishingSession s) => s.Anchor ?? player.transform.position;
+
         private static float FlatDistance(Vector3 a, Vector3 b) { a.y = b.y = 0f; return Vector3.Distance(a, b); }
+
+        /// <summary>
+        /// The end of a line let down an Ice Hole: LineDistance is how much line is down it - straight under the hole, as
+        /// deep as the water goes. (A fish running takes more line, but it's drawn under the hole: drawn off to the side the
+        /// line cut through the ice.)
+        /// </summary>
+        private static Vector3 IceEnd(FishingSession s)
+        {
+            float down = Mathf.Min(Mathf.Max(0f, s.LineDistance), IceBottom(s));
+            return new Vector3(s.Spot.x, s.WaterY - down, s.Spot.z);
+        }
+
+        /// <summary>How far a line can go straight down an Ice Hole before it's on the bottom.</summary>
+        private static float IceBottom(FishingSession s) => Mathf.Max(0.3f, s.Depth - 0.15f);
+
+        /// <summary>
+        /// Down an Ice Hole, left click held lets the line down (at IceLowerSpeed) until it's let go or on the bottom.
+        /// Returns false if the cast ended.
+        /// </summary>
+        private static bool IceLower(Player player, FishingSession s, bool blocked)
+        {
+            bool held = !blocked && ZInput.GetButton("Attack");
+            if (!blocked && ZInput.GetButtonDown("Attack") && !_lowering) { _lowering = true; _lowerStart = Time.time; }
+            if (!_lowering) return true;
+            if (!held)
+            {
+                _lowering = false;
+                return true;
+            }
+            if (Time.time - _lowerStart < IceTapTime) return true;
+            float bottom = Mathf.Min(IceBottom(s), s.MaxLine);
+            if (s.LineDistance >= bottom) return true;
+            float was = s.LineDistance;
+            s.LineDistance = Mathf.Min(bottom, s.LineDistance + IceLowerSpeed * Time.deltaTime);
+            s.Worked += s.LineDistance - was;   // a falling lure is a lure on the move
+            s.LastMoved = Time.time;
+            s.BaitDepth = s.LineDistance;
+            if (s.LineDistance >= bottom) Msg($"Your line touches bottom ({bottom:0.0} m down).");
+            return true;
+        }
 
         private const float MaxLineSlack = 0.3f;
 
@@ -72,7 +117,7 @@ namespace ValheimDeepWaters
         /// </summary>
         private static void KeepFloat(Player player, FishingSession s)
         {
-            Vector3 from = player.transform.position;
+            Vector3 from = From(player, s);
             Vector3 v = s.FloatPos - from; v.y = 0f;
             float d = v.magnitude;
             if (d > s.LineDistance && d > 0.01f)
@@ -90,7 +135,8 @@ namespace ValheimDeepWaters
         /// <summary>Where the hooked fish (the end of the line) is right now.</summary>
         private static Vector3 FishPos(Player player, FishingSession s)
         {
-            var pos = player.transform.position + s.LineDir * s.LineDistance;
+            if (s.IceHole) return IceEnd(s);
+            var pos = From(player, s) + s.LineDir * s.LineDistance;
             pos.y = s.WaterY;
             return pos;
         }
@@ -127,7 +173,7 @@ namespace ValheimDeepWaters
                 Vector3 p = player.transform.position + dir * d;
                 float ground = ZoneSystem.instance.GetGroundHeight(p);
                 float dpt = water - ground;
-                if (dpt >= MinCastDepth)
+                if (dpt >= MinCastDepth && !IceFishing.FrozenAt(p, water))   // frozen over: only an Ice Hole goes through
                 {
                     spot = new Vector3(p.x, water, p.z);
                     distance = d;
@@ -166,29 +212,53 @@ namespace ValheimDeepWaters
             // its own animation on it.
             bool blockDown = !blocked && ZInput.GetButtonDown("Block");
 
-            if (s.Phase != FishingPhase.Fighting) { KeepFloat(player, s); _reelingNow = false; s.DragSlip = 0f; }
+            if (s.Phase != FishingPhase.Fighting) { if (!s.IceHole) KeepFloat(player, s); else s.Slack = 0f; _reelingNow = false; s.DragSlip = 0f; }
             Vector3 bobberPos = LineEnd(player, s);
 
             switch (s.Phase)
             {
                 case FishingPhase.Waiting:
                     // Right click on a nibble is a strike too early; otherwise holding it works the line back in.
+                    if (blockDown) _blockStart = Time.time;
                     if (blockDown && FishApproach.TryEarlyStrike(s, bobberPos))
                     {
                         Msg("Too early! You spooked it.");
                     }
-                    else if (!blocked && ZInput.GetButton("Block"))
+                    else if (s.IceHole && !blocked && ZInput.GetButtonUp("Block") && Time.time - _blockStart < IceTapTime)
+                    {
+                        // down an Ice Hole a tap of right click jigs the line; only holding it reels
+                        if (!Twitch(player, s)) return;
+                    }
+                    else if (!blocked && ZInput.GetButton("Block") && (!s.IceHole || Time.time - _blockStart >= IceTapTime))
                     {
                         _reelingNow = true;                    // the reel clicks while you work the line back too
                         if (!Retrieve(player, s)) return;
                         bobberPos = LineEnd(player, s);
                     }
-                    if (s.Lure != null)
+                    if (s.IceHole)
+                    {
+                        // Down an Ice Hole: left click held lets the line down (right click: a tap jigs, held reels).
+                        if (!IceLower(player, s, blocked)) return;
+                        if (s.Lure != null)
+                        {
+                            s.Tracker.Update(_reelingNow, FullSpeed, _reelSpeed, Time.time, Time.deltaTime);
+                            s.Style = s.Tracker.Style(Time.time, LurePause);
+                        }
+                        bobberPos = LineEnd(player, s);
+                    }
+                    else if (s.Lure != null)
                     {
                         // Left click twitches the rod: the lure darts a little way in.
                         if (!blocked && ZInput.GetButtonDown("Attack") && !Twitch(player, s)) return;
                         s.Tracker.Update(_reelingNow, FullSpeed, _reelSpeed, Time.time, Time.deltaTime);
                         s.Style = s.Tracker.Style(Time.time, LurePause);
+                        bobberPos = LineEnd(player, s);
+                    }
+                    else if (!blocked && ZInput.GetButtonDown("Attack"))
+                    {
+                        // Left click with bait out: a tug on the rod - the float (or the bait on the bottom) comes in a
+                        // little way and the movement draws the fish around it in a touch sooner.
+                        if (!PullBait(player, s)) return;
                         bobberPos = LineEnd(player, s);
                     }
                     if (s.Boss != null)
@@ -200,8 +270,12 @@ namespace ValheimDeepWaters
                     if (!UpdateDrift(player, s)) return;
                     bobberPos = LineEnd(player, s);
                     CheckRealNearbyFish(bobberPos, s);
-                    // A lure left sitting still draws no strikes: fish follow it but only hit it while it moves.
-                    bool live = s.Lure == null || s.Boss != null || Time.time - s.LastMoved < LurePause;   // (a boss comes when it comes)
+                    // A lure left sitting still draws no strikes: fish follow it but only hit it while it moves - or, once it's
+                    // been worked a little, while it sinks after you stop (a dying baitfish fluttering down). Cast and left
+                    // alone, it's never taken.
+                    float still = Time.time - s.LastMoved;
+                    bool live = s.Lure == null || s.Boss != null || still < LurePause   // (a boss comes when it comes)
+                                || (s.Worked >= WorkedBeforeFlutter && still < LurePause + FlutterTime);
                     if (s.Dragged && s.Boss == null) live = false;   // nothing takes a bait that's being dragged about
                     var biter = FishApproach.Update(s, s.Bobber, bobberPos, waiting: live);
                     if (biter != null)
@@ -209,7 +283,7 @@ namespace ValheimDeepWaters
                         s.Biter = biter;
                         SetBiterFish(s, biter.Fish, biter.WeightKg);
                         s.Phase = FishingPhase.Bite;
-                        s.HookDeadline = Time.time + HookWindowSeconds * HookStyles.WindowMult(s.Hook) * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
+                        s.HookDeadline = Time.time + HookWindowSeconds * HookStyles.WindowMult(s.Hook) * IceFishing.WindowFactor(s) * (1f + FishingBuffs.Total(player, BuffStat.HookWindow) + (s.Hook?.HookWindow ?? 0f) + SkillHookWindow * Skill(player));
                         s.BiteTime = Time.time;
                         FishingFx.Bite(bobberPos);
                         Msg("FISH ON!");
@@ -254,25 +328,49 @@ namespace ValheimDeepWaters
             float speed = s.Rod.ReelSpeed * RetrieveShare * (1f + FishingBuffs.Total(player, BuffStat.ReelSpeed));
             // Reeling takes up the slack first; only once the line is tight does the float (or lure) come in.
             s.LineDistance -= speed * Time.deltaTime;
+            s.Worked += speed * Time.deltaTime;
             return WorkedIn(player, s);
         }
 
         /// <summary>A rod twitch (left click with a lure out): the lure darts in a short way. Returns false if the cast ended.</summary>
         private static bool Twitch(Player player, FishingSession s)
         {
-            s.LineDistance -= TwitchDistance;
+            if (!s.IceHole) s.LineDistance -= TwitchDistance;   // (down a hole a jig hops the lure and it falls back)
+            s.Worked += TwitchDistance;
+            s.LastMoved = Time.time;
             s.Tracker.Twitch(Time.time);
             RodMotion.Trigger(RodEvent.Twitch);
+            return WorkedIn(player, s);
+        }
+
+        /// <summary>A tug on the rod with bait out (left click): the bait comes in a little. Returns false if the cast ended.</summary>
+        private static bool PullBait(Player player, FishingSession s)
+        {
+            s.LineDistance -= TwitchDistance * 0.6f;
+            RodMotion.Trigger(RodEvent.Twitch);
+            FishApproach.SpeedUp(s, 1.1f);
             return WorkedIn(player, s);
         }
 
         /// <summary>After the line's been taken in: moves the lure (or float) and ends the cast if it's come all the way in.</summary>
         private static bool WorkedIn(Player player, FishingSession s)
         {
+            if (s.IceHole)
+            {
+                // up the hole: the line comes straight up, and the cast ends when it's out
+                s.LastMoved = Time.time;
+                s.BaitDepth = Mathf.Max(0f, s.LineDistance);
+                if (s.LineDistance <= IceOutLength)
+                {
+                    Finish(player, s.Lure != null ? "You jig the lure up out of the hole." : "You reel your line up out of the hole.");
+                    return false;
+                }
+                return true;
+            }
             var before = s.FloatPos;
             KeepFloat(player, s);
             if ((s.FloatPos - before).sqrMagnitude > 1e-6f) s.LastMoved = Time.time;
-            if (FlatDistance(player.transform.position, s.FloatPos) <= RetrieveEndDistance)
+            if (FlatDistance(From(player, s), s.FloatPos) <= RetrieveEndDistance)
             {
                 Finish(player, s.Lure != null ? "You work the lure all the way in." : "You reel in your line.");
                 return false;
@@ -323,8 +421,9 @@ namespace ValheimDeepWaters
             {
                 s.Phase = FishingPhase.Fighting;
                 // From here the fight runs along the line from you to where the float is now.
-                var toFloat = s.FloatPos - player.transform.position; toFloat.y = 0f;
-                if (toFloat.sqrMagnitude > 0.01f) { s.CastDir = toFloat.normalized; s.Angle = 0f; s.LineDistance = toFloat.magnitude; }
+                var toFloat = s.FloatPos - From(player, s); toFloat.y = 0f;
+                // (down a hole the line is already as long as it's been let down)
+                if (toFloat.sqrMagnitude > 0.01f && !s.IceHole) { s.CastDir = toFloat.normalized; s.Angle = 0f; s.LineDistance = toFloat.magnitude; }
                 s.Tension = 18f;
                 s.Running = false;
                 s.StateTimer = UnityEngine.Random.Range(0.8f, 1.6f);
@@ -371,6 +470,11 @@ namespace ValheimDeepWaters
         /// </summary>
         private static void ConsumeBait(Player player, FishingSession s)
         {
+            if (s.Prepaid)
+            {   // set down in a holder: the bait (or a spent boss lure, or the trailer) was taken off the angler then
+                if (s.Lure == null) s.BaitUsed = true; else if (s.Trailer != null) s.TrailerUsed = true;
+                return;
+            }
             if (s.Bait == null) return;
             if (s.Lure != null)
             {
@@ -388,6 +492,7 @@ namespace ValheimDeepWaters
         /// <summary>Takes one of the trailer this cast was made with from the bait slot, if it's still there.</summary>
         private static void UseTrailer(Player player, FishingSession s)
         {
+            if (s.Prepaid) { s.TrailerUsed = true; s.Trailer = null; return; }
             var item = Tackle.ItemIn(player, Tackle.BaitSlot);
             if (item != null && ContentRegistry.BaitByItemName.TryGetValue(item.m_shared.m_name, out var b) && b.Id == s.Trailer!.Id)
                 Tackle.UseOne(player, Tackle.BaitSlot);
@@ -462,7 +567,7 @@ namespace ValheimDeepWaters
             {
                 float maxAngle = IsSerpent(s) ? SerpentMaxAngle : MaxLineAngle;
                 float next = Mathf.Clamp(s.Angle + s.AngleSpeed * dt, -maxAngle, maxAngle);
-                var p = player.transform.position + Quaternion.AngleAxis(next, Vector3.up) * s.CastDir * s.LineDistance;
+                var p = From(player, s) + Quaternion.AngleAxis(next, Vector3.up) * s.CastDir * s.LineDistance;
                 bool shore = ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(p) > s.WaterY - 0.6f;
                 if (shore || Mathf.Abs(next) >= maxAngle) s.AngleSpeed = -s.AngleSpeed;
                 else s.Angle = next;
@@ -641,9 +746,9 @@ namespace ValheimDeepWaters
             }
             // Landed when it's close, or when reeling has dragged it out of the water onto the bank (from a high bank
             // the last couple of metres would otherwise be under the ground at your feet).
-            var fishAt = player.transform.position + s.LineDir * s.LineDistance;
+            var fishAt = From(player, s) + s.LineDir * s.LineDistance;
             bool ashore = reeling && ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(fishAt) > s.WaterY - 0.3f;
-            if (s.LineDistance <= 2f || ashore)
+            if (s.IceHole ? s.LineDistance <= IceLandLength : (s.LineDistance <= 2f || ashore))   // (up an Ice Hole: when it's at the hole)
             {
                 // Whatever happens while handing out the catch, the cast ends (else it would retry every frame).
                 try { Catch(player, s); }

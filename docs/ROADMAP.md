@@ -103,6 +103,28 @@ Improvements first, new content last, in this order:
 1. #38 the tackle screen. 2. Hildir's stock in recipes (below). 3. #7 bait models, and restyle the bait models
 already made (more stylized, better looking). 4. #25 the floats. 5. #27 the custom rewards (pennants, angler caps).
 
+## Playtest notes (2026-11-07) - all built, in Test, to test (docs/TO_TEST.md)
+
+Bugs:
+- Built: equipped items and tackle go back to their own slots after looting your grave (Tackle.cs GraveReturn).
+- Built: the tackle screen's loadouts use tackle boxes carried, worn or set down and open; applying one empties the
+  slots that weren't in it.
+- Built: a fish's extra drops go into the bag when caught from a boat.
+- Built: fireflies at night glow, with a small pulsing light (FireflyGlow).
+- Built: vanilla rods and baits found in the world (frost caves) turn into Deep Waters gear (VanillaGearSwap.cs).
+- Built: left click with bait out (no lure) tugs the rod and draws the bait in a little (PullBait).
+
+Ideas:
+- Built: a lbs / kg setting (4 Interface > Weight Unit).
+- Built: the Rod Holder - a bank stake; set a rod in it with the line out and it keeps fishing, tells for everyone,
+  circle hooks set themselves, anyone can take the rod and fight the fish; several at once (RodHolders.cs,
+  FishingController.Parked.cs). And the Rod Rack - ten rods, storage only.
+- Built: a bigger water swirl for boss fish (16 m, more for the biggest).
+- Built: the Cork float is the Cork-and-Bone Float (bone fragments, no boss item).
+- Built: mead bottles with see-through glass, a glowing fake-liquid mesh inside, and the user's fixed cork and twine
+  (Mesh\mead bottle\v4; export_mead.py), glow 2.5x / 3.5x.
+- Built: Deep Waters catches count for the vanilla fishing achievements (FishCaught and the tier stats).
+- Built: the HUD shows the tackle on the line for a rod taken up from a holder.
 ## Hildir's stock (was "after the first release")
 
 - **Hildir's stock in recipes** (the rest of #20). Checked in the game files: Sparkler (`Sparkler`), Basic Fireworks
@@ -119,3 +141,137 @@ already made (more stylized, better looking). 4. #25 the floats. 5. #27 the cust
 ## Spear fishing (2026-11-03)
 
 41. **Spear fishing.** Stab or throw a spear at fish near the surface. *Built 2026-11-03, being tested: SpearFishing.cs, eight leisters (Flint to Frostcore) on vanilla spear looks; any vanilla spear works on small fish. Leister models and icons in 2026-11-03 (build_lures.py leister_<tier>, fitted onto the vanilla spear). The thrown spear wears the leister model too.*
+
+## Ice fishing (#34) - design, 2026-11-03 (build next)
+
+Fish through a hole drilled in the ice, for fish that only bite there. Mountain and Deep North lakes, where the water is
+frozen over (or snow-covered ice at the shore).
+
+**Seen in game (2026-11-03 clip):** yes - in the Deep North, rivers and lakes are covered in solid walkable ice sheets
+(a whole river channel frozen bank to bank, flat frozen lakes), ending in broken ice plates beside dark open water.
+So the Ice Hole goes on those sheets. Still to find out in code: what the sheets are - terrain, a static piece, or an
+"ice" water material? `vdw_debug` a ray
+down from the player standing on lake ice: hit collider name/layer, Floating.GetLiquidLevel there, WorldGenerator biome.
+If there's no real frozen water, fall back to: the hole works on Mountain / Deep North lakes' shallow edges, as a piece
+placed on the water's surface (like the Fishing Boat's spot checks).
+
+**Items**
+| Item | Kind | Made at | Recipe | Notes |
+|---|---|---|---|---|
+| Ice Auger | tool (secondary attack drills) | Forge 3 | Iron 4, Fine Wood 2, Silver 2 | Drills an Ice Hole in front of you on ice over at least 1.5 m of water; durability, repairs at the forge |
+| Ice Hole | piece (spawned by the auger, not built) | - | - | A 0.5 m hole with a slush ring; refreezes after 20 min (ZDO timestamp); one per player at a time |
+| Ice Fishing Rod | rod (Rods.json) | Forge 3 | Fine Wood 4, Silver 3, Wolf Pelt 1 | Short (cast 0, line straight down the hole), +25% hook window, reels fast; only works in an Ice Hole (any rod works in a hole too, at -50% hook window) |
+| Ice shelters (built 2026-11-08, to test) | pieces (hammer) | Workbench | Hide Lavvu: Wood 20, Wolf Pelt 6, Leather Scraps 8, Stone 5 / Ice Shelter (igloo): Ice 30, Stone 5 / Ship-Tent: Fine Wood 12, Elaking Hair Bundle 4, Lox Pelt 4, Iron 2, Stone 5 | Walk-in shelters with a vent for a fire's smoke (the Lavvu and Ship-Tent come with a campfire; the igloo doesn't); comfort, shelter, and +10/15/20% bite through a hole inside (IceShelters.cs; art build_shelters.py, Mesh/ice fishing/shelter_v6) |
+| Grub Jig / Rime Jig | lures (Baits.json, kind Jig) | Forge 3 / Black forge 2 | small jig + hook | Jigged in place (Hop retrieve without reeling) - the ice-fishing way |
+
+The Ice Angler's Watch Cap gets **IceBite** (+30%: fish bite sooner through the ice) on top of its hook window.
+
+**Fish (only bite through an Ice Hole; one model each - Sketchfab/Tripo, per the one-model-per-species rule)**
+| Fish | Biomes | Max | Bait | Material |
+|---|---|---|---|---|
+| Burbot | Mountain, Deep North | 8 kg | worm, cut bait | rime |
+| Lake Whitefish | Mountain, Deep North | 5 kg | grub, Grub Jig | fins |
+| Arctic Grayling (ice) - or reuse Frost Char's niche | Deep North | 3 kg | fly, grub | rime |
+| Lake Trout (legendary-ish "Ice King Trout", mini-boss like Fenringfin) | Deep North | 40 kg | Rime Jig | legend |
+Frost Char and Frost Sculpin also bite through the ice (they already live there).
+
+**Code (files to change)**
+- New `src/Fishing/IceFishing.cs`: the auger's drill (Harmony postfix on the tool's attack hit like SpearFishing's
+  StabPatch), the IceHole piece (ZNetView, refreeze timer, slush VFX, removed when frozen), `IsIceHole(spot)`.
+- `FishingController.Casting.cs`: `TryFindWater` accepts an Ice Hole within 2 m in front (spot = hole centre, depth
+  from the water below); a cast there is a straight drop (no arc - BobberVisual.BeginCastTravel with a tiny arc);
+  `FishingSession.IceHole` flag.
+- Fish data: `FishDefinition.IceOnly` (bool, merged field: add to ContentRegistry's new-fields list) - `Matches()` only
+  lets IceOnly fish come to an Ice Hole cast, and an Ice Hole cast only draws IceOnly fish plus the cold-water fish.
+- `Buffs.cs`: `BuffStat.IceBite` (added to BiteSpeed when s.IceHole, like PlaceBite). FisherGear.cs: the cap's IceBite.
+- `DefaultData.cs`: the rod, two jigs, the four fish (new ids only: existing saves pick them up); Rods.json gets an
+  `IceRod` flag (no cast distance).
+- `FishSpawns.cs`: IceOnly fish don't swim free in the world (they're under the ice).
+- Catch log / Rewards: an "Under the Ice" biome set (all IceOnly fish) - Rewards.cs RecordCaughtIn.
+- README section, wiki page (wiki_from_readme.py picks it up), sheet: Fish rows, an Ice Fishing tab.
+
+**Art (all Sanctus + Grungit, previews first)**
+- Ice Auger (spiral bit, T-handle, wrapped grip) - build_lures-style procedural, or a hand model.
+- Ice Hole: a round hole with a slush ring and chipped ice around it (procedural, a flat ring mesh + ice chunks).
+- Ice Fishing Rod (short, stubby, a small reel) - build_rod_model.py / convert_user_rod.py; icon + rod_ice_full.png.
+- Ice Shelter (hide stretched over a bent-pole frame) - procedural or Tripo.
+- Grub Jig, Rime Jig - build_lures.py (jig head + treble).
+- The four fish: Sketchfab/Tripo downloads -> prep_sourced_fish.py -> rig/seam/export chain (fish-model-pipeline).
+- Icons for all of them; sheet icons pushed to the sheet-icons branch.
+
+**Built 2026-11-07 (first pass, in Test, to test):** IceFishing.cs - ice found by its slippery collider or an "ice"-named object (the props are IceSheet / Icepond / IceShore, from the asset rip) with water under it; `vdw_debug ice` reports what's there; the Ice Auger (PickaxeIron clone, no damage) drills a VDW_IceHole (networked, refreezes after 20 min); casts onto ice are refused, a hole in front takes the cast; IceOnly fish (Burbot, Lake Whitefish, Ice King Trout) only there and never spawned free; the Ice Fishing Rod (IceRod) and the hole hook window; Grub Jig and Rime Jig; IceBite on the Ice Angler's Watch Cap. Still to do: the "Under the Ice" catch-log set, art (auger, hole, rod, jigs, shelter, three fish models), README/wiki/sheet.
+
+**Order to build:** 1. the in-game ice check; 2. Ice Hole + auger (code, placeholder models) and casting into it;
+3. IceOnly fish with stand-in models to test; 4. the rod, jigs, IceBite; 5. art; 6. README/wiki/sheet; 7. 1.0.4.
+
+## Crab traps and crustaceans (#32) - design, 2026-11-03
+
+Set a baited trap in the water, leave it, come back to crabs, lobsters and other shellfish. Passive fishing: no rod, no
+fight - the trap fills over in-game time while you do other things, like vanilla's beehives and fermenters.
+
+**How it works**
+- Build a trap with the hammer, standing in shallow water (0.5-6 m; the placement ghost turns red elsewhere) or drop it
+  off a boat or dock into deeper water (crab pots: 4-30 m). It sinks to the bottom; a cork marker buoy floats above it.
+- Put bait in it (one stack; `E` opens it like a small chest). It checks every in-game hour: each check, if baited, rolls
+  one catch from what lives there (biome, water depth, sea or fresh, time of day), using up one bait.
+- Holds up to its capacity, then stops. `E` on the buoy hauls it up: take the catch, re-bait, leave it.
+- Traps wear (durability per haul) and repair at the workbench. Sea serpents and storms can't move them; nothing else
+  takes from them - other players can (it's a chest), unless set in a ward.
+- Bait matters: Cut Bait and fish scraps for crabs, Stinkbait for crayfish, Blubber for the Deep North.
+
+**Pieces (hammer)**
+| Trap | Station | Recipe | Water | Capacity | Notes |
+|---|---|---|---|---|---|
+| Wicker Crayfish Trap | Workbench 1 | Wood 6, Resin 2, Leather Scraps 2 | fresh, 0.5-4 m | 4 | rivers and lakes |
+| Crab Pot | Workbench 2 | Fine Wood 8, Deer Hide 2, Bronze Nails 10 | sea, 2-15 m | 6 | the coast |
+| Iron Lobster Pot | Forge 2 | Fine Wood 6, Iron 4, Fish Oil 2 | sea, 6-30 m | 8 | lobsters, deeper |
+| Rime Pot | Forge 4 | Frostwood 6, Silver 4, Rime Scales 2 | Deep North, any | 10 | cold-water catches; doesn't ice over |
+
+**Catches (one model each)**
+| Catch | Where | Rarity | Use |
+|---|---|---|---|
+| Crayfish | Meadows / Black Forest fresh water | common | cook (small food), bait (Crayfish Bait: pike, bass, catfish) |
+| Shore Crab | sea, any coast | common | cook, Crab Meat for chum and dishes |
+| Brown Crab | sea, 4 m+ | uncommon | bigger food, sells |
+| Lobster | sea, 8 m+, night likelier | uncommon | top shellfish food, sells well (Haldor 2x) |
+| Spider Crab | Mistlands / deep sea | rare | its shell -> Carapace-like lure parts |
+| Ember Crab | Ashlands sea | rare | glowing shell, Cinder material |
+| Rime Lobster | Deep North | rare | Rime material, the best food |
+| Golden Lobster | any sea pot | 1 in 300 (like rare fish) | trophy, sells 10x, catch log mark |
+Also from pots now and then: a sea shell, amber, a waterlogged chest (coins / a random tackle item), old boots (junk).
+
+**Uses (so the catches matter)**
+- Food at the cauldron: Crab Cakes, Lobster Stew, Crayfish Boil (cauldron 2-5), with Valheim's own ingredients.
+- Bait: Crayfish Bait, Crab Meat in chum (an alternative to Cut Bait).
+- The catch log: a "Shellfish" page (each species, its record, how many) and a Shellfish set reward; mastery tiers count.
+- Traders: Haldor buys shellfish; Hildir pays well for the Golden Lobster and the rare ones.
+- A **Lobster Trophy** mount (like the fish trophy mount).
+
+**Code (files to change)**
+- New `src/Fishing/CrabTraps.cs`: the trap pieces (Container like the coolers' set-down boxes, plus a ZDO "last check"
+  time), the hourly roll (run by the trap's owner on load and on a timer, so time passed while away still counts -
+  like vanilla's Beehive), the bait use, the buoy (a child object that floats at the surface: Floating.GetLiquidLevel),
+  placement rules (depth under the ghost, fresh vs sea - reuse FishingController.IsOceanAt).
+- New data `Shellfish.json` (DefaultData.ShellfishJson): id, name, biomes, water, depth range, rarity, night/day,
+  food values, sell value, material - merged like Fish.json; ContentRegistry registers them as items (clone a vanilla
+  food) with models and icons.
+- Recipes for the dishes (FishDishes.cs) and Crayfish Bait (Baits.json, new id).
+- CatchLog.cs / Rewards.cs / Mastery.cs: shellfish species and their set; TraderSales.cs: who buys them.
+- RareFish.cs: the Golden Lobster as a shellfish variant.
+- README section, wiki page, sheet tab (Shellfish).
+
+**Art (Sanctus + Grungit, previews first)**
+- The four traps: wicker (woven), wooden crab pot with netting, iron-banded lobster pot, frosted rime pot; each with a
+  cork-and-rope marker buoy. Procedural (build_wood_*.py style) - netting as a mesh grid with alpha.
+- The eight catches: Sketchfab/Tripo crab and lobster models (one per species), cleaned and baked; the Golden Lobster
+  a tinted copy (like golden fish).
+- Three dishes (bowl + contents, like the fish dishes), Crayfish Bait, the Lobster Trophy mount; icons for all.
+
+**Also worth adding with it (small)**
+- **Fish trap / weir** (fresh water): a stake fence that catches small baitfish over time - a passive source of minnows.
+- **Clam digging**: wriggling-soil-like spots on beaches at low... (Valheim has no tides) - skip unless wanted.
+- **Ward-safe**: traps in your ward can't be opened by others.
+
+**Order to build:** 1. one trap (Crab Pot) with placement, bait, the hourly roll and the buoy, with stand-in models;
+2. the catches as data + items (stand-ins); 3. the other three traps; 4. food, bait, catch log, traders; 5. art;
+6. README/wiki/sheet. After ice fishing (1.0.4) - this as 1.0.5.
