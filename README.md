@@ -12,12 +12,12 @@ Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippy
 
 ## Features
 
-- All 12 vanilla fish plus 31 new ones, including 10 legendaries, each with its own biomes, depth,
+- All 12 vanilla fish plus 34 new ones, including 11 legendaries, each with its own biomes, depth,
   favourite bait, time of day and weather
 - Fish you can see swim up to your bait, nibble the float, then bite. Strike too early and you spook them;
   make noise and they flee
 - A real fight: line tension, drag on the mouse wheel, sideways runs, leaps and snapped lines
-- Twelve rods, one for each era plus special ones, that wear out with use and upgrade to level 4
+- Thirteen rods, one for each era plus special ones, that wear out with use and upgrade to level 4
 - A tackle screen beside the inventory with the whole rod pictured and eight slots - rod, reel, line, float, hook,
   bait or lure, weight and leader - and three loadouts you can swap between; the rod in its slot takes no space
 - Reels, lines and floats for every era, and hooks in six sizes and four kinds: J, circle (sets itself), EWG
@@ -30,6 +30,10 @@ Full guide, one page per topic: the [Deep Waters wiki](https://github.com/trippy
 - Lures you cast far and retrieve (spoons, spinners, crankbaits, jigs, soft baits, swimbaits, poppers and flies),
   with trailers, and seven boss lures
 - Spear fishing: stab or throw a spear at fish near the surface, with eight leisters (fish spears) made for it
+- Ice fishing: drill a hole in the Deep North's frozen lakes with the Ice Auger and fish down it with the Ice Fishing
+  Rod, for three fish that live only under the ice. Fish from three shelters you walk into: a hide lavvu, an igloo
+  with an ice bench and a deer hide to sit on, and a Viking ship-tent with its own campfire
+- Rod holders that keep a line fishing while you do something else, and rod racks to store your rods
 - A Fishing Boat you row, with a passenger seat and a bow holdfast
 - Fishing meads (from mead bases, like vanilla's), chum, totems, rare relics, a Fisherman's armour set and two angler caps
 - Seven boss fish you summon with boss lures, each with its own weather, music and fight
@@ -91,6 +95,7 @@ strength, reel speed, power, hook bonus, stamina use and durability.
 | Leviathan | Black forge 2 | Two materials from each of the seven boss fish, Yggdrasil wood 10, Flametal 6 |
 | Allfather's Rod | Black forge 3 | The Leviathan Rod and three materials from each boss fish; shows once you've landed every boss fish |
 | Haldor's Gilded Rod | Haldor only | 6000 coins |
+| Ice Fishing Rod | Forge 3 | Fine wood 4, Gold 2, Elaking hair bundle 3 (see [Ice fishing](#ice-fishing)) |
 
 Rods wear while a fish is on the line, faster with heavy fish and high tension. A broken rod loses the fish
 and must be repaired where it was crafted.
@@ -143,11 +148,11 @@ Made from the cleaning table's prepared ingredients at Valheim's own food statio
 |---|---|
 | Fish Scales | Perch, Bluegill, Trout, Largemouth Bass, Greydwarf Goby, Pike |
 | Fish Oil | Trollfish, Channel Catfish, Mackerel, Sea Bass, Giant Herring, Surtling Sardine |
-| Spiny Fins | Tetra, Frost Char, Coral Cod, Pufferfish, Serpentfin |
+| Spiny Fins | Tetra, Frost Char, Coral Cod, Pufferfish, Serpentfin, Lake Whitefish |
 | Fish Roe | Tuna, Grouper, Halibut, Lingcod |
 | Abyssal Ink | Anglerfish, Mistfin, Bonemaw, Jotunn Perch |
 | Cinder Scales | Magmafish |
-| Rime Scales | Northern Salmon, Rimejaw Cod, Glacier Grayling, Frost Sculpin |
+| Rime Scales | Northern Salmon, Rimejaw Cod, Glacier Grayling, Frost Sculpin, Burbot |
 | Legendary Scale | Any legendary or boss fish |
 
 Landing a **Trophy-size** fish of any kind also gives a **Trophy Fin**.
@@ -194,7 +199,7 @@ they can't be crafted.
 
 ## Deep Waters fish
 
-28 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
+31 new fish to catch and eat, plus 3 bait fish. Weights are each species' maximum. Ocean and deep-ocean fish
 bite in any sea; fresh-water fish only in their biomes.
 
 **Fresh water**
@@ -210,6 +215,16 @@ bite in any sea; fresh-water fish only in their biomes.
 | Channel Catfish | Lake, river | Black Forest, Swamp | 20 kg |
 | Glacier Grayling | River | Deep North | 3 kg |
 | Frost Sculpin | Lake | Deep North | 4 kg |
+
+**Under the ice** (bite only through a hole in the ice; see [Ice fishing](#ice-fishing))
+
+| Fish | Biomes | Max |
+|---|---|---|
+| Lake Whitefish | Mountain, Deep North | 5 kg |
+| Burbot (at night, on the bottom) | Mountain, Deep North | 8 kg |
+| Ice King Trout (legendary) | Deep North | 40 kg |
+
+![The three ice fish: the Burbot, the Lake Whitefish and the legendary Ice King Trout](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/ice-fish.jpg)
 
 **Ocean**
 
@@ -244,6 +259,7 @@ bite in any sea; fresh-water fish only in their biomes.
 | Yagluth Gill | Deep ocean | 100 kg |
 | Moder Scale Fish | Deep ocean | 180 kg |
 | Fimbul Salmon | Deep North river | 250 kg |
+| Ice King Trout | Deep North lake, under the ice | 40 kg |
 
 **Bait fish** (land as bait instead of food; use a Tiny hook)
 
@@ -383,6 +399,8 @@ strains the line less); Shift reels at full speed.
 | Sparkler Popper | Topwater; after dark it fizzes and lights the water, and fish come sooner | Pike, trollfish, mackerel (0.3–12 kg) | Forge 1, Hildir's Sparkler, Medium Hook |
 | Ice Spoon | Spoon | Salmon, grayling, char (0.5–20 kg) | Forge 4, Heavy Hook |
 | Frostcore Jig | Jig, takes a trailer | Rimejaw cod, sculpin (1–60 kg) | Black forge 2, Giant Hook |
+| Grub Jig | Jig for ice holes, takes a trailer | Whitefish, burbot, char, sculpin (0.3–8 kg) | Forge 3, Medium Hook (makes 2) |
+| Rime Jig | Jig for ice holes | Ice King Trout, burbot, rimejaw cod (2–45 kg) | Black forge 2, Large Hook |
 
 A **trailer** (Curly Tail, Boar Rind, Feather Skirt) brings fish of its own and makes the lure's fish keener.
 Lures are mid-game tackle: each is made at the forge with a hook in the recipe. Lures and trailers are only used
@@ -413,6 +431,58 @@ Fishing skill); it trains the Spears skill too, which makes you
 surer, but it comes out a little lighter than one landed on a rod. Leisters hit creatures more weakly than their spears.
 
 ![A Largemouth Bass speared from the shallows: it goes straight into the bag](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/spear-fishing.jpg)
+
+## Ice fishing
+
+In the Deep North (and on the Mountain's frozen lakes) the water is covered in ice you can walk on. Nothing can be cast
+onto it: drill a hole and fish down it. Three fish live only under the ice and bite nowhere else: the **Lake
+Whitefish**, the **Burbot** (at night, on the bottom) and the legendary **Ice King Trout**. The cold-water fish of the
+place bite through a hole too.
+
+**The Ice Auger** (Forge 3: Iron 4, Fine wood 2, Silver 2). Stand on the ice and attack: you set the auger upright and
+twist its T-handle until the bit breaks through, and a hole opens in the ice in front of you. It needs at least 1 m of
+water underneath. A hole freezes over again after 20 minutes, skinning over in the last two. Press **E** on it to
+scoop out the slush and keep it open as long again.
+
+**The Ice Fishing Rod** (Forge 3: Fine wood 4, Gold 2, Elaking hair bundle 3) is a short rod with a bloodgold reel
+and an Elaking-fur grip. It fishes only through a hole, with a longer hook window there; any other rod works in a hole
+at half the window. Stand at a hole and click to drop the line straight in; hold the click to let it down further.
+Jig it with the **Grub Jig** or the **Rime Jig** (see [Lures and trailers](#lures-and-trailers)). Carried, it hangs
+in your left hand; with the line down you hold it out over the hole.
+
+### Shelters
+
+Three shelters to fish the ice from, built with the hammer (Furniture, near a workbench). You walk into each one: it
+counts as shelter for resting, and a fire inside doesn't smoke you out. Drill a hole inside and the fish bite sooner,
+because they can't see you against the sky.
+
+| Shelter | Materials | Bites sooner | |
+|---|---|---|---|
+| Hide Lavvu | Wood 20, Wolf pelt 6, Leather scraps 8 | +10% | A cone of poles under sewn hides, open at the top for smoke |
+| Ice Shelter | Ice 30, Stone 5 | +15% | An igloo of the game's own ice blocks, with a vent at the top and an ice bench |
+| Ship-Tent | Fine wood 12, Elaking hair bundle 4, Lox pelt 4, Iron 2, Stone 5 | +20% | A Viking ship's tent with dragon-head gables; comes with a campfire at the back |
+
+![The Ice Shelter, the Hide Lavvu and the Ship-Tent around a campfire on the ice](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/ice-shelters.jpg)
+
+The **Ice Shelter**'s ice bench runs round its back wall, under a deer hide: three seats, so you can sit and fish the
+hole in the middle.
+
+![Sitting on the igloo's bench, on the deer hide, fishing the hole in the middle](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/igloo-bench.jpg)
+
+![The Ice Shelter on a frozen lake, a hole drilled inside](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/igloo.jpg)
+
+![The Hide Lavvu with a fire inside and a hole beside it](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/lavvu.jpg)
+
+![The Ship-Tent at night under the northern lights](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/ship-tent.jpg)
+
+![Fishing down a hole inside the Ship-Tent, by its campfire](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/ship-tent-inside.jpg)
+
+### Rod holders and racks
+
+The **Rod Holder** (Workbench: Wood 4, Leather scraps 2) is a forked stake for the bank or the ice. Set a rod in it
+with its line out and the line keeps fishing while you do something else; you can run several at once. When a fish
+bites, everyone nearby is told, a circle hook sets itself, and anyone can take the rod up and fight it. The **Rod
+Rack** (Workbench: Fine wood 8, Iron 2, Leather scraps 4) stores ten rods.
 
 ## Fishing Boat
 
@@ -854,6 +924,9 @@ Several fish are built on models from Sketchfab, used under their licences:
 | Largemouth Bass | [Model 67A - Largemouth Bass](https://sketchfab.com/3d-models/model-67a-largemouth-bass-e60c457636b640629747c19feac4906c) | DigitalLife3D | CC BY-NC |
 | Bluegill | [Model 70A - Bluegill](https://sketchfab.com/3d-models/model-70a-bluegill-3f4665f558fc4bcab1b460e5f33666d3) | DigitalLife3D | CC BY-NC |
 | Sea Bass | [Perch Weever Sea Bass Fish](https://sketchfab.com/3d-models/perch-weever-sea-bass-fish-88a88ea2e8954f99ac153231e3a25d01) | boxgizmo | Sketchfab Standard |
+| Burbot | [burbot fish](https://sketchfab.com/3d-models/burbot-fish-89a1f40dac9a43618c17013eeb2609c7) | OldYakutHunter | CC BY |
+| Lake Whitefish | [Whitefish](https://sketchfab.com/3d-models/whitefish-d87cbe0733a64de5aedf5101f80e2cd9) | ucdavisterc | CC BY |
+| Ice King Trout | [Lake Trout](https://sketchfab.com/3d-models/lake-trout-e5387e5e576343489d85212315c023c6) | ucdavisterc | CC BY-NC |
 
 Other models used:
 
