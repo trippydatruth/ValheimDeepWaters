@@ -484,6 +484,10 @@ with its line out and the line keeps fishing while you do something else; you ca
 bites, everyone nearby is told, a circle hook sets itself, and anyone can take the rod up and fight it. The **Rod
 Rack** (Workbench: Fine wood 8, Iron 2, Leather scraps 4) stores ten rods.
 
+![Three rods set in Rod Holders on the bank at night, their lines out](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/rod-holders.jpg)
+
+![A Rod Rack holding ten rods](https://raw.githubusercontent.com/trippydatruth/ValheimDeepWaters/main/docs/screenshots/rod-rack.jpg)
+
 ## Fishing Boat
 
 A small rowing boat built with the hammer at a workbench (24 wood, 8 resin, 4 deer hide). Use the bench to row
