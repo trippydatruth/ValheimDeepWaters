@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.5
+Fixes from the first GitHub issue: works with Valheim Performance Optimizations, the fishing HUD can be moved and
+resized, and bait fish swim as one fish.
+
+### Added
+- **Move and resize the fishing HUD**: press `Alt + U` (Move HUD Key) and its four parts - the bait, tension and line
+  panels, the drag and reel dials, the key hints and the boss bar - show as frames. Drag one to move it, scroll over it
+  or drag its corner handle to resize it, and double-click it to put it back. `Alt + U` or `Escape` when done. Each
+  part's place and size are saved in the config (HUD Position and HUD Size, under 4 Interface).
+
+### Fixed
+- **Valheim Performance Optimizations**: with its rendering option on, a frozen copy of a fish could be left floating
+  on the player after a catch, or sitting still in the water. Every item with a custom model carries a still copy for
+  item stands, which VPO kept drawing after it was hidden; it now starts hidden, so VPO leaves it alone.
+- **Bait fish** (minnows and baitfish) swam with a second, frozen copy beside them.
+
 ## 1.0.4
 Ice fishing: drill a hole in the frozen lakes of the Deep North and the Mountain, fish down it for three new fish,
 and do it from one of three shelters. Rod holders and a rod rack, and the fixes from the November playtest.

@@ -274,4 +274,4 @@ Also from pots now and then: a sea shell, amber, a waterlogged chest (coins / a 
 
 **Order to build:** 1. one trap (Crab Pot) with placement, bait, the hourly roll and the buoy, with stand-in models;
 2. the catches as data + items (stand-ins); 3. the other three traps; 4. food, bait, catch log, traders; 5. art;
-6. README/wiki/sheet. After ice fishing (1.0.4) - this as 1.0.5.
+6. README/wiki/sheet. After ice fishing (1.0.4) and the issue #1 fixes (1.0.5) - this as 1.0.6.
