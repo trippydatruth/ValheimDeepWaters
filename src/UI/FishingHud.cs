@@ -1,3 +1,4 @@
+using BepInEx.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -41,12 +42,14 @@ namespace ValheimDeepWaters
             bool showHud = VdwConfig.ShowHud.Value && FishingController.RodEquippedNow
                            && !InventoryGui.IsVisible() && !Menu.IsVisible() && !Hud.IsUserHidden();
             bool showLog = FishingController.LogOpen;
-            if (!showHud && !showLog) return;
+            bool moving = MoveMode && !InventoryGui.IsVisible() && !Menu.IsVisible();
+            if (!showHud && !showLog && !moving) return;
 
             EnsureStyles();
 
             float hudScale = Mathf.Clamp(VdwConfig.HudScale.Value, 0.4f, 2f);
             float scale = Screen.height / RefHeight * hudScale;
+            _scale = scale;
             _width = Screen.width / scale;
             _height = Screen.height / scale;
             _vu = 1f / hudScale;
@@ -55,8 +58,9 @@ namespace ValheimDeepWaters
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             try
             {
-                if (showHud) DrawHud(player);
-                if (showLog) DrawLog(player);
+                if (moving) DrawMoveMode();
+                else if (showHud) DrawHud(player);
+                if (showLog && !moving) DrawLog(player);
             }
             finally
             {
@@ -71,23 +75,48 @@ namespace ValheimDeepWaters
 
         private static void DrawHud(Player player)
         {
-            float right = _width - 24f;
+            var col = Offset(VdwConfig.HudPosColumn);
+            float right = _width - 24f + col.x;
             var s = FishingController.Session;
 
-            float baitTop = 268f * _vu; // just below Valheim's minimap
-            DrawBaitPanel(player, right, baitTop);
-
-            float y = baitTop + 92f + BaitRigRow;
-            if (s != null && s.Phase == FishingPhase.Fighting)
+            float baitTop = 268f * _vu + col.y; // just below Valheim's minimap (unless moved)
+            var m0 = GUI.matrix;
+            try
             {
-                DrawTension(s, right, y);
-                y += 346f;   // the line-out panel then still ends just above the drag gauge
-            }
-            if (s != null) DrawLineOut(s, right, y);
+                Sized(VdwConfig.HudSizeColumn, new Vector2(right, baitTop));   // grows from its top right corner
+                DrawBaitPanel(player, right, baitTop);
 
-            DrawDials(right - 94f, _height - 160f, FishingController.DragLevel, FishingController.ReelSpeedLevel);
-            DrawHint(s);
-            if (s != null && FishingController.BossFightNow) DrawBossBar(s);
+                float y = baitTop + 92f + BaitRigRow;
+                if (s != null && s.Phase == FishingPhase.Fighting)
+                {
+                    DrawTension(s, right, y);
+                    y += 346f;   // the line-out panel then still ends just above the drag gauge
+                }
+                if (s != null) DrawLineOut(s, right, y);
+                GUI.matrix = m0;
+
+                var dials = DialsCentre();
+                Sized(VdwConfig.HudSizeDials, dials);                        // about its centre
+                DrawDials(dials.x, dials.y, FishingController.DragLevel, FishingController.ReelSpeedLevel);
+                GUI.matrix = m0;
+                DrawHint(s);
+                if (s != null && FishingController.BossFightNow)
+                {
+                    var bo = Offset(VdwConfig.HudPosBoss);
+                    Sized(VdwConfig.HudSizeBoss, new Vector2(_width / 2f + bo.x, 70f * _vu + bo.y));   // from its top middle
+                    DrawBossBar(s);
+                }
+            }
+            finally { GUI.matrix = m0; }
+        }
+
+        private static float Size(ConfigEntry<float> entry) => Mathf.Clamp(entry.Value, 0.5f, 2f);
+
+        // the GUI from here on drawn at a part's own size, about a point that stays put
+        private static void Sized(ConfigEntry<float> entry, Vector2 pivot)
+        {
+            float k = Size(entry);
+            if (Mathf.Abs(k - 1f) > 0.001f) GUIUtility.ScaleAroundPivot(new Vector2(k, k), pivot);
         }
 
         /// <summary>
@@ -97,7 +126,8 @@ namespace ValheimDeepWaters
         private static void DrawBossBar(FishingSession s)
         {
             const float w = 640f, h = 80f;
-            var r = new Rect(_width / 2f - w / 2f, 70f * _vu, w, h);
+            var bo = Offset(VdwConfig.HudPosBoss);
+            var r = new Rect(_width / 2f - w / 2f + bo.x, 70f * _vu + bo.y, w, h);
             Panel(r);
 
             float frac = s.FishStaminaMax > 0f ? Mathf.Clamp01(s.FishStamina / s.FishStaminaMax) : 0f;
@@ -311,10 +341,11 @@ namespace ValheimDeepWaters
             const float h = 74f;
             // Drawn smaller, in the strip under Valheim's stamina bar: laid out full size with its bottom edge on the
             // pivot, then shrunk toward that point.
-            var pivot = new Vector2(_width / 2f, _height - HintBottomGap * _vu);
+            var pivot = new Vector2(_width / 2f, _height - HintBottomGap * _vu) + Offset(VdwConfig.HudPosHints);
             var r = new Rect(pivot.x - w / 2f, pivot.y - h, w, h);
             var oldMatrix = GUI.matrix;
-            GUIUtility.ScaleAroundPivot(new Vector2(HintScale, HintScale), pivot);
+            float hk = HintScale * Size(VdwConfig.HudSizeHints);
+            GUIUtility.ScaleAroundPivot(new Vector2(hk, hk), pivot);
             try
             {
                 Panel(r);
@@ -322,6 +353,166 @@ namespace ValheimDeepWaters
                 KeyPrompts(keys, r.center.x - keysW / 2f, r.y + 42f, alignRight: false);
             }
             finally { GUI.matrix = oldMatrix; }
+        }
+
+        // ------------------------------------------------------------------
+        // Moving the HUD (issue #1): each part's offset from its usual place, in HUD units, kept in the config
+        // ------------------------------------------------------------------
+
+        /// <summary>The HUD's move mode (Move HUD Key): its parts drawn as frames to drag; the mouse is free meanwhile.</summary>
+        internal static bool MoveMode;
+        private static float _scale = 1f;
+        private static ConfigEntry<string>? _dragging;
+        private static ConfigEntry<float>? _sizing;
+        private static Vector2 _dragStart, _dragFrom;
+        private static float _sizeFrom;
+
+        private static Vector2 Offset(ConfigEntry<string> entry)
+        {
+            var parts = (entry.Value ?? "").Split(',');
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var num = System.Globalization.NumberStyles.Float;
+            return parts.Length == 2 && float.TryParse(parts[0], num, inv, out float x) && float.TryParse(parts[1], num, inv, out float y)
+                ? new Vector2(x, y) : Vector2.zero;
+        }
+
+        private static void SetOffset(ConfigEntry<string> entry, Vector2 v) =>
+            entry.Value = v == Vector2.zero ? "" : string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0},{1:0}", v.x, v.y);
+
+        // while dragging the value changes every frame: set without writing the file each time (saved on letting go)
+        private static void SetOffsetLive(ConfigEntry<string> entry, Vector2 v)
+        {
+            var file = entry.ConfigFile; bool was = file.SaveOnConfigSet;
+            file.SaveOnConfigSet = false;
+            try { SetOffset(entry, v); } finally { file.SaveOnConfigSet = was; }
+        }
+
+        private static Vector2 DialsCentre() => new Vector2(_width - 24f - 94f, _height - 160f) + Offset(VdwConfig.HudPosDials);
+
+        private struct Part { public ConfigEntry<string> Pos; public ConfigEntry<float> Size; public string Name; public Rect Rect; public Vector2 Pivot; }
+
+        /// <summary>Each movable part's frame where it sits now (its usual place plus its offset), at its size.</summary>
+        private static Part[] MovableParts()
+        {
+            var col = Offset(VdwConfig.HudPosColumn);
+            float colH = 92f + BaitRigRow + 346f + 112f;
+            var colPivot = new Vector2(_width - 24f + col.x, 268f * _vu + col.y);
+            var dials = DialsCentre();
+            var hintPivot = new Vector2(_width / 2f, _height - HintBottomGap * _vu) + Offset(VdwConfig.HudPosHints);
+            float hw = 560f * HintScale, hh = 74f * HintScale;
+            var boss = Offset(VdwConfig.HudPosBoss);
+            var bossPivot = new Vector2(_width / 2f + boss.x, 70f * _vu + boss.y);
+            Part P(ConfigEntry<string> pos, ConfigEntry<float> size, string name, Rect r, Vector2 pivot)
+            {
+                float k = Size(size);   // the frame at the part's size, about its anchor
+                return new Part { Pos = pos, Size = size, Name = name, Pivot = pivot,
+                                  Rect = new Rect(pivot + (r.position - pivot) * k, r.size * k) };
+            }
+            return new[]
+            {
+                P(VdwConfig.HudPosColumn, VdwConfig.HudSizeColumn, "Bait, tension and line", new Rect(colPivot.x - 320f, colPivot.y, 320f, colH), colPivot),
+                P(VdwConfig.HudPosDials, VdwConfig.HudSizeDials, "Drag and reel", new Rect(dials.x - 92f, dials.y - 92f, 184f, 184f), dials),
+                P(VdwConfig.HudPosHints, VdwConfig.HudSizeHints, "Key hints", new Rect(hintPivot.x - hw / 2f, hintPivot.y - hh, hw, hh), hintPivot),
+                P(VdwConfig.HudPosBoss, VdwConfig.HudSizeBoss, "Boss bar", new Rect(bossPivot.x - 320f, bossPivot.y, 640f, 80f), bossPivot),
+            };
+        }
+
+        // the resize handle: the frame's corner farthest from the point it grows from
+        private static Rect Handle(Part p)
+        {
+            Vector2 best = p.Rect.min; float far = -1f;
+            foreach (var c in new[] { p.Rect.min, p.Rect.max, new Vector2(p.Rect.xMin, p.Rect.yMax), new Vector2(p.Rect.xMax, p.Rect.yMin) })
+            {
+                float d = (c - p.Pivot).sqrMagnitude;
+                if (d > far) { far = d; best = c; }
+            }
+            const float hs = 22f;
+            return new Rect(Mathf.Clamp(best.x - hs / 2f, p.Rect.xMin, p.Rect.xMax - hs), Mathf.Clamp(best.y - hs / 2f, p.Rect.yMin, p.Rect.yMax - hs), hs, hs);
+        }
+
+        private static void SetSizeLive(ConfigEntry<float> entry, float k)
+        {
+            var file = entry.ConfigFile; bool was = file.SaveOnConfigSet;
+            file.SaveOnConfigSet = false;
+            try { entry.Value = Mathf.Round(Mathf.Clamp(k, 0.5f, 2f) * 100f) / 100f; } finally { file.SaveOnConfigSet = was; }
+        }
+
+        /// <summary>
+        /// The move mode: every part as a frame where it sits. Drag one to move it, double-click it to put it back; the
+        /// place is saved as it's let go. Parts stay on screen.
+        /// </summary>
+        private static void DrawMoveMode()
+        {
+            var e = Event.current;
+            var mouse = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale;   // in HUD units
+            var parts = MovableParts();
+
+            if (e.type == EventType.MouseDown && e.button == 0)
+            {
+                foreach (var p in parts)
+                {
+                    bool onHandle = Handle(p).Contains(mouse);
+                    if (!onHandle && !p.Rect.Contains(mouse)) continue;
+                    if (e.clickCount >= 2) { SetOffset(p.Pos, Vector2.zero); p.Size.Value = 1f; _dragging = null; _sizing = null; }
+                    else if (onHandle) { _sizing = p.Size; _dragStart = mouse; _sizeFrom = Size(p.Size); }
+                    else { _dragging = p.Pos; _dragStart = mouse; _dragFrom = Offset(p.Pos); }
+                    e.Use(); break;
+                }
+            }
+            else if (e.type == EventType.MouseDrag && _sizing != null)
+            {
+                // the size follows the handle's distance from the point the part grows from
+                var sizing = _sizing;
+                var p = System.Array.Find(parts, q => q.Size == sizing);
+                float d0 = Mathf.Max(8f, (_dragStart - p.Pivot).magnitude);
+                SetSizeLive(sizing, _sizeFrom * (mouse - p.Pivot).magnitude / d0);
+                e.Use();
+            }
+            else if (e.type == EventType.MouseDrag && _dragging != null)
+            {
+                var entry = _dragging;
+                var rect = System.Array.Find(parts, q => q.Pos == entry).Rect;
+                var to = _dragFrom + (mouse - _dragStart);
+                // keep the whole part on screen
+                var moved = new Rect(rect.position + (to - Offset(entry)), rect.size);
+                to.x += Mathf.Clamp(moved.x, 0f, Mathf.Max(0f, _width - moved.width)) - moved.x;
+                to.y += Mathf.Clamp(moved.y, 0f, Mathf.Max(0f, _height - moved.height)) - moved.y;
+                SetOffsetLive(entry, to);
+                e.Use();
+            }
+            else if (e.type == EventType.MouseUp && (_dragging != null || _sizing != null))
+            {
+                (_dragging?.ConfigFile ?? _sizing!.ConfigFile).Save();
+                _dragging = null; _sizing = null; e.Use();
+            }
+            else if (e.type == EventType.ScrollWheel)
+            {
+                foreach (var p in parts)
+                {
+                    if (!p.Rect.Contains(mouse)) continue;
+                    p.Size.Value = Mathf.Round(Mathf.Clamp(Size(p.Size) - Mathf.Sign(e.delta.y) * 0.05f, 0.5f, 2f) * 100f) / 100f;   // up: bigger
+                    e.Use(); break;
+                }
+            }
+
+            foreach (var p in MovableParts())
+            {
+                bool held = p.Pos == _dragging || p.Size == _sizing;
+                Panel(p.Rect);
+                Fill(new Rect(p.Rect.x, p.Rect.y, p.Rect.width, 2f), held ? Amber : Trim);
+                Label(new Rect(p.Rect.x, p.Rect.center.y - 22f, p.Rect.width, 26f), p.Name, _smallBold, held ? Amber : Gold, TextAnchor.MiddleCenter);
+                string where = Offset(p.Pos) == Vector2.zero ? "usual place" : "moved";
+                Label(new Rect(p.Rect.x, p.Rect.center.y + 2f, p.Rect.width, 22f), $"{where}, {Size(p.Size) * 100f:0}%", _small, Dim, TextAnchor.MiddleCenter);
+                var h = Handle(p);
+                Fill(h, p.Size == _sizing ? Amber : Trim);
+                Fill(new Rect(h.x + 4f, h.y + 4f, h.width - 8f, h.height - 8f), Wood);
+            }
+            string key = VdwConfig.MoveHudKey.Value.ToString();
+            var help = new Rect(_width / 2f - 340f, _height / 2f - 56f, 680f, 112f);
+            Panel(help);
+            Label(new Rect(help.x, help.y + 10f, help.width, 30f), "Moving the fishing HUD", _big, Gold, TextAnchor.MiddleCenter);
+            Label(new Rect(help.x, help.y + 48f, help.width, 24f), "Drag a part to move it. Drag its corner handle, or scroll over it, to resize it.", _small, Cream, TextAnchor.MiddleCenter);
+            Label(new Rect(help.x, help.y + 74f, help.width, 24f), "Double-click a part to put it back. " + key + " or Escape when done.", _small, Cream, TextAnchor.MiddleCenter);
         }
 
         // the hint panel's size, and its gap above the bottom of the screen (Valheim units; the stamina bar's bottom edge

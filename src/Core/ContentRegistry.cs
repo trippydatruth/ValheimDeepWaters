@@ -915,6 +915,9 @@ namespace ValheimDeepWaters
                 f.m_pickupItemStackSize = Mathf.Max(1, fish.CatchAmount);
             }
             CustomModels.ApplyToPrefab(swim, BaitModelKey(fish.CatchBait));
+            // no item, so no item stand ever shows it: drop the still "attach" copy (it swam beside the fish as a second one)
+            var attach = swim.transform.Find("attach");
+            if (attach != null) UnityEngine.Object.DestroyImmediate(attach.gameObject);
             PrefabManager.Instance.AddPrefab(swim);
             SwimmingBaitfish[fish.Id] = swim;
             FishIdByPrefab[name] = fish.Id;

@@ -27,6 +27,9 @@ namespace ValheimDeepWaters
         public static ConfigEntry<KeyboardShortcut> TackleBoxKey = null!;
         public static ConfigEntry<KeyboardShortcut> TackleBoxSetDownKey = null!;
         public static ConfigEntry<string> TacklePanelPosition = null!;
+        public static ConfigEntry<KeyboardShortcut> MoveHudKey = null!;
+        public static ConfigEntry<string> HudPosColumn = null!, HudPosDials = null!, HudPosHints = null!, HudPosBoss = null!;
+        public static ConfigEntry<float> HudSizeColumn = null!, HudSizeDials = null!, HudSizeHints = null!, HudSizeBoss = null!;
         public static ConfigEntry<WeightUnit> WeightUnits = null!;
         public static ConfigEntry<StepControl> DragControl = null!;
         public static ConfigEntry<StepControl> ReelSpeedControl = null!;
@@ -71,6 +74,18 @@ namespace ValheimDeepWaters
             TackleBoxSetDownKey = cfg.Bind("3 Controls", "Tackle Box Set Down Key", new KeyboardShortcut(KeyCode.K, KeyCode.LeftShift), "Sets the tackle box you're wearing down as a chest (Shift+E on it picks it up again).");
             WeightUnits = cfg.Bind("4 Interface", "Weight Unit", WeightUnit.Kilograms, "Show fish weights in kilograms or pounds. Item descriptions update after a restart.");
             TacklePanelPosition = cfg.Bind("4 Interface", "Tackle Screen Position", "", "Where the tackle screen sits beside the inventory, set by dragging it. Empty: beside the inventory. Double-clicking its title also resets it.");
+            MoveHudKey = cfg.Bind("3 Controls", "Move HUD Key", new KeyboardShortcut(KeyCode.U, KeyCode.LeftAlt), "Turns the fishing HUD's move mode on and off: drag its parts where you want them, double-click one to put it back, Escape or this key again to finish.");
+            const string hudPos = " on screen, set in the HUD's move mode (Move HUD Key): an offset from its usual place, in HUD units. Empty: its usual place.";
+            HudPosColumn = cfg.Bind("4 Interface", "HUD Position: Bait and Line", "", "Where the bait, tension and line panels sit" + hudPos);
+            HudPosDials = cfg.Bind("4 Interface", "HUD Position: Drag and Reel", "", "Where the drag and reel dials sit" + hudPos);
+            HudPosHints = cfg.Bind("4 Interface", "HUD Position: Key Hints", "", "Where the key hints sit" + hudPos);
+            HudPosBoss = cfg.Bind("4 Interface", "HUD Position: Boss Bar", "", "Where a boss fish's bar sits" + hudPos);
+            const string hudSize = ", on top of HUD Scale. Also set in the HUD's move mode (mouse wheel over it, or its corner handle).";
+            var sizes = new AcceptableValueRange<float>(0.5f, 2f);
+            HudSizeColumn = cfg.Bind("4 Interface", "HUD Size: Bait and Line", 1f, new ConfigDescription("Size of the bait, tension and line panels" + hudSize, sizes));
+            HudSizeDials = cfg.Bind("4 Interface", "HUD Size: Drag and Reel", 1f, new ConfigDescription("Size of the drag and reel dials" + hudSize, sizes));
+            HudSizeHints = cfg.Bind("4 Interface", "HUD Size: Key Hints", 1f, new ConfigDescription("Size of the key hints" + hudSize, sizes));
+            HudSizeBoss = cfg.Bind("4 Interface", "HUD Size: Boss Bar", 1f, new ConfigDescription("Size of a boss fish's bar" + hudSize, sizes));
             DragControl = cfg.Bind("3 Controls", "Drag Control", StepControl.MouseWheel, "What sets the drag while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). If drag and reel speed use the same control, drag gets it.");
             ReelSpeedControl = cfg.Bind("3 Controls", "Reel Speed Control", StepControl.AltMouseWheel, "What sets the reel speed while the rod is out: the mouse wheel, Alt + mouse wheel, or the mouse side buttons (Mouse 5 up, Mouse 4 down). Shift always reels at full speed.");
         }

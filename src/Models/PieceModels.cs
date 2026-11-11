@@ -108,7 +108,8 @@ namespace ValheimDeepWaters
             {
                 var still = Place(attach.Find("attachobj") ?? attach, "vdw_model_still");   // stands copy only attachobj when there is one
                 AddGarnish(still.transform, baseName);
-                foreach (var r in still.GetComponentsInChildren<Renderer>(true)) r.gameObject.AddComponent<StandOnlyModel>();
+                // off in the prefab, switched on away from a dropped item (see StandOnlyModel: issue #1, VPO)
+                foreach (var r in still.GetComponentsInChildren<Renderer>(true)) { r.enabled = false; r.gameObject.AddComponent<StandOnlyModel>().ShowOffItem = true; }
             }
             Plugin.Log.LogDebug($"Custom models: '{baseName}' is a whole model (from '{source}'), {renderers.Length} parts.");
             return true;

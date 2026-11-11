@@ -183,6 +183,8 @@ namespace ValheimDeepWaters
 
             if (VdwConfig.LogKey.Value.IsDown() && !InputBlocked())
                 _logOpen = !_logOpen;
+            if (VdwConfig.MoveHudKey.Value.IsDown() && !InputBlocked())
+                FishingHud.MoveMode = !FishingHud.MoveMode;
             if (VdwConfig.RodKey.Value.IsDown() && !InputBlocked() && !player.IsDead())
             {
                 Tackle.ToggleRod(player);
@@ -219,7 +221,7 @@ namespace ValheimDeepWaters
         /// </summary>
         public static void ProcessScrollEvent()
         {
-            if (!VdwConfig.Enabled.Value || !_rodEquipped) return;
+            if (!VdwConfig.Enabled.Value || !_rodEquipped || FishingHud.MoveMode) return;   // (moving the HUD: the wheel sizes its parts)
             var e = Event.current;
             if (e == null || e.type != EventType.ScrollWheel) return;
             if (InputBlocked()) return;
@@ -347,16 +349,18 @@ namespace ValheimDeepWaters
         private static bool _logHoldsInput;
 
         /// <summary>
-        /// The open catch log frees the mouse (and holds the player's controls, like any Valheim window) so its filters
-        /// and pages can be clicked; Escape, dying or another window closes it.
+        /// The open catch log, and the HUD's move mode, free the mouse (and hold the player's controls, like any Valheim
+        /// window) so the log can be clicked or the HUD dragged; Escape, dying or another window ends either.
         /// </summary>
         private static void UpdateLogCursor(Player player)
         {
-            if (_logOpen && (Input.GetKeyDown(KeyCode.Escape) || player.IsDead() || Menu.IsVisible() || InventoryGui.IsVisible()))
-                _logOpen = false;
-            if (_logOpen == _logHoldsInput) return;
-            _logHoldsInput = _logOpen;
-            Jotunn.Managers.GUIManager.BlockInput(_logOpen);
+            bool leave = Input.GetKeyDown(KeyCode.Escape) || player.IsDead() || Menu.IsVisible() || InventoryGui.IsVisible();
+            if (_logOpen && leave) _logOpen = false;
+            if (FishingHud.MoveMode && leave) FishingHud.MoveMode = false;
+            bool hold = _logOpen || FishingHud.MoveMode;
+            if (hold == _logHoldsInput) return;
+            _logHoldsInput = hold;
+            Jotunn.Managers.GUIManager.BlockInput(hold);
         }
 
         internal static void CloseLog() => _logOpen = false;

@@ -67,8 +67,9 @@ namespace ValheimDeepWaters
                     still.transform.SetParent(standRoot, false);
                     still.transform.localScale = smr.transform.lossyScale;
                     still.AddComponent<MeshFilter>().sharedMesh = smr.sharedMesh;
-                    still.AddComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
-                    still.AddComponent<StandOnlyModel>();
+                    var sr = still.AddComponent<MeshRenderer>(); sr.sharedMaterials = smr.sharedMaterials;
+                    sr.enabled = false;                      // off in the prefab: see StandOnlyModel
+                    still.AddComponent<StandOnlyModel>().ShowOffItem = true;
                 }
             }
         }
@@ -76,13 +77,22 @@ namespace ValheimDeepWaters
 
     /// <summary>
     /// The still copy of an animated model under an item's "attach" child is for item stands (which show only that
-    /// child). On the item itself, lying in the world, the animated model is showing already, so it hides.
+    /// child). On the item itself, lying in the world, the animated model is showing already, so it stays hidden.
+    /// On an item's copy it starts switched off in the prefab (ShowOffItem) and is switched on only away from an
+    /// ItemDrop: Valheim Performance Optimizations takes over drawing a dropped item's enabled mesh renderers the
+    /// moment it spawns (before Start), and turning one off after that left its copy drawn - a still fish frozen in
+    /// the water or floating on the player (issue #1).
     /// </summary>
     internal sealed class StandOnlyModel : MonoBehaviour
     {
+        public bool ShowOffItem;     // starts off; shown wherever it isn't part of a dropped item (stands, held copies)
+
         private void Start()
         {
-            if (GetComponentInParent<ItemDrop>() != null && GetComponent<Renderer>() is Renderer r) r.enabled = false;
+            if (!(GetComponent<Renderer>() is Renderer r)) return;
+            // part of the object itself (a dropped item, or a swimming fish - a swimming baitfish has no ItemDrop): hidden
+            if (GetComponentInParent<ItemDrop>() != null || GetComponentInParent<global::Fish>() != null) r.enabled = false;
+            else if (ShowOffItem) r.enabled = true;
         }
     }
 
