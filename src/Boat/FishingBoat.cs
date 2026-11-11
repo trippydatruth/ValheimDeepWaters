@@ -566,22 +566,141 @@ namespace ValheimDeepWaters
             }
 
             var rower = Rower();
-            if (rower != null) PoseRower(rower, grips, sweepNow);
+            // a rod in hand: you're fishing from the seat, so the arms are the rod's to pose (cast, reel), not the oars'
+            if (rower != null && !ContentRegistry.HoldsRod(rower)) PoseRower(rower, grips, sweepNow);
             PoseHoldfast();
         }
 
         /// <summary>
-        /// Whoever holds fast in the bow keeps the Longship's braced stance, but with nothing to grip their arms hang down
-        /// at their sides instead of reaching for a dragon head.
+        /// Whoever holds fast in the bow keeps the Longship's braced stance in the legs, one foot up on the bow, but with
+        /// nothing to grip their arms play the standing idle (breathing, a little sway) instead of reaching for a dragon
+        /// head. With a rod in hand the arms are left to the rod.
         /// </summary>
         private void PoseHoldfast()
         {
             if (_holdfast == null) return;
             var p = Player.GetClosestPlayer(_holdfast.position, 0.3f);
             if (p == null || (p == Player.m_localPlayer && !p.IsAttached())) return;   // others: only their own game knows they're seated
+            if (ContentRegistry.HoldsRod(p)) return;
             BeginPose(p);
-            try { PoseHoldfastArms(p); }
+            try { if (!IdleBody(p, arms: true)) PoseHoldfastArms(p); }   // (the old hanging arms if the idle can't be found)
             finally { EndPose(p); }
+        }
+
+        // the standing idle clip, found once in the player's animator; the bones it gives the upper body (and the arms)
+        private static AnimationClip? _idleClip;
+        private static bool _idleSearched;
+        private static readonly string[] IdleTorsoBones = { "Spine", "Spine1", "Spine2", "Neck", "Head" };
+        private static string[]? _idleArmBones;   // (built on first use: Fingers is declared further down)
+        private static string[] IdleArmBones => _idleArmBones ??= BuildIdleArmBones();
+
+        private static string[] BuildIdleArmBones()
+        {
+            var names = new List<string>();
+            foreach (var side in new[] { "Left", "Right" })
+            {
+                names.Add(side + "Shoulder"); names.Add(side + "Arm"); names.Add(side + "ForeArm"); names.Add(side + "Hand");
+                foreach (var f in Fingers) for (int j = 1; j <= 3; j++) names.Add(side + "Hand" + f + j);
+            }
+            return names.ToArray();
+        }
+
+        private static AnimationClip? IdleClip(Animator anim)
+        {
+            if (_idleSearched) return _idleClip;
+            var ctrl = anim.runtimeAnimatorController;
+            if (ctrl == null) return null;
+            _idleSearched = true;
+            var clips = ctrl.animationClips.Where(c => c != null).Distinct().ToList();
+            string[] not = { "sit", "swim", "crouch", "sneak", "attach", "block", "fish", "sleep", "emote", "equip", "bow", "staff",
+                             "spear", "axe", "sword", "club", "shield", "torch", "carry", "knife", "crossbow", "fist", "atgeir",
+                             "hammer", "hoe", "pickaxe", "cultivat", "_to", "to_", "turn", "ladder", "drunk", "cold", "wet" };
+            bool Clean(AnimationClip c) => !not.Any(c.name.ToLowerInvariant().Contains);
+            _idleClip = clips.FirstOrDefault(c => c.name.Equals("idle", System.StringComparison.OrdinalIgnoreCase))
+                        ?? clips.FirstOrDefault(c => c.name.ToLowerInvariant().StartsWith("idle") && Clean(c))
+                        ?? clips.FirstOrDefault(c => c.name.ToLowerInvariant().Contains("idle") && Clean(c));
+            Plugin.Log.LogInfo($"Boat holdfast: idle arms from '{_idleClip?.name ?? "(none - arms hang)"}' (idle clips: " +
+                               string.Join(", ", clips.Where(c => c.name.ToLowerInvariant().Contains("idle")).Select(c => c.name)) + ")");
+            return _idleClip;
+        }
+
+        /// <summary>
+        /// Plays the standing idle on the upper body - back, neck and head, and the arms too unless a rod has them: the
+        /// clip is sampled onto the body, those bones' pose taken from it, and every other bone (the legs, braced) put back
+        /// as the stance had it. Every game does this for everyone at the holdfast, so everyone sees it.
+        /// </summary>
+        internal static bool IdleBody(Player p, bool arms)
+        {
+            var anim = p.GetComponentInChildren<Animator>();
+            var clip = anim != null ? IdleClip(anim) : null;
+            if (clip == null || clip.length <= 0f) return false;
+            return SampleUpper(p, clip, (Time.time + (p.GetInstanceID() & 0xff) * 0.37f) % clip.length, arms);
+        }
+
+        private static readonly Dictionary<string, AnimationClip?> ClipsByName = new();
+
+        /// <summary>One of the player's own animation clips by name (the first of the names it has), or null.</summary>
+        internal static AnimationClip? PlayerClip(Player p, params string[] names)
+        {
+            string key = string.Join("|", names);
+            if (ClipsByName.TryGetValue(key, out var found)) return found;   // (a missing one too: looked for once, logged once)
+            var ctrl = p.GetComponentInChildren<Animator>()?.runtimeAnimatorController;
+            if (ctrl == null) return null;
+            var clips = ctrl.animationClips.Where(c => c != null).ToList();
+            found = names.Select(n => clips.FirstOrDefault(c => c.name.Equals(n, System.StringComparison.OrdinalIgnoreCase))).FirstOrDefault(c => c != null);
+            ClipsByName[key] = found;
+            Plugin.Log.LogInfo($"Rod cast seated: clip '{names[0]}' {(found != null ? $"found ({found.length:0.00} s)" : "not found")}.");
+            return found;
+        }
+
+        /// <summary>
+        /// Plays a clip of the player's own animation at a time on the upper body - the back, neck and head, and the arms
+        /// unless told not to: sampled onto the body, those bones taken from it, everything else put back as it was (the
+        /// legs keep whatever the seat or stance has them doing).
+        /// </summary>
+        internal static bool SampleUpper(Player p, AnimationClip clip, float time, bool arms) => SampleBones(p, clip, time, arms ? IdleTorsoBones.Concat(IdleArmBones) : IdleTorsoBones);
+
+        /// <summary>One arm only (side "Left" or "Right": shoulder, arm, forearm, hand and fingers) from a clip.</summary>
+        internal static bool SampleArm(Player p, AnimationClip clip, float time, string side) => SampleBones(p, clip, time, IdleArmBones.Where(n => n.StartsWith(side)));
+
+        private static bool SampleBones(Player p, AnimationClip clip, float time, IEnumerable<string> names)
+        {
+            var body = p.GetComponent<VisEquipment>()?.m_bodyModel;
+            var anim = p.GetComponentInChildren<Animator>();
+            if (body == null || anim == null || clip == null) return false;
+
+            var bones = body.bones.Where(b => b != null).Distinct().Append(anim.transform).ToArray();
+            var pos = new Vector3[bones.Length]; var rot = new Quaternion[bones.Length];
+            for (int i = 0; i < bones.Length; i++) { pos[i] = bones[i].localPosition; rot[i] = bones[i].localRotation; }
+            clip.SampleAnimation(anim.gameObject, Mathf.Clamp(time, 0f, clip.length));
+            var keep = new List<(Transform b, Quaternion r)>();
+            foreach (var n in names) { var b = Bone(p, n); if (b != null) keep.Add((b, b.localRotation)); }
+            for (int i = 0; i < bones.Length; i++) { bones[i].localPosition = pos[i]; bones[i].localRotation = rot[i]; }
+            foreach (var (b, r) in keep) b.localRotation = r;
+            return keep.Count > 0;
+        }
+
+        private static readonly Dictionary<int, (Animator anim, int[] hashes, int dragon)> AttachParams = new();
+
+        /// <summary>
+        /// Whether a player is seated (on a seat, at the oars, braced at a holdfast) and whether it's a holdfast - read from
+        /// their animator's attach states, which the game syncs, so it's right for every player on every game.
+        /// </summary>
+        internal static bool Seated(Player p, out bool holdfast)
+        {
+            holdfast = false;
+            int id = p.GetInstanceID();
+            if (!AttachParams.TryGetValue(id, out var ap) || ap.anim == null)
+            {
+                var anim = p.GetComponentInChildren<Animator>();
+                if (anim == null) return false;
+                var ps = anim.parameters.Where(x => x.type == AnimatorControllerParameterType.Bool && x.name.StartsWith("attach")).ToArray();
+                AttachParams[id] = ap = (anim, ps.Select(x => x.nameHash).ToArray(), Animator.StringToHash("attach_dragon"));
+            }
+            bool seated = false;
+            foreach (var h in ap.hashes)
+                if (ap.anim.GetBool(h)) { seated = true; if (h == ap.dragon) holdfast = true; }
+            return seated;
         }
 
         private void PoseHoldfastArms(Player p)
@@ -802,10 +921,10 @@ namespace ValheimDeepWaters
 
         private static string[] BuildPosedBones()
         {
-            var names = new List<string> { "Spine", "Spine1", "Spine2" };
+            var names = new List<string> { "Spine", "Spine1", "Spine2", "Neck", "Head" };
             foreach (var side in new[] { "Left", "Right" })
             {
-                names.Add(side + "Arm"); names.Add(side + "ForeArm"); names.Add(side + "Hand");
+                names.Add(side + "Shoulder"); names.Add(side + "Arm"); names.Add(side + "ForeArm"); names.Add(side + "Hand");
                 foreach (var f in Fingers) for (int j = 1; j <= 3; j++) names.Add(side + "Hand" + f + j);
             }
             return names.ToArray();
@@ -866,9 +985,10 @@ namespace ValheimDeepWaters
                 foreach (var g in grips)
                     if (Vector3.Dot(g.Value - p.transform.position, p.transform.right) * sideOfRower > 0) { target = g.Value; found = true; }
                 if (!found) continue;
-                // elbows out to the side and a little down
-                var pole = upper.position + p.transform.right * (sideOfRower * 0.6f) - Vector3.up * 0.4f - p.transform.forward * 0.2f;
-                SolveArm(upper, lower, hand, target, pole);
+                // the hand closed round the oar's handle, overhand: knuckles over the top, fingers forward and down
+                // round it, the thumb in toward the boat's middle (Grasp puts the elbow out to its side)
+                var tr = p.transform;
+                AnglerPose.Grasp(p, prefix, target, sideOfRower, tr.forward - Vector3.up * 0.35f, -tr.right * sideOfRower, 0.025f);
             }
         }
 

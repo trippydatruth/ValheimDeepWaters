@@ -164,6 +164,7 @@ namespace ValheimDeepWaters
                 foreach (var an in go.GetComponentsInChildren<Animator>(true)) Object.DestroyImmediate(an);
                 foreach (var an in go.GetComponentsInChildren<Animation>(true)) Object.DestroyImmediate(an);
                 foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true; // it bends past its bounds
+                UseVanillaMaterials(go);
 
                 // The hand holds the item's "attach" point: put the rod's grip (marker bone Rod.Grip) right there,
                 // keeping the vanilla rod's direction. Without the marker, the rod's origin sits at the vanilla pivot.
@@ -174,6 +175,27 @@ namespace ValheimDeepWaters
 
                 go.AddComponent<RodRig>();
                 mr.enabled = false;
+            }
+        }
+
+        /// <summary>Parts named for a vanilla metal wear the game's own material ("bloodgold" = the Bloodgold bar's,
+        /// prefab "Gold"); the model's tiling box UVs suit it. Without that item the part keeps its own fallback look.</summary>
+        private static readonly Dictionary<string, string> VanillaMaterialParts = new() { ["bloodgold"] = "Gold" };
+        private static readonly Dictionary<string, Material?> VanillaMaterialCache = new();
+
+        private static void UseVanillaMaterials(GameObject go)
+        {
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!VanillaMaterialParts.TryGetValue(r.gameObject.name, out var itemPrefab)) continue;
+                if (!VanillaMaterialCache.TryGetValue(itemPrefab, out var mat))
+                {
+                    var item = Jotunn.Managers.PrefabManager.Cache.GetPrefab<GameObject>(itemPrefab);
+                    mat = item?.GetComponentsInChildren<MeshRenderer>(true).Select(m => m.sharedMaterial).FirstOrDefault(m => m != null);
+                    if (mat == null) Plugin.Log.LogDebug($"Rod parts: no '{itemPrefab}' material in this game; '{r.gameObject.name}' keeps its own.");
+                    else VanillaMaterialCache[itemPrefab] = mat;   // (not cached while missing: the item may load later)
+                }
+                if (mat != null) r.sharedMaterials = Enumerable.Repeat(mat, r.sharedMaterials.Length).ToArray();
             }
         }
     }

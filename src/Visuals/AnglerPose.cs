@@ -54,14 +54,36 @@ namespace ValheimDeepWaters
             if (a.Rod == null) return;
             float dt = Time.deltaTime, now = Time.time;
 
-            // Valheim animates the body itself with no line out, while a cast charges and through the throw (its own
-            // bow-style draw and cast, driven by RodMotion and synced like any animation). Our pose blends in once the
+            // Valheim animates the body itself while a cast charges and through the throw (its own rod draw and cast, driven
+            // by RodMotion and synced like any animation), and holds the rod with no line out. Our pose blends in once the
             // line is in the water and blends back out for the next cast.
-            bool vanilla = st.Phase == 0 || st.Charging || a.Since(RodEvent.Cast) < CastAnimTime;
-            a.PoseW = Mathf.MoveTowards(a.PoseW, vanilla ? 0f : 1f, (vanilla ? 6f : 3f) * dt);
+            // Seated (a boat's seats and holdfast, any chair) the seat's animation has the body, so Valheim's draw and throw
+            // can't play: the same clips are played on the upper body instead (Load as the cast charges, Throw on release),
+            // the legs staying seated. Seated with no line out, and with a short rod, our pose holds it (Valheim's hold is
+            // made for a full-length rod standing). (Seated is read from the synced animator, so everyone sees the same.)
+            bool seated = FishingBoatOars.Seated(player, out bool holdfast);
+            bool own = seated || a.Short;
+            float castE = a.Since(RodEvent.Cast);
+            bool casting = st.Charging || castE < CastAnimTime;
+            bool vanilla = casting || (!own && st.Phase == 0);
+            a.PoseW = Mathf.MoveTowards(a.PoseW, vanilla ? 0f : 1f, (vanilla ? 8f : 3f) * dt);
             // Holding the rod with no line out, Valheim's hold animation has the left hand where its own rod would be: it
             // goes onto ours instead (eased in and out, so starting a cast doesn't snap it away).
-            a.IdleW = Mathf.MoveTowards(a.IdleW, st.Phase == 0 && !st.Charging && a.Since(RodEvent.Cast) >= CastAnimTime ? 1f : 0f, 4f * dt);
+            a.IdleW = own ? 0f : Mathf.MoveTowards(a.IdleW, st.Phase == 0 && !casting ? 1f : 0f, 4f * dt);
+            // just taken in hand: straight into the hold (easing in from nothing, the rod slid across from the middle)
+            if (a.Fresh) { a.Fresh = false; a.PoseW = vanilla ? 0f : 1f; a.IdleW = own ? 0f : st.Phase == 0 && !casting ? 1f : 0f; }
+            // a short (ice) rod with no line out: pinned in the left fist, so it goes with every one of Valheim's own
+            // animations (walking, jumping, anything) - nothing of the body posed; once the line's down it's brought to the
+            // middle to reel (our pose, straight away - no slide)
+            if (a.Short) RodMotion.SetCarryState(player, a, !seated && !casting && st.Phase == 0);
+            if (a.Short && !seated && !casting)
+            {
+                if (st.Phase == 0) { a.PoseW = 0f; a.Placed = false; RodMotion.AttachToLeftHand(player, a); return; }
+                a.PoseW = 1f;
+            }
+            // braced at a holdfast, the back and head take the standing idle (the legs keep the braced stance)
+            if (holdfast && !casting) FishingBoatOars.IdleBody(player, arms: false);
+            if (seated && (casting || (castE < 3f && a.PoseW < 1f))) SeatedCast(player, st, castE);
             if (a.PoseW <= 0f)
             {
                 a.Placed = false;
@@ -75,7 +97,8 @@ namespace ValheimDeepWaters
             // where the left hand holds it, from between the shoulders (Hold: forward, down, to the right), so the rod sits on
             // the right side with the right hand winding the reel beside it
             float forward = Hold.x, down = Hold.y, side = Hold.z;
-            if (st.Phase == 1) { elev = st.Lure && st.Reeling ? 14f : 30f; if (st.Lure) { forward = Hold.x + 0.07f; down = Hold.y - 0.02f; } }
+            if (a.Short && !seated && st.Phase == 1) { elev = st.Reeling ? -6f : -12f; }   // the ice rod's tip down toward the hole
+            else if (st.Phase == 1) { elev = st.Lure && st.Reeling ? 14f : 30f; if (st.Lure) { forward = Hold.x + 0.07f; down = Hold.y - 0.02f; } }
             else if (st.Phase == 2) { elev = 30f + Mathf.Sin(now * 35f) * 3f; }
             else if (st.Phase == 3)
             {
@@ -84,6 +107,9 @@ namespace ValheimDeepWaters
                 else if (st.Reeling) { elev = 24f; lean = 3f; }
                 else { elev = 34f + 8f * st.Load; lean = 5f * st.Load; }
             }
+            // the ice rod, standing: held well out in front over the hole at about belly-button height, the arms near
+            // straight - line down, reeling, fighting
+            if (a.Short && !seated) { forward += 0.30f; down += 0.05f; }
             a.Elevation = a.Placed ? Mathf.MoveTowards(a.Elevation, elev, 160f * dt) : elev;
             a.Lean = a.Placed ? Mathf.MoveTowards(a.Lean, lean, 50f * dt) : lean;
             a.Placed = true;
@@ -142,7 +168,8 @@ namespace ValheimDeepWaters
                     Vector3 W(Vector3 local) => pos + rot * (local * s);             // rod space to world, as placed
                     // the left hand round the rod just above the reel (LeftAlong up from it, nudged), fingers across it,
                     // thumb along it
-                    leftT = W(anchor + a.AxisLocal * (LeftAlong / s)) + Nudge(LeftRight, LeftUp, LeftForward);
+                    leftT = a.Short ? W(a.GripLocal) + Nudge(LeftRight, LeftUp, LeftForward)        // a short rod: by its grip
+                                    : W(anchor + a.AxisLocal * (LeftAlong / s)) + Nudge(LeftRight, LeftUp, LeftForward);
                     leftFingers = Quaternion.AngleAxis(LeftRoll, dir) * Vector3.ProjectOnPlane(t.right - t.up * 0.3f, dir);
 
                     // the right hand: on the reel's handle (going round with it while reeling), or round the butt of a rod
@@ -164,13 +191,15 @@ namespace ValheimDeepWaters
                         rightFingers = Quaternion.AngleAxis(RightRoll, dir) * Vector3.ProjectOnPlane(-t.right - t.up * 0.3f, dir);
                     }
                 }
+                bool rightOn = true;
                 Place(grip);
                 // Both hands must reach: if one would have to stretch past most of its arm's length, the rod moves toward
                 // that shoulder by the difference (exactly enough, as the hand moves with the rod), so the hands stay on
                 // it and the elbows keep a bend.
                 for (int i = 0; i < 6; i++)
                 {
-                    float overL = Overreach(player, "Left", leftT), overR = Overreach(player, "Right", rightT);
+                    float reach = a.Short && !seated ? 0.97f : 0.85f;   // (the ice rod: the arms stretched out, not kept bent)
+                    float overL = Overreach(player, "Left", leftT, reach), overR = rightOn ? Overreach(player, "Right", rightT, reach) : 0f;
                     if (overL <= 0.002f && overR <= 0.002f) break;
                     bool left = overL >= overR;
                     Vector3 shoulder = (left ? lUpper : rUpper).position, hand = left ? leftT : rightT;
@@ -179,7 +208,8 @@ namespace ValheimDeepWaters
                 }
 
                 Grasp(player, "Left", leftT, -1f, leftFingers, dir, 0.03f);
-                Grasp(player, "Right", rightT, 1f, rightFingers, dir, 0.025f);
+                if (rightOn) Grasp(player, "Right", rightT, 1f, rightFingers, dir, 0.025f);
+                // (the free arm: the idle's, set above - or, walking, where the walk swings it)
 
                 // Last, as the rod hangs off the right hand: put it in the left.
                 a.Rod.SetPositionAndRotation(pos, rot);
@@ -196,6 +226,24 @@ namespace ValheimDeepWaters
                 }
             }
             finally { FishingBoatOars.EndPose(player); }
+        }
+
+        /// <summary>
+        /// Seated, Valheim's own rod draw and throw are played on the upper body (the seat's animation keeps the body, so the
+        /// animator can't): the Load clip held further back as the cast charges, then the Throw clip from the release.
+        /// </summary>
+        private static void SeatedCast(Player player, in AnglerState st, float castE)
+        {
+            if (st.Charging)
+            {
+                var load = FishingBoatOars.PlayerClip(player, "Load");
+                if (load != null) FishingBoatOars.SampleUpper(player, load, load.length * Mathf.Clamp01(st.Charge * 1.5f) * 0.999f, arms: true);
+            }
+            else
+            {
+                var thr = FishingBoatOars.PlayerClip(player, "Throw");
+                if (thr != null) FishingBoatOars.SampleUpper(player, thr, Mathf.Min(castE, thr.length * 0.999f), arms: true);
+            }
         }
 
         /// <summary>The point on the rod above its reel (the grip point on a rod without one), in the rod's own space.</summary>
@@ -276,7 +324,7 @@ namespace ValheimDeepWaters
         /// hand turns so its fingers point along <paramref name="fingers"/> and its thumb toward <paramref name="thumb"/>.
         /// Returns where the palm ended up.
         /// </summary>
-        private static Vector3 Grasp(Player player, string side, Vector3 palmAt, float sign, Vector3 fingers, Vector3 thumb, float thickness)
+        internal static Vector3 Grasp(Player player, string side, Vector3 palmAt, float sign, Vector3 fingers, Vector3 thumb, float thickness)
         {
             var hand = FishingBoatOars.Bone(player, side + "Hand");
             if (hand == null) { Arm(player, side, palmAt, sign); return palmAt; }

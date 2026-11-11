@@ -66,6 +66,9 @@ namespace ValheimDeepWaters
                 line.Bobber.BeginCastTravel(tip, st.Target);
             }
             var b = line.Bobber;
+            b.WidthScale = RodMotion.IsShort(p) ? BobberVisual.ShortRodLine : 1f;   // the little ice rod's fine line
+            var hole = IceHole.Near(line.At, 0.6f);                                    // a line down an Ice Hole goes through it
+            b.Via = hole != null ? hole.transform.position + Vector3.up * 0.02f : null;
             b.Position = line.At;
             b.Slack = st.Phase == 3 ? 0f : 0.12f;
             b.Dipped = st.Phase == 2;
@@ -176,7 +179,7 @@ namespace ValheimDeepWaters
         {
             if (ZRoutedRpc.instance == null || BossFish.IsBoss(fish.Id) || !string.IsNullOrWhiteSpace(fish.CatchBait)) return;
             string kind = variant != 0 ? RareFish.Name(variant).ToLowerInvariant() + " " : "";
-            string text = $"{player.GetPlayerName()} landed a {kg:0.0} kg {kind}{fish.Name}!";
+            string text = $"{player.GetPlayerName()} landed a {Units.Kg(kg, "0.0")} {kind}{fish.Name}!";
             ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, Rpc, text, player.transform.position);
         }
 

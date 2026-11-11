@@ -24,6 +24,12 @@ namespace ValheimDeepWaters
         public Vector3 TipLocal, GripLocal, AxisLocal = Vector3.up, UpLocal = Vector3.forward;
         public bool HasReel;
         public Vector3 ReelLocal, AxleLocal = Vector3.right;
+        // a short rod (the Ice Fishing Rod, under ShortRod from grip to tip): held in one hand, the other only on the reel
+        // when it's winding - Valheim's two-handed hold animation is made for a full-length rod
+        public bool Short;
+        public const float ShortRod = 1.3f;
+        public bool Fresh;           // just taken in hand: the hold starts where it should be, not eased in from nothing
+        public bool Carry;           // the arms on Valheim's unarmed idle (the ice rod carried, no line out)
 
         public RodEvent Event = RodEvent.None;
         public float EventStart;
@@ -37,6 +43,7 @@ namespace ValheimDeepWaters
         public void Capture(Transform rod, Player player)
         {
             Rod = rod;
+            Carry = false;
             BaseLocal = rod.localRotation;
             BaseLocalPos = rod.localPosition;
             Rig = rod.GetComponentInChildren<RodRig>(true);
@@ -46,6 +53,7 @@ namespace ValheimDeepWaters
             GripLocal = Rig?.Grip != null ? rod.InverseTransformPoint(Rig.Grip.position) : Vector3.zero;
             Vector3 tip = Rig?.Tip != null ? rod.InverseTransformPoint(Rig.Tip.position) : HasTip ? TipLocal : GripLocal + Vector3.up;
             AxisLocal = (tip - GripLocal).sqrMagnitude > 1e-6f ? (tip - GripLocal).normalized : Vector3.up;
+            Short = (tip - GripLocal).magnitude * rod.lossyScale.x < ShortRod;
             // which way is "up" round the rod: away from its Rod.BendDir marker, which every rigged rod has on its underside (the
             // side it bends toward), so every rod sits the same way up whatever twist its model has in the hand. A rod without
             // one keeps whatever side the hold animation has up now.
@@ -66,6 +74,7 @@ namespace ValheimDeepWaters
                 Plugin.Log.LogDebug($"Rod rig: {rod.name}, reel {(HasReel ? $"{along:0.00} m from the grip point, {Vector3.ProjectOnPlane(ReelLocal - GripLocal, AxisLocal).magnitude * s:0.00} m off the rod" : "none")}, scale {s:0.00}.");
             }
             Placed = false;
+            Fresh = true;
         }
 
         public void Restore()
@@ -101,6 +110,8 @@ namespace ValheimDeepWaters
         public static void SetCharge(bool active, float fraction)
         {
             var zanim = LocalAnim(out var attack);
+            // seated, the draw is played on the upper body by AnglerPose (SeatedCast): Valheim's own would stand you up
+            if (Player.m_localPlayer != null && FishingBoatOars.Seated(Player.m_localPlayer, out _)) zanim = null;
             if (zanim != null && attack != null && attack.m_drawAnimationState != "")
             {
                 if (active) { zanim.SetBool(attack.m_drawAnimationState, true); zanim.SetFloat("drawpercent", Mathf.Clamp01(fraction)); }
@@ -113,12 +124,17 @@ namespace ValheimDeepWaters
         /// <summary>A one-off moment on the local angler's rod, shared with everyone (a cast plays Valheim's throw).</summary>
         public static void Trigger(RodEvent e)
         {
+            // a rod in a holder twitches on its own (ParkedLines), not the one in your hands
+            if (FishingController.Quiet) { if (e == RodEvent.Nibble) ParkedLines.Fx(FishFx.Nibble, 0f); return; }
             Local?.Trigger(e);
             if (Player.m_localPlayer != null) AnglerSync.Event(Player.m_localPlayer, e);
             if (e == RodEvent.Cast)
             {
                 var zanim = LocalAnim(out var attack);
-                if (zanim != null && attack != null && attack.m_attackAnimation != "") zanim.SetTrigger(attack.m_attackAnimation);
+                // (seated, the throw is played on the upper body by AnglerPose: Valheim's own stood the angler up and the
+                // throw played twice)
+                bool seated = Player.m_localPlayer != null && FishingBoatOars.Seated(Player.m_localPlayer, out _);
+                if (!seated && zanim != null && attack != null && attack.m_attackAnimation != "") zanim.SetTrigger(attack.m_attackAnimation);
             }
         }
 
@@ -144,6 +160,71 @@ namespace ValheimDeepWaters
             Anglers.Clear();
             _charging = false;
         }
+
+        /// <summary>
+        /// The short (ice) rod in the left hand, attached the way Valheim attaches anything to a hand: at the left hand's
+        /// attach point, with the same offset it has in the right hand (its item's own "attach" placing). So it sits in the
+        /// fist the way the game holds it, and goes with every animation of that hand. Nothing of the body is posed.
+        /// </summary>
+        internal static void AttachToLeftHand(Player player, RodAnimator a)
+        {
+            if (a.Rod == null || !player.TryGetComponent<VisEquipment>(out var vis) || vis.m_leftHand == null) return;
+            var hand = vis.m_leftHand;
+            a.Rod.SetPositionAndRotation(hand.TransformPoint(a.BaseLocalPos), hand.rotation * a.BaseLocal);
+        }
+
+        private static readonly int StateF = ZSyncAnimation.GetHash("statef"), StateI = ZSyncAnimation.GetHash("statei");
+        private static readonly AccessTools.FieldRef<Humanoid, ItemDrop.ItemData>? LeftItem = Fields.Ref<Humanoid, ItemDrop.ItemData>("m_leftItem");
+
+        /// <summary>
+        /// The ice rod carried with no line out: the arms on Valheim's unarmed idle (both hang naturally, the rod in the left
+        /// hand at the side), instead of its rod hold (the right arm up round a rod that isn't there, the left in the middle).
+        /// Back to the rod's own state for a cast, so Valheim's draw and throw play. It's the animator's synced state, so
+        /// everyone sees it; equipping anything resets it the game's way.
+        /// </summary>
+        internal static void SetCarryState(Player player, RodAnimator a, bool carry)
+        {
+            if (a.Carry == carry) return;
+            if (carry && LeftItem != null && LeftItem(player) != null) return;   // (something in the left hand decides the state)
+            var z = player.GetComponent<ZSyncAnimation>();
+            if (z == null) return;
+            var state = carry ? ItemDrop.ItemData.AnimationState.Unarmed : ItemDrop.ItemData.AnimationState.FishingRod;
+            z.SetFloat(StateF, (float)state);
+            z.SetInt(StateI, (int)state);
+            a.Carry = carry;
+        }
+
+        private static readonly Dictionary<int, RodAnimator> MenuRods = new();
+        private static VisEquipment[] _menuVis = System.Array.Empty<VisEquipment>();
+        private static float _menuScan;
+
+        /// <summary>The main menu's characters (character select, campfire sitters): the ice rod in the left hand there too.</summary>
+        public static void PoseMenuRods()
+        {
+            if (ZNet.instance != null || VisRightItem == null) { MenuRods.Clear(); return; }
+            if (Time.unscaledTime > _menuScan)
+            {
+                _menuScan = Time.unscaledTime + 1f;
+                _menuVis = Object.FindObjectsByType<VisEquipment>(FindObjectsSortMode.None);
+            }
+            foreach (var vis in _menuVis)
+            {
+                if (vis == null) continue;
+                int id = vis.GetInstanceID();
+                var player = vis.GetComponent<Player>();
+                var go = VisRightItem(vis);
+                if (player == null || go == null) { MenuRods.Remove(id); continue; }
+                if (!MenuRods.TryGetValue(id, out var a) || a.Rod != go.transform)
+                {
+                    MenuRods[id] = a = new RodAnimator();
+                    a.Capture(go.transform, player);
+                }
+                if (a.Rig != null && a.Short) AttachToLeftHand(player, a);   // (a Deep Waters rod: rigged)
+            }
+        }
+
+        /// <summary>Whether an angler's rod in hand is a short one (the Ice Fishing Rod).</summary>
+        public static bool IsShort(Player p) => Anglers.TryGetValue(p.GetInstanceID(), out var a) && a.Rod != null && a.Short;
 
         /// <summary>Any angler's rod tip, as their rod is posed this frame (for drawing their line).</summary>
         public static bool TryGetTip(Player p, out Vector3 tip)
