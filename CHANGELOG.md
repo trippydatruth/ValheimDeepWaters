@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.0.4
+Ice fishing: drill a hole in the frozen lakes of the Deep North and the Mountain, fish down it for three new fish,
+and do it from one of three shelters. Rod holders and a rod rack, and the fixes from the November playtest.
+
+### Added
+- **Ice fishing**: the lakes and rivers of the Deep North (and the Mountain's frozen lakes) are walkable ice, and
+  nothing can be cast onto it. Drill a hole and fish down it.
+  - **Ice Auger** (forge 3): stand on the ice and attack. You set the auger upright and twist its T-handle until the
+    bit breaks through, and a real hole opens in the ice. It needs at least 1 m of water underneath.
+  - A hole freezes over after 20 minutes, skinning over in the last two. Press `E` to scoop out the slush and keep it
+    open as long again.
+  - **Ice Fishing Rod** (forge 3): a short rod with a bloodgold reel and an Elaking-fur grip. It fishes only through a
+    hole, with a longer hook window there (any other rod works in a hole at half the window). Click at a hole to drop
+    the line straight in; hold the click to let it down further. Click with no hole in front and it just says so.
+  - **Three fish that bite only under the ice**, each with its own model: the **Lake Whitefish** (5 kg), the
+    **Burbot** (8 kg, at night, on the bottom) and the legendary **Ice King Trout** (40 kg, dark slate with ice-white
+    markings and glowing eyes). The cold-water fish of the place bite through a hole too.
+  - **Two jigs** for them: the **Grub Jig** (forge 3) and the **Rime Jig** (black forge 2).
+  - The **Ice Angler's Watch Cap** also makes fish bite 30% sooner through the ice.
+- **Ice shelters**, built with the hammer near a workbench. Walk in: each counts as shelter for resting, the camera
+  stops at its walls, and a fire inside doesn't smoke you out. Drill a hole inside and the fish bite sooner.
+  - **Hide Lavvu** (+10%): a cone of poles under sewn hides, open at the top.
+  - **Ice Shelter** (+15%): an igloo of Valheim's own ice blocks with a vent at the top, and an ice bench round its
+    back wall under a deer hide, with three seats.
+  - **Ship-Tent** (+20%): a Viking ship's tent with dragon-head gables and its own campfire at the back.
+  - They can be set down on the lake ice as well as on the ground.
+- **Rod Holder** (workbench): a forked stake for the bank or the ice. Set a rod in it with its line out and it keeps
+  fishing while you do something else; run several at once. When a fish bites everyone nearby is told, a circle hook
+  sets itself, and anyone can take the rod up and fight it. The HUD shows the tackle on that line.
+- **Rod Rack** (workbench): stores ten rods.
+- A **Weight Unit** setting: catches in pounds or kilograms.
+- Deep Waters catches count for **Valheim's own fishing achievements**.
+
+### Changed
+- **Mead bottles** are see-through glass, with the mead glowing inside.
+- **Boss fish** stir a bigger swirl in the water (16 m, more for the biggest).
+- The Cork float is now the **Cork-and-Bone Float**, made with bone fragments instead of a boss item.
+- With bait out (no lure), a left click tugs the rod and draws the bait in a little.
+- Vanilla fishing rods and baits found in the world (in the frost caves, or dropped) turn into Deep Waters gear.
+- Fireflies glow at night, with a small pulsing light.
+- Textures are 1K at most, so the download is smaller.
+
+### Fixed
+- After looting your grave, equipped items and tackle go back to their own slots.
+- The tackle screen's loadouts use tackle boxes you carry, wear, or set down and open; applying a loadout empties the
+  slots that weren't in it.
+- A fish's extra drops go into your bag when you catch it from a boat.
+
 ## 1.0.3
 The tackle screen with reels, lines and floats, hook kinds, spear fishing, coolers, Hildir's recipes, and new models
 for the baits, hooks, tackle boxes and coolers.

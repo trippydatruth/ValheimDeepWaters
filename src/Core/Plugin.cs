@@ -17,7 +17,7 @@ namespace ValheimDeepWaters
     {
         public const string Guid = "valheimdeepwaters";   // also the config file's name: BepInEx/config/valheimdeepwaters.cfg
         public const string Name = "Valheim: Deep Waters";
-        public const string Version = "1.0.3";
+        public const string Version = "1.0.4";
 
         internal static ManualLogSource Log = null!;
         internal static string ConfigDirectory = null!;
